@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a1128">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
+    <title>About - SADPMR Financial Reporting System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style-organized.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-compact.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h2>SADPMR Financial Reporting System</h2>
+                <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
+            </div>
+            
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
+            <div class="nav-wrapper" id="navMenu">
+                <ul class="nav-menu">
+                    <li><a href="/">Dashboard</a></li>
+                    <li><a href="/upload">Upload TB</a></li>
+                    <li><a href="/about" class="active">About</a></li>
+                </ul>
+                {% if current_user %}
+                <div class="user-menu">
+                    <div class="user-info">
+                        <span class="user-name">{{ current_user.full_name }}</span>
+                        <span class="user-role" style="background: {{ get_role_color(current_user.role) }}">
+                            {{ current_user.role }}
+                        </span>
+                    </div>
+                    <a href="/logout" class="logout-btn">Logout</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Mobile Menu Overlay -->
+        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+    </nav>
+
+    <div class="container about-container">
+        <h1>About the SADPMR Financial Reporting System</h1>
+
+        <div class="about-section">
+            <h2>Overview</h2>
+            <p>The SADPMR Financial Reporting System is a cloud-based solution designed specifically for Schedule 3A public entities to streamline the preparation of GRAP-compliant financial statements. Our system automates the complex mapping between Trial Balance accounts and GRAP line items, eliminating manual errors and ensuring full compliance with PFMA requirements.</p>
+        </div>
+
+        <div class="about-section">
+            <h2>Why This System?</h2>
+            <div class="problem-solution">
+                <div class="problem-box">
+                    <h3>❌ Traditional Challenges</h3>
+                    <ul>
+                        <li>❌ 2-3 days of manual data entry from Pastel to Word templates</li>
+                        <li>❌ High risk of copy-paste errors</li>
+                        <li>❌ Difficult to maintain audit trail for AGSA</li>
+                        <li>❌ Manual Cash Flow Statement calculations</li>
+                        <li>❌ Version control nightmares (final_v2_FINAL.docx)</li>
+                        <li>❌ Expensive annual licensing fees</li>
+                    </ul>
+                </div>
+                <div class="solution-box">
+                    <h3>✅ Our Solution</h3>
+                    <ul>
+                        <li>✅ 30-second automated processing</li>
+                        <li>✅ Zero manual intervention = zero errors</li>
+                        <li>✅ Complete audit trail in PostgreSQL database</li>
+                        <li>✅ Fully automated Cash Flow (Indirect Method)</li>
+                        <li>✅ Built-in version control with approval workflows</li>
+                        <li>✅ 38% cost savings vs. competitors</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="about-section">
+            <h2>Key Features</h2>
+            <div class="features-list">
+                <div class="feature-item">
+                    <h4>🎯 Intelligent GRAP Mapping</h4>
+                    <p>Our proprietary mapping engine automatically identifies account codes and assigns them to the correct GRAP line items. The system flags unmapped accounts before processing, ensuring 100% accuracy.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>📊 Complete Financial Statements</h4>
+                    <p>Automatically generates:</p>
+                    <ul>
+                        <li>Statement of Financial Position (Balance Sheet)</li>
+                        <li>Statement of Financial and Economic Performance (Income Statement)</li>
+                        <li>Cash Flow Statement (Indirect Method)</li>
+                        <li>Notes to Financial Statements</li>
+                    </ul>
+                </div>
+                <div class="feature-item">
+                    <h4>🔐 AGSA Compliance</h4>
+                    <p>Every transaction, mapping change, and approval is logged with timestamp and user ID. The system provides the complete audit trail required by the Auditor-General South Africa.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>👥 Multi-User Collaboration</h4>
+                    <p>Role-based access control allows:</p>
+                    <ul>
+                        <li><strong>CFO:</strong> Full access, approval authority</li>
+                        <li><strong>Accountants:</strong> Upload TB, modify mappings, generate reports</li>
+                        <li><strong>Clerks:</strong> Upload TB only</li>
+                        <li><strong>Auditors:</strong> View-only access</li>
+                    </ul>
+                </div>
+                <div class="feature-item">
+                    <h4>📈 Financial Ratio Analysis</h4>
+                    <p>Automatic calculation of key ratios:</p>
+                    <ul>
+                        <li>Current Ratio (Liquidity)</li>
+                        <li>Debt-to-Equity Ratio (Solvency)</li>
+                        <li>Operating Margin (Profitability)</li>
+                        <li>Return on Assets (Efficiency)</li>
+                    </ul>
+                </div>
+                <div class="feature-item">
+                    <h4>📄 Professional PDF Export</h4>
+                    <p>One-click PDF generation with SADPMR branding, matching official templates exactly. Includes digital signature placeholders for CFO and Accounting Authority.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="about-section">
+            <h2>Compliance Standards</h2>
+            <p>This system is designed to meet the requirements of:</p>
+            <ul>
+                <li>✓ Public Finance Management Act (PFMA) - Schedule 3A entities</li>
+                <li>✓ Generally Recognised Accounting Practice (GRAP)</li>
+                <li>✓ National Treasury regulations</li>
+                <li>✓ Auditor-General South Africa (AGSA) audit requirements</li>
+            </ul>
+        </div>
+
+        <div class="cta-section-about">
+            <h2>Ready to See It in Action?</h2>
+            <p>Upload a Trial Balance and experience the automation firsthand</p>
+            <a href="/upload" class="btn btn-primary btn-large">Try It Now</a>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SADPMR Financial Reporting System | Developed for Schedule 3A PFMA Compliance</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/mobile-menu.js') }}"></script>
+</body>
+</html>

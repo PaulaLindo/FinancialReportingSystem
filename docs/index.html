@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a1128">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
+    <title>SADPMR Financial Reporting System</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layouts.css">
+    <script src="js/main.js"></script>
+    <script src="js/mobile-menu.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h2>SADPMR Financial Reporting System</h2>
+                <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
+            </div>
+            
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
+            <div class="nav-wrapper" id="navMenu">
+                <ul class="nav-menu">
+                    <li><a href="/" class="active">Dashboard</a></li>
+                    <li><a href="/upload">Upload TB</a></li>
+                    <li><a href="/about">About</a></li>
+                </ul>
+                <div class="user-menu">
+                    <div class="user-info">
+                        <span class="user-name">Demo User</span>
+                        <span class="user-role" style="background: #28a745">
+                            Administrator
+                        </span>
+                    </div>
+                    <a href="#" class="logout-btn">Logout</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu Overlay -->
+        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+    </nav>
+
+    <div class="hero">
+        <div class="container">
+            <h1>Automated Financial Reporting for Schedule 3A Entities</h1>
+            <p class="hero-subtitle">Transform your Trial Balance into GRAP-compliant Financial Statements in under 30 seconds</p>
+            <div class="hero-buttons">
+                <a href="/upload" class="btn btn-primary">Upload Trial Balance</a>
+                <a href="/about" class="btn btn-secondary">Learn More</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container features-section">
+        <h2 class="section-title">Key Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Automated Mapping</h3>
+                <p>Intelligent mapping of Trial Balance accounts to GRAP line items with zero manual intervention</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">✅</div>
+                <h3>GRAP Compliance</h3>
+                <p>100% compliant with Generally Recognised Accounting Practice standards approved by ASB</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3>Audit Trail</h3>
+                <p>Complete audit trail for AGSA compliance - every change logged with timestamps and user IDs</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📄</div>
+                <h3>Instant PDF Export</h3>
+                <p>Generate pixel-perfect PDFs matching SADPMR official formats with one click</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">💹</div>
+                <h3>Cash Flow Automation</h3>
+                <p>Automated Cash Flow Statement generation using Indirect Method - no manual calculations</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h3>Ratio Analysis</h3>
+                <p>Automatic calculation of key financial ratios: liquidity, solvency, efficiency, profitability</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <div class="container">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Upload Trial Balance</h3>
+                    <p>Import your Trial Balance from Pastel or Excel (CSV, XLSX supported)</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Automatic Mapping</h3>
+                    <p>System intelligently maps accounts to GRAP categories</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Generate Reports</h3>
+                    <p>Click one button to generate complete financial statements</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Download PDF</h3>
+                    <p>Receive GRAP-compliant PDF ready for AGSA submission</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="cta-section">
+        <div class="container">
+            <h2>Ready to Streamline Your Financial Reporting?</h2>
+            <p>Upload your Trial Balance now and see the magic happen</p>
+            <a href="/upload" class="btn btn-large">Get Started</a>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SADPMR Financial Reporting System | Developed for Schedule 3A PFMA Compliance</p>
+            <p class="footer-note">Demo Version - February 3, 2026 Presentation</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script src="js/mobile-menu.js"></script>
+</body>
+</html>

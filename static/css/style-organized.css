@@ -1,0 +1,81 @@
+/* Main Stylesheet - SADPMR Financial Reporting System */
+/* This file imports all modular CSS files */
+
+/* Import Component Styles */
+@import url('components.css');
+
+/* Import Layout Styles */
+@import url('layouts.css');
+
+/* Import Desktop Large Styles */
+@import url('desktop-large.css');
+
+/* Import Mobile Compact Styles */
+@import url('mobile-compact.css');
+
+/* Additional Global Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Responsive Typography */
+html {
+    font-size: 16px;
+}
+
+@media (max-width: 768px) {
+    html {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    html {
+        font-size: 13px;
+    }
+}
+
+/* Smooth Scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Focus Styles for Accessibility */
+*:focus {
+    outline: 2px solid #4f46e5;
+    outline-offset: 2px;
+}
+
+/* Selection Color */
+::selection {
+    background-color: #d4a574;
+    color: white;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d4a574;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #c19652;
+}
