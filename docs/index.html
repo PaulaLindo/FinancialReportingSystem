@@ -149,6 +149,21 @@
     <script src="js/main.js"></script>
     <script src="js/mobile-menu.js"></script>
     <script>
+        // Check if user is authenticated
+        function checkAuthentication() {
+            const userEmail = sessionStorage.getItem('user_email');
+            const userRole = sessionStorage.getItem('user_role');
+            
+            // If not authenticated, redirect to login
+            if (!userEmail || !userRole) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // Load user info if authenticated
+            loadUserInfo();
+        }
+        
         // Load user info from session storage
         function loadUserInfo() {
             const userRole = sessionStorage.getItem('user_role') || 'CFO';
@@ -186,7 +201,7 @@
         }
         
         // Load user info when page loads
-        document.addEventListener('DOMContentLoaded', loadUserInfo);
+        document.addEventListener('DOMContentLoaded', checkAuthentication);
     </script>
 </body>
 </html>

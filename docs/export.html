@@ -107,5 +107,25 @@
     <script src="js/utils.js"></script>
     <script src="js/main.js"></script>
     <script src="js/mobile-menu.js"></script>
+    <script>
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const userEmail = sessionStorage.getItem('user_email');
+            const userRole = sessionStorage.getItem('user_role');
+            
+            // Redirect to login if not authenticated
+            if (!userEmail || !userRole) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // Check if user has access to export (CFO or Accountant)
+            if (userRole !== 'CFO' && userRole !== 'Accountant') {
+                alert('Access denied. Export access required.');
+                window.location.href = 'index.html';
+                return;
+            }
+        });
+    </script>
 </body>
 </html>

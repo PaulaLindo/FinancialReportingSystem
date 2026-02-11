@@ -138,5 +138,25 @@
     <script src="js/utils.js"></script>
     <script src="js/main.js"></script>
     <script src="js/mobile-menu.js"></script>
+    <script>
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const userEmail = sessionStorage.getItem('user_email');
+            const userRole = sessionStorage.getItem('user_role');
+            
+            // Redirect to login if not authenticated
+            if (!userEmail || !userRole) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // Check if user has admin access (CFO role)
+            if (userRole !== 'CFO') {
+                alert('Access denied. Admin access required.');
+                window.location.href = 'index.html';
+                return;
+            }
+        });
+    </script>
 </body>
 </html>
