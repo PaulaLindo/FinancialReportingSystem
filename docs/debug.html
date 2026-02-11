@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a1128">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
+    <title>Debug - SADPMR Financial Reporting System</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Debug: Current User Information</h1>
+        
+        <h2>Session Data:</h2>
+        <pre>{
+  'user_id': 'demo_user_001',
+  'role': 'CFO',
+  'logged_in': True,
+  'session_start': '2026-02-11T21:14:00Z'
+}</pre>
+        
+        <h2>Current User Object:</h2>
+        <pre>&lt;User: demo_user_001 - CFO&gt;</pre>
+        
+        <h2>User Details:</h2>
+        <ul>
+            <li>ID: demo_user_001</li>
+            <li>Username: cfo@sadpmr.gov.za</li>
+            <li>Full Name: Demo User</li>
+            <li>Role: CFO</li>
+            <li>Can Upload: True</li>
+            <li>Can Process: True</li>
+            <li>Can Approve: True</li>
+            <li>Can Generate PDF: True</li>
+        </ul>
+        
+        <h2>Role Checks:</h2>
+        <ul>
+            <li>Is CFO: True</li>
+            <li>Is Accountant: False</li>
+            <li>Is Clerk: False</li>
+            <li>Is Auditor: False</li>
+        </ul>
+        
+        <h2>Navigation Logic Test:</h2>
+        <ul>
+            <li>Show Upload Link: YES</li>
+            <li>Show CFO Links: YES</li>
+        </ul>
+        
+        <p><a href="login.html">Go to Login</a> | <a href="index.html">Go to Dashboard</a></p>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

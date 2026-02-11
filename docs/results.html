@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a1128">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
+    <title>Results - SADPMR Financial Reporting System</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h2>SADPMR Financial Reporting System</h2>
+                <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
+            </div>
+            
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
+            <div class="nav-wrapper" id="navMenu">
+                <ul class="nav-menu">
+                    <li><a href="index.html">Dashboard</a></li>
+                    <li><a href="upload.html">Upload TB</a></li>
+                    <li><a href="reports.html">Reports</a></li>
+                    <li><a href="export.html">Export</a></li>
+                    <li><a href="admin.html">Admin</a></li>
+                    <li><a href="about.html">About</a></li>
+                </ul>
+                <div class="user-menu">
+                    <div class="user-info">
+                        <span class="user-name">Demo User</span>
+                        <span class="user-role" style="background: #28a745">CFO</span>
+                    </div>
+                    <a href="login.html" class="logout-btn">Logout</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+    </nav>
+
+    <div class="container results-container">
+        <h1>Processing Results</h1>
+        <p class="page-subtitle">Results from trial balance processing and GRAP mapping</p>
+
+        <div class="results-section">
+            <div class="results-card">
+                <h3>📊 Financial Statements Generated</h3>
+                <p>Your trial balance has been processed and mapped to GRAP standards</p>
+                <div class="results-details">
+                    <p>Processing completed successfully. View your generated financial statements below.</p>
+                </div>
+            </div>
+
+            <div class="results-summary">
+                <h2>Summary of Results</h2>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <label>Total Assets</label>
+                        <span class="amount">R 0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Total Liabilities</label>
+                        <span class="amount">R 0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Net Assets</label>
+                        <span class="amount">R 0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Total Revenue</label>
+                        <span class="amount">R 0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Total Expenses</label>
+                        <span class="amount">R 0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Surplus/Deficit</label>
+                        <span class="amount">R 0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-statements">
+                <h2>Generated Financial Statements</h2>
+                <div class="statements-grid">
+                    <div class="statement-card">
+                        <h4>📄 Statement of Financial Position</h4>
+                        <p>Balance sheet with complete asset, liability and equity breakdown</p>
+                        <button class="btn btn-primary">View Statement</button>
+                    </div>
+                    <div class="statement-card">
+                        <h4>📈 Statement of Financial Performance</h4>
+                        <p>Income statement with revenue, expenses and surplus/deficit</p>
+                        <button class="btn btn-primary">View Statement</button>
+                    </div>
+                    <div class="statement-card">
+                        <h4>💰 Cash Flow Statement</h4>
+                        <p>Statement of cash flows with operating, investing and financing activities</p>
+                        <button class="btn btn-primary">View Statement</button>
+                    </div>
+                    <div class="statement-card">
+                        <h4>📊 Financial Ratios</h4>
+                        <p>Key financial ratios and performance metrics</p>
+                        <button class="btn btn-primary">View Ratios</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-actions">
+                <h2>Next Steps</h2>
+                <div class="action-buttons">
+                    <button class="btn btn-primary btn-lg">Generate PDF Report</button>
+                    <button class="btn btn-secondary btn-lg">Export to Excel</button>
+                    <button class="btn btn-secondary btn-lg">Download Files</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SADPMR Financial Reporting System | Developed for Schedule 3A PFMA Compliance</p>
+            <p class="footer-note">Demo Version - February 3, 2026 Presentation</p>
+        </div>
+    </footer>
+
+    <script src="js/utils.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/mobile-menu.js"></script>
+</body>
+</html>

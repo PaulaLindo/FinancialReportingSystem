@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a1128">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
+    <title>Admin - SADPMR Financial Reporting System</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h2>SADPMR Financial Reporting System</h2>
+                <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
+            </div>
+            
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
+            <div class="nav-wrapper" id="navMenu">
+                <ul class="nav-menu">
+                    <li><a href="index.html">Dashboard</a></li>
+                    <li><a href="upload.html">Upload TB</a></li>
+                    <li><a href="reports.html">Reports</a></li>
+                    <li><a href="export.html">Export</a></li>
+                    <li><a href="admin.html" class="active">Admin</a></li>
+                    <li><a href="about.html">About</a></li>
+                </ul>
+                <div class="user-menu">
+                    <div class="user-info">
+                        <span class="user-name">Demo User</span>
+                        <span class="user-role" style="background: #28a745">
+                            CFO
+                        </span>
+                    </div>
+                    <a href="login.html" class="logout-btn">Logout</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu Overlay -->
+        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+    </nav>
+
+    <div class="container admin-container">
+        <h1>Administration</h1>
+        <p class="page-subtitle">System administration and user management</p>
+
+        <div class="admin-section">
+            <div class="admin-card">
+                <h3>👥 User Management</h3>
+                <p>Manage user accounts and permissions</p>
+                <button class="btn btn-primary">Manage Users</button>
+            </div>
+            
+            <div class="admin-card">
+                <h3>🔧 System Settings</h3>
+                <p>Configure system parameters and GRAP mappings</p>
+                <button class="btn btn-primary">Settings</button>
+            </div>
+            
+            <div class="admin-card">
+                <h3>📊 System Logs</h3>
+                <p>View system activity and audit logs</p>
+                <button class="btn btn-primary">View Logs</button>
+            </div>
+            
+            <div class="admin-card">
+                <h3>💾 Data Backup</h3>
+                <p>Backup and restore system data</p>
+                <button class="btn btn-primary">Backup Data</button>
+            </div>
+        </div>
+
+        <div class="system-status">
+            <h2>System Status</h2>
+            <div class="status-grid">
+                <div class="status-item">
+                    <h4>Database</h4>
+                    <p class="status-ok">✅ Connected</p>
+                </div>
+                <div class="status-item">
+                    <h4>File Storage</h4>
+                    <p class="status-ok">✅ Available</p>
+                </div>
+                <div class="status-item">
+                    <h4>PDF Generation</h4>
+                    <p class="status-ok">✅ Operational</p>
+                </div>
+                <div class="status-item">
+                    <h4>GRAP Engine</h4>
+                    <p class="status-ok">✅ Ready</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="recent-activity">
+            <h2>Recent Activity</h2>
+            <div class="activity-list">
+                <div class="activity-item">
+                    <div class="activity-info">
+                        <h4>Trial Balance Uploaded</h4>
+                        <p>By Thabo Mthembu (Accountant) • 2 hours ago</p>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-info">
+                        <h4>Financial Statements Generated</h4>
+                        <p>By Sarah Nkosi (CFO) • 4 hours ago</p>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-info">
+                        <h4>PDF Report Downloaded</h4>
+                        <p>By AGSA Auditor • 1 day ago</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SADPMR Financial Reporting System | Developed for Schedule 3A PFMA Compliance</p>
+            <p class="footer-note">Demo Version - February 3, 2026 Presentation</p>
+        </div>
+    </footer>
+
+    <script src="js/utils.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/mobile-menu.js"></script>
+</body>
+</html>

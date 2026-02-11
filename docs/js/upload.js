@@ -1,261 +1,476 @@
-// Upload Page JavaScript - SADPMR Financial Reporting System
+/**
+ * SADPMR Financial Reporting System - Upload Functionality
+ * Refactored upload service with better error handling and state management
+ */
 
-let uploadedFilePath = null;
-let resultsFile = null;
-
-// DOM Elements
-const uploadBox = document.getElementById('uploadBox');
-const fileInput = document.getElementById('fileInput');
-const fileInfo = document.getElementById('fileInfo');
-const fileName = document.getElementById('fileName');
-const fileSize = document.getElementById('fileSize');
-const fileRows = document.getElementById('fileRows');
-const processBtn = document.getElementById('processBtn');
-const processingLoader = document.getElementById('processingLoader');
-const errorMessage = document.getElementById('errorMessage');
-const resultsSection = document.getElementById('resultsSection');
-
-// Click to browse
-uploadBox.addEventListener('click', () => {
-    fileInput.click();
-});
-
-// Drag and drop
-uploadBox.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    uploadBox.style.borderColor = '#3f51b5';
-    uploadBox.style.background = '#f0f4ff';
-});
-
-uploadBox.addEventListener('dragleave', () => {
-    uploadBox.style.borderColor = '#e0e0e0';
-    uploadBox.style.background = '';
-});
-
-uploadBox.addEventListener('drop', (e) => {
-    e.preventDefault();
-    uploadBox.style.borderColor = '#e0e0e0';
-    uploadBox.style.background = '';
-    
-    const file = e.dataTransfer.files[0];
-    if (file) {
-        handleFile(file);
-    }
-});
-
-// File input change
-fileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        handleFile(file);
-    }
-});
-
-// Handle file upload
-function handleFile(file) {
-    // Hide previous results
-    resultsSection.style.display = 'none';
-    errorMessage.style.display = 'none';
-    
-    // Validate file type
-    const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
-                       'application/vnd.ms-excel', 
-                       'text/csv'];
-    
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/i)) {
-        showError('Invalid file type. Please upload Excel (.xlsx, .xls) or CSV file.');
-        return;
-    }
-    
-    // Validate file size (16MB max)
-    if (file.size > 16 * 1024 * 1024) {
-        showError('File too large. Maximum size is 16MB.');
-        return;
-    }
-    
-    // Upload file
-    uploadFile(file);
-}
-
-// Upload file to server
-function uploadFile(file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    uploadBox.style.display = 'none';
-    processingLoader.style.display = 'block';
-    processingLoader.querySelector('p').textContent = 'Uploading file...';
-    
-    fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        processingLoader.style.display = 'none';
+class UploadService {
+    constructor() {
+        this.state = {
+            uploadedFilePath: null,
+            resultsFile: null,
+            isProcessing: false,
+            currentStep: null
+        };
         
-        if (data.success) {
-            // Show file info
-            fileName.textContent = file.name;
-            fileSize.textContent = `Size: ${(file.size / 1024).toFixed(2)} KB`;
-            fileRows.textContent = `Accounts: ${data.row_count}`;
-            
-            uploadedFilePath = data.filepath;
-            
-            fileInfo.style.display = 'block';
-        } else {
-            showError(data.error);
-            uploadBox.style.display = 'block';
+        this.elements = {};
+        this.boundMethods = {};
+        this.init();
+    }
+
+    /**
+     * Initialize upload service
+     */
+    init() {
+        this.cacheElements();
+        this.validateElements();
+        this.bindMethods();
+        this.setupEventListeners();
+        this.initializeUI();
+    }
+
+    /**
+     * Cache DOM elements
+     */
+    cacheElements() {
+        this.elements = {
+            uploadBox: document.getElementById('uploadBox'),
+            fileInput: document.getElementById('fileInput'),
+            fileInfo: document.getElementById('fileInfo'),
+            fileName: document.getElementById('fileName'),
+            fileSize: document.getElementById('fileSize'),
+            fileRows: document.getElementById('fileRows'),
+            processBtn: document.getElementById('processBtn'),
+            processingLoader: document.getElementById('processingLoader'),
+            errorMessage: document.getElementById('errorMessage'),
+            resultsSection: document.getElementById('resultsSection'),
+            generatePdfBtn: document.getElementById('generatePdfBtn'),
+            uploadAnotherBtn: document.getElementById('uploadAnotherBtn'),
+            pdfLoader: document.getElementById('pdfLoader'),
+            pdfSuccess: document.getElementById('pdfSuccess'),
+            downloadLink: document.getElementById('downloadLink')
+        };
+    }
+
+    /**
+     * Validate required elements
+     */
+    validateElements() {
+        const required = ['uploadBox', 'fileInput', 'processBtn'];
+        const missing = required.filter(id => !this.elements[id]);
+        
+        if (missing.length > 0) {
+            console.error('Missing required elements:', missing);
+            return false;
         }
-    })
-    .catch(error => {
-        processingLoader.style.display = 'none';
-        uploadBox.style.display = 'block';
-        showError('Upload failed: ' + error.message);
-    });
-}
-
-// Process Trial Balance
-processBtn.addEventListener('click', () => {
-    if (!uploadedFilePath) {
-        showError('No file uploaded');
-        return;
+        return true;
     }
-    
-    fileInfo.style.display = 'none';
-    processingLoader.style.display = 'block';
-    processingLoader.querySelector('p').textContent = 'Processing your Trial Balance...';
-    processingLoader.querySelector('.loader-subtext').textContent = 'Mapping accounts to GRAP line items';
-    errorMessage.style.display = 'none';
-    
-    fetch('/api/process', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            filepath: uploadedFilePath
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        processingLoader.style.display = 'none';
+
+    /**
+     * Bind methods to maintain context
+     */
+    bindMethods() {
+        this.boundMethods = {
+            handleFile: this.handleFile.bind(this),
+            handleDragOver: this.handleDragOver.bind(this),
+            handleDragLeave: this.handleDragLeave.bind(this),
+            handleDrop: this.handleDrop.bind(this),
+            handleFileInput: this.handleFileInput.bind(this),
+            processFile: this.processFile.bind(this),
+            generatePDF: this.generatePDF.bind(this),
+            uploadAnother: this.uploadAnother.bind(this)
+        };
+    }
+
+    /**
+     * Setup event listeners
+     */
+    setupEventListeners() {
+        const { uploadBox, fileInput, processBtn, generatePdfBtn, uploadAnotherBtn } = this.elements;
         
-        if (data.success) {
-            // Store results file
-            resultsFile = data.results_file;
+        // Upload box events
+        uploadBox.addEventListener('click', () => fileInput.click());
+        uploadBox.addEventListener('dragover', this.boundMethods.handleDragOver);
+        uploadBox.addEventListener('dragleave', this.boundMethods.handleDragLeave);
+        uploadBox.addEventListener('drop', this.boundMethods.handleDrop);
+        
+        // File input events
+        fileInput.addEventListener('change', this.boundMethods.handleFileInput);
+        
+        // Button events
+        processBtn.addEventListener('click', this.boundMethods.processFile);
+        if (generatePdfBtn) {
+            generatePdfBtn.addEventListener('click', this.boundMethods.generatePDF);
+        }
+        if (uploadAnotherBtn) {
+            uploadAnotherBtn.addEventListener('click', this.boundMethods.uploadAnother);
+        }
+    }
+
+    /**
+     * Initialize UI state
+     */
+    initializeUI() {
+        this.hideError();
+        this.hideResults();
+        this.setProcessingState(false);
+    }
+
+    /**
+     * Handle drag over event
+     */
+    handleDragOver(event) {
+        event.preventDefault();
+        this.elements.uploadBox.style.borderColor = '#3f51b5';
+        this.elements.uploadBox.style.background = '#f0f4ff';
+    }
+
+    /**
+     * Handle drag leave event
+     */
+    handleDragLeave(event) {
+        event.preventDefault();
+        this.elements.uploadBox.style.borderColor = '#e0e0e0';
+        this.elements.uploadBox.style.background = '';
+    }
+
+    /**
+     * Handle drop event
+     */
+    handleDrop(event) {
+        event.preventDefault();
+        this.elements.uploadBox.style.borderColor = '#e0e0e0';
+        this.elements.uploadBox.style.background = '';
+        
+        const file = event.dataTransfer.files[0];
+        if (file) {
+            this.handleFile(file);
+        }
+    }
+
+    /**
+     * Handle file input change
+     */
+    handleFileInput(event) {
+        const file = event.target.files[0];
+        if (file) {
+            this.handleFile(file);
+        }
+    }
+
+    /**
+     * Handle file processing
+     */
+    async handleFile(file) {
+        try {
+            this.hideResults();
+            this.hideError();
             
-            // Display results
-            displayResults(data.summary);
-        } else {
-            if (data.unmapped_accounts) {
-                showError('Unmapped accounts detected. Please review the mapping configuration.');
-                console.error('Unmapped accounts:', data.unmapped_accounts);
-            } else {
-                showError(data.error);
+            // Validate file
+            const validation = SADPMRUtils.validateFile(file);
+            if (!validation.valid) {
+                this.showError(validation.error);
+                return;
             }
-            fileInfo.style.display = 'block';
-        }
-    })
-    .catch(error => {
-        processingLoader.style.display = 'none';
-        fileInfo.style.display = 'block';
-        showError('Processing failed: ' + error.message);
-    });
-});
-
-// Display results
-function displayResults(summary) {
-    // Update summary cards
-    document.getElementById('totalAssets').textContent = formatCurrency(summary.total_assets);
-    document.getElementById('totalLiabilities').textContent = formatCurrency(summary.total_liabilities);
-    document.getElementById('netAssets').textContent = formatCurrency(summary.net_assets);
-    document.getElementById('surplus').textContent = formatCurrency(summary.surplus_deficit);
-    
-    // Update ratios
-    document.getElementById('currentRatio').textContent = summary.ratios.current_ratio.toFixed(2);
-    document.getElementById('debtToEquity').textContent = summary.ratios.debt_to_equity.toFixed(2);
-    document.getElementById('operatingMargin').textContent = summary.ratios.operating_margin.toFixed(2) + '%';
-    document.getElementById('returnOnAssets').textContent = summary.ratios.return_on_assets.toFixed(2) + '%';
-    
-    // Show results section
-    resultsSection.style.display = 'block';
-    
-    // Scroll to results
-    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-// Generate PDF
-document.getElementById('generatePdfBtn').addEventListener('click', () => {
-    if (!resultsFile) {
-        showError('No results available');
-        return;
-    }
-    
-    const pdfLoader = document.getElementById('pdfLoader');
-    const pdfSuccess = document.getElementById('pdfSuccess');
-    
-    pdfLoader.style.display = 'block';
-    pdfSuccess.style.display = 'none';
-    
-    fetch('/api/generate-pdf', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            results_file: resultsFile
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        pdfLoader.style.display = 'none';
-        
-        if (data.success) {
-            // Update download link
-            const downloadLink = document.getElementById('downloadLink');
-            downloadLink.href = data.download_url;
-            downloadLink.download = data.pdf_filename;
             
-            pdfSuccess.style.display = 'block';
-        } else {
-            showError('PDF generation failed: ' + data.error);
+            // Upload file
+            await this.uploadFile(file);
+            
+        } catch (error) {
+            this.showError('File processing failed: ' + error.message);
+            console.error('File processing error:', error);
         }
-    })
-    .catch(error => {
-        pdfLoader.style.display = 'none';
-        showError('PDF generation failed: ' + error.message);
-    });
-});
+    }
 
-// Upload another button
-document.getElementById('uploadAnotherBtn').addEventListener('click', () => {
-    // Reset everything
-    uploadedFilePath = null;
-    resultsFile = null;
-    
-    uploadBox.style.display = 'block';
-    fileInfo.style.display = 'none';
-    resultsSection.style.display = 'none';
-    errorMessage.style.display = 'none';
-    
-    fileInput.value = '';
-    
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-});
+    /**
+     * Upload file to server
+     */
+    async uploadFile(file) {
+        this.setProcessingState(true, 'Uploading file...');
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        try {
+            const data = await SADPMRUtils.safeFetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (data.success) {
+                this.showFileInfo(file, data);
+                this.state.uploadedFilePath = data.filepath;
+            } else {
+                throw new Error(data.error || 'Upload failed');
+            }
+            
+        } catch (error) {
+            this.showError('Upload failed: ' + error.message);
+            throw error;
+        } finally {
+            this.setProcessingState(false);
+        }
+    }
 
-// Helper functions
-function formatCurrency(amount) {
-    const sign = amount >= 0 ? '' : '-';
-    const abs = Math.abs(amount);
-    return sign + 'R ' + abs.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    /**
+     * Show file information
+     */
+    showFileInfo(file, data) {
+        const { fileName, fileSize, fileRows, fileInfo, uploadBox } = this.elements;
+        
+        fileName.textContent = file.name;
+        fileSize.textContent = `Size: ${SADPMRUtils.formatFileSize(file.size)}`;
+        fileRows.textContent = `Accounts: ${data.row_count}`;
+        
+        uploadBox.style.display = 'none';
+        fileInfo.style.display = 'block';
+    }
+
+    /**
+     * Process uploaded file
+     */
+    async processFile() {
+        if (!this.state.uploadedFilePath) {
+            this.showError('No file uploaded');
+            return;
+        }
+        
+        try {
+            this.elements.fileInfo.style.display = 'none';
+            this.setProcessingState(true, 'Processing your Trial Balance...', 'Mapping accounts to GRAP line items');
+            this.hideError();
+            
+            const data = await SADPMRUtils.safeFetch('/api/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    filepath: this.state.uploadedFilePath
+                })
+            });
+            
+            if (data.success) {
+                this.state.resultsFile = data.results_file;
+                this.displayResults(data.summary);
+            } else {
+                if (data.unmapped_accounts) {
+                    this.showError('Unmapped accounts detected. Please review the mapping configuration.');
+                    console.error('Unmapped accounts:', data.unmapped_accounts);
+                } else {
+                    this.showError(data.error || 'Processing failed');
+                }
+                this.elements.fileInfo.style.display = 'block';
+            }
+            
+        } catch (error) {
+            this.showError('Processing failed: ' + error.message);
+            this.elements.fileInfo.style.display = 'block';
+            console.error('Processing error:', error);
+        } finally {
+            this.setProcessingState(false);
+        }
+    }
+
+    /**
+     * Display processing results
+     */
+    displayResults(summary) {
+        // Update summary cards
+        this.updateElement('totalAssets', SADPMRUtils.formatCurrency(summary.total_assets));
+        this.updateElement('totalLiabilities', SADPMRUtils.formatCurrency(summary.total_liabilities));
+        this.updateElement('netAssets', SADPMRUtils.formatCurrency(summary.net_assets));
+        this.updateElement('surplus', SADPMRUtils.formatCurrency(summary.surplus_deficit));
+        
+        // Update ratios
+        if (summary.ratios) {
+            this.updateElement('currentRatio', summary.ratios.current_ratio.toFixed(2));
+            this.updateElement('debtToEquity', summary.ratios.debt_to_equity.toFixed(2));
+            this.updateElement('operatingMargin', summary.ratios.operating_margin.toFixed(2) + '%');
+            this.updateElement('returnOnAssets', summary.ratios.return_on_assets.toFixed(2) + '%');
+        }
+        
+        // Show results section
+        this.elements.resultsSection.style.display = 'block';
+        SADPMRUtils.scrollToElement(this.elements.resultsSection);
+    }
+
+    /**
+     * Generate PDF report
+     */
+    async generatePDF() {
+        if (!this.state.resultsFile) {
+            this.showError('No results available');
+            return;
+        }
+        
+        const { pdfLoader, pdfSuccess } = this.elements;
+        
+        pdfLoader.style.display = 'block';
+        pdfSuccess.style.display = 'none';
+        
+        try {
+            const data = await SADPMRUtils.safeFetch('/api/generate-pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    results_file: this.state.resultsFile
+                })
+            });
+            
+            if (data.success) {
+                // Update download link
+                const downloadLink = this.elements.downloadLink;
+                if (downloadLink) {
+                    downloadLink.href = data.download_url;
+                    downloadLink.download = data.pdf_filename;
+                }
+                
+                pdfSuccess.style.display = 'block';
+            } else {
+                this.showError('PDF generation failed: ' + (data.error || 'Unknown error'));
+            }
+            
+        } catch (error) {
+            this.showError('PDF generation failed: ' + error.message);
+            console.error('PDF generation error:', error);
+        } finally {
+            pdfLoader.style.display = 'none';
+        }
+    }
+
+    /**
+     * Upload another file
+     */
+    uploadAnother() {
+        // Reset state
+        this.state.uploadedFilePath = null;
+        this.state.resultsFile = null;
+        
+        // Reset UI
+        this.elements.uploadBox.style.display = 'block';
+        this.elements.fileInfo.style.display = 'none';
+        this.hideResults();
+        this.hideError();
+        this.elements.fileInput.value = '';
+        
+        // Scroll to top
+        SADPMRUtils.scrollToElement(document.body, { top: 0 });
+    }
+
+    /**
+     * Set processing state
+     */
+    setProcessingState(isProcessing, message = '', subtext = '') {
+        this.state.isProcessing = isProcessing;
+        const { processingLoader, uploadBox } = this.elements;
+        
+        if (isProcessing) {
+            uploadBox.style.display = 'none';
+            processingLoader.style.display = 'block';
+            
+            if (message) {
+                processingLoader.querySelector('p').textContent = message;
+            }
+            if (subtext) {
+                const subtextEl = processingLoader.querySelector('.loader-subtext');
+                if (subtextEl) {
+                    subtextEl.textContent = subtext;
+                }
+            }
+        } else {
+            processingLoader.style.display = 'none';
+            if (this.state.uploadedFilePath) {
+                this.elements.fileInfo.style.display = 'block';
+            } else {
+                uploadBox.style.display = 'block';
+            }
+        }
+    }
+
+    /**
+     * Update element content safely
+     */
+    updateElement(id, content) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = content;
+        }
+    }
+
+    /**
+     * Show error message
+     */
+    showError(message) {
+        SADPMRUtils.showError(message, this.elements.errorMessage);
+    }
+
+    /**
+     * Hide error message
+     */
+    hideError() {
+        SADPMRUtils.hideError(this.elements.errorMessage);
+    }
+
+    /**
+     * Hide results section
+     */
+    hideResults() {
+        if (this.elements.resultsSection) {
+            this.elements.resultsSection.style.display = 'none';
+        }
+    }
+
+    /**
+     * Get current state
+     */
+    getState() {
+        return { ...this.state };
+    }
+
+    /**
+     * Cleanup method
+     */
+    destroy() {
+        // Remove event listeners
+        const { uploadBox, fileInput, processBtn, generatePdfBtn, uploadAnotherBtn } = this.elements;
+        
+        uploadBox.removeEventListener('click', () => fileInput.click());
+        uploadBox.removeEventListener('dragover', this.boundMethods.handleDragOver);
+        uploadBox.removeEventListener('dragleave', this.boundMethods.handleDragLeave);
+        uploadBox.removeEventListener('drop', this.boundMethods.handleDrop);
+        
+        fileInput.removeEventListener('change', this.boundMethods.handleFileInput);
+        processBtn.removeEventListener('click', this.boundMethods.processFile);
+        
+        if (generatePdfBtn) {
+            generatePdfBtn.removeEventListener('click', this.boundMethods.generatePDF);
+        }
+        if (uploadAnotherBtn) {
+            uploadAnotherBtn.removeEventListener('click', this.boundMethods.uploadAnother);
+        }
+        
+        // Reset state
+        this.state = {
+            uploadedFilePath: null,
+            resultsFile: null,
+            isProcessing: false,
+            currentStep: null
+        };
+        
+        console.log('Upload service cleanup complete');
+    }
 }
 
-function showError(message) {
-    errorMessage.textContent = '❌ ' + message;
-    errorMessage.style.display = 'block';
-    
-    // Scroll to error
-    errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
+// Initialize upload service when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.uploadService = new UploadService();
+});
+
+// Handle page unload for cleanup
+window.addEventListener('beforeunload', () => {
+    if (window.uploadService) {
+        window.uploadService.destroy();
+    }
+});

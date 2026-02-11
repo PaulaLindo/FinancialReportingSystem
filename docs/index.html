@@ -8,12 +8,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
-    <title>SADPMR Financial Reporting System</title>
-    <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/layouts.css">
-    <script src="js/main.js"></script>
-    <script src="js/mobile-menu.js"></script>
+    <title>Dashboard - SADPMR Financial Reporting System</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <nav class="navbar">
@@ -23,7 +19,6 @@
                 <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
             </div>
             
-            <!-- Mobile Menu Toggle -->
             <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
                 <span></span>
                 <span></span>
@@ -32,33 +27,33 @@
             
             <div class="nav-wrapper" id="navMenu">
                 <ul class="nav-menu">
-                    <li><a href="/" class="active">Dashboard</a></li>
-                    <li><a href="/upload">Upload TB</a></li>
-                    <li><a href="/about">About</a></li>
+                    <li><a href="index.html" class="active">Dashboard</a></li>
+                    <li><a href="upload.html">Upload TB</a></li>
+                    <li><a href="reports.html">Reports</a></li>
+                    <li><a href="export.html">Export</a></li>
+                    <li><a href="admin.html">Admin</a></li>
+                    <li><a href="about.html">About</a></li>
                 </ul>
                 <div class="user-menu">
                     <div class="user-info">
-                        <span class="user-name">Demo User</span>
-                        <span class="user-role" style="background: #28a745">
-                            Administrator
-                        </span>
+                        <span class="user-name" id="userName">Demo User</span>
+                        <span class="user-role" id="userRole" style="background: #28a745">CFO</span>
                     </div>
-                    <a href="#" class="logout-btn">Logout</a>
+                    <a href="login.html" class="logout-btn" onclick="logout()">Logout</a>
                 </div>
             </div>
         </div>
         
-        <!-- Mobile Menu Overlay -->
         <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
     </nav>
 
     <div class="hero">
         <div class="container">
-            <h1>Automated Financial Reporting for Schedule 3A Entities</h1>
-            <p class="hero-subtitle">Transform your Trial Balance into GRAP-compliant Financial Statements in under 30 seconds</p>
+            <h1 id="welcomeMessage">Welcome back, Demo User!</h1>
+            <p class="hero-subtitle" id="roleDescription">Chief Financial Officer - Full system access</p>
             <div class="hero-buttons">
-                <a href="/upload" class="btn btn-primary">Upload Trial Balance</a>
-                <a href="/about" class="btn btn-secondary">Learn More</a>
+                <a href="upload.html" class="btn btn-primary">Upload Trial Balance</a>
+                <a href="about.html" class="btn btn-secondary">Learn More</a>
             </div>
         </div>
     </div>
@@ -138,8 +133,8 @@
     <div class="cta-section">
         <div class="container">
             <h2>Ready to Streamline Your Financial Reporting?</h2>
-            <p>Upload your Trial Balance now and see the magic happen</p>
-            <a href="/upload" class="btn btn-large">Get Started</a>
+            <p>Upload your Trial Balance now and see magic happen</p>
+            <a href="upload.html" class="btn btn-large">Get Started</a>
         </div>
     </div>
 
@@ -150,7 +145,48 @@
         </div>
     </footer>
 
+    <script src="js/utils.js"></script>
     <script src="js/main.js"></script>
     <script src="js/mobile-menu.js"></script>
+    <script>
+        // Load user info from session storage
+        function loadUserInfo() {
+            const userRole = sessionStorage.getItem('user_role') || 'CFO';
+            const userEmail = sessionStorage.getItem('user_email') || 'demo@sadpmr.gov.za';
+            
+            // Update user display
+            document.getElementById('userName').textContent = userEmail.split('@')[0];
+            document.getElementById('userRole').textContent = userRole;
+            
+            // Update welcome message
+            document.getElementById('welcomeMessage').textContent = `Welcome back, ${userEmail.split('@')[0]}!`;
+            
+            // Update role description
+            const roleDescriptions = {
+                'CFO': 'Chief Financial Officer - Full system access',
+                'Accountant': 'Accountant - Process & Reports access',
+                'Clerk': 'Clerk - Upload only access',
+                'Auditor': 'Auditor - View only access'
+            };
+            document.getElementById('roleDescription').textContent = roleDescriptions[userRole] || roleDescriptions['CFO'];
+            
+            // Update role badge color
+            const roleColors = {
+                'CFO': '#28a745',
+                'Accountant': '#007bff', 
+                'Clerk': '#ffc107',
+                'Auditor': '#6c757d'
+            };
+            document.getElementById('userRole').style.background = roleColors[userRole] || roleColors['CFO'];
+        }
+        
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        }
+        
+        // Load user info when page loads
+        document.addEventListener('DOMContentLoaded', loadUserInfo);
+    </script>
 </body>
 </html>

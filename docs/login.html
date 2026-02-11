@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a1128">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
+    <title>Login - SADPMR Financial Reporting System</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/login.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #88796a 0%, #6b5d52 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .login-box {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px 30px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .login-logo {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .login-header h1 {
+            margin: 10px 0 5px;
+            color: #88796a;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .login-header p {
+            color: #888;
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #b8a99a;
+            box-shadow: 0 0 0 3px rgba(184, 169, 154, 0.1);
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #b8a99a 0%, #a8998a 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 25px;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(184, 169, 154, 0.3);
+        }
+
+        .login-button:active {
+            transform: translateY(0);
+        }
+
+        .demo-credentials {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e8e8e8;
+        }
+
+        .demo-credentials h3 {
+            margin: 0 0 15px;
+            font-size: 14px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .demo-account {
+            background: white;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid #b8a99a;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .demo-account:hover {
+            background: #fafafa;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .demo-role {
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 11px;
+            color: white;
+            margin-right: 8px;
+            text-transform: uppercase;
+        }
+
+        .role-cfo { background: #4285f4; }
+        .role-accountant { background: #34a853; }
+        .role-clerk { background: #ea4335; }
+        .role-auditor { background: #fbbc04; color: #333; }
+
+        .demo-email {
+            color: #888;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .quick-login {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .quick-login-btn {
+            padding: 10px 12px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            color: #333;
+        }
+
+        .quick-login-btn:hover {
+            background: #e8e8e8;
+            border-color: #b8a99a;
+            color: #88796a;
+        }
+
+        @media (max-width: 480px) {
+            .login-box {
+                padding: 30px 20px;
+            }
+
+            .login-header h1 {
+                font-size: 24px;
+            }
+
+            .quick-login {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <div class="login-logo">🔐</div>
+                <h1>Welcome Back</h1>
+                <p>SADPMR Financial Reporting System</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username" class="form-label">Email Address</label>
+                    <input 
+                        type="email" 
+                        id="username" 
+                        name="username" 
+                        class="form-input" 
+                        placeholder="your.email@sadpmr.gov.za"
+                        required
+                        autofocus
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input" 
+                        placeholder="Enter your password"
+                        required
+                    >
+                </div>
+
+                <button type="submit" class="login-button">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="demo-credentials">
+                <h3>📋 Demo Accounts (February 3, 2026)</h3>
+                
+                <div class="demo-account">
+                    <div class="demo-role">
+                        <span class="role-badge role-cfo">CFO</span>
+                        Full Access
+                    </div>
+                    <div class="demo-email">cfo@sadpmr.gov.za / demo123</div>
+                </div>
+
+                <div class="demo-account">
+                    <div class="demo-role">
+                        <span class="role-badge role-accountant">Accountant</span>
+                        Process & Reports
+                    </div>
+                    <div class="demo-email">accountant@sadpmr.gov.za / demo123</div>
+                </div>
+
+                <div class="demo-account">
+                    <div class="demo-role">
+                        <span class="role-badge role-clerk">Clerk</span>
+                        Upload Only
+                    </div>
+                    <div class="demo-email">clerk@sadpmr.gov.za / demo123</div>
+                </div>
+
+                <div class="demo-account">
+                    <div class="demo-role">
+                        <span class="role-badge role-auditor">Auditor</span>
+                        View Only
+                    </div>
+                    <div class="demo-email">auditor@agsa.gov.za / demo123</div>
+                </div>
+
+                <div class="quick-login">
+                    <button type="button" class="quick-login-btn" onclick="quickLogin('CFO', 'cfo@sadpmr.gov.za')">
+                        Quick Login: CFO
+                    </button>
+                    <button type="button" class="quick-login-btn" onclick="quickLogin('Accountant', 'accountant@sadpmr.gov.za')">
+                        Quick Login: Accountant
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            // For demo, just navigate to dashboard on any login attempt
+            sessionStorage.setItem('user_email', username);
+            window.location.href = 'index.html';
+        }
+
+        function quickLogin(role, email) {
+            document.getElementById('username').value = email;
+            document.getElementById('password').value = 'demo123';
+            sessionStorage.setItem('user_role', role);
+            sessionStorage.setItem('user_email', email);
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 300);
+        }
+    </script>
+</body>
+</html>

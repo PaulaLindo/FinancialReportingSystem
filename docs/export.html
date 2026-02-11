@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a1128">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
+    <title>Export - SADPMR Financial Reporting System</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h2>SADPMR Financial Reporting System</h2>
+                <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
+            </div>
+            
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
+            <div class="nav-wrapper" id="navMenu">
+                <ul class="nav-menu">
+                    <li><a href="index.html">Dashboard</a></li>
+                    <li><a href="upload.html">Upload TB</a></li>
+                    <li><a href="reports.html">Reports</a></li>
+                    <li><a href="export.html" class="active">Export</a></li>
+                    <li><a href="admin.html">Admin</a></li>
+                    <li><a href="about.html">About</a></li>
+                </ul>
+                <div class="user-menu">
+                    <div class="user-info">
+                        <span class="user-name">Demo User</span>
+                        <span class="user-role" style="background: #28a745">
+                            CFO
+                        </span>
+                    </div>
+                    <a href="login.html" class="logout-btn">Logout</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu Overlay -->
+        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+    </nav>
+
+    <div class="container export-container">
+        <h1>Export Center</h1>
+        <p class="page-subtitle">Export financial statements in various formats</p>
+
+        <div class="export-section">
+            <div class="export-card">
+                <h3>📄 PDF Report</h3>
+                <p>Complete financial statements in PDF format for AGSA submission</p>
+                <button class="btn btn-primary">Generate PDF</button>
+            </div>
+            
+            <div class="export-card">
+                <h3>📊 Excel Workbook</h3>
+                <p>Financial statements in Excel format with detailed calculations</p>
+                <button class="btn btn-primary">Export to Excel</button>
+            </div>
+            
+            <div class="export-card">
+                <h3>📋 CSV Data</h3>
+                <p>Raw data export for further analysis and reporting</p>
+                <button class="btn btn-primary">Export CSV</button>
+            </div>
+            
+            <div class="export-card">
+                <h3>🗃️ Archive Package</h3>
+                <p>Complete package with all statements, notes, and supporting documents</p>
+                <button class="btn btn-primary">Download Archive</button>
+            </div>
+        </div>
+
+        <div class="export-history">
+            <h2>Export History</h2>
+            <div class="export-list">
+                <div class="export-item">
+                    <div class="export-info">
+                        <h4>Annual Financial Statements 2025</h4>
+                        <p>PDF • 2.4 MB • Generated on January 29, 2026 at 14:30</p>
+                    </div>
+                    <div class="export-actions">
+                        <button class="btn btn-download">Download</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SADPMR Financial Reporting System | Developed for Schedule 3A PFMA Compliance</p>
+            <p class="footer-note">Demo Version - February 3, 2026 Presentation</p>
+        </div>
+    </footer>
+
+    <script src="js/utils.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/mobile-menu.js"></script>
+</body>
+</html>
