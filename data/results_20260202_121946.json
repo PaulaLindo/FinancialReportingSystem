@@ -1,0 +1,131 @@
+{
+  "summary": {
+    "total_assets": 14590000.0,
+    "total_liabilities": 3040000.0,
+    "net_assets": 8500000.0,
+    "total_revenue": 11480000.0,
+    "total_expenses": 10845000.0,
+    "surplus_deficit": 635000.0,
+    "ratios": {
+      "current_ratio": 2.4,
+      "debt_to_equity": 0.36,
+      "operating_margin": 5.53,
+      "return_on_assets": 4.35
+    },
+    "timestamp": "2026-02-02T12:19:46.215333"
+  },
+  "sofp": {
+    "assets": [
+      {
+        "GRAP Code": "CA-001",
+        "Line Item": "Cash and Cash Equivalents",
+        "Amount": 1300000
+      },
+      {
+        "GRAP Code": "CA-002",
+        "Line Item": "Receivables from Exchange Transactions",
+        "Amount": 1400000
+      },
+      {
+        "GRAP Code": "CA-003",
+        "Line Item": "Receivables from Non-Exchange Transactions",
+        "Amount": 500000
+      },
+      {
+        "GRAP Code": "CA-004",
+        "Line Item": "Inventories",
+        "Amount": 75000
+      },
+      {
+        "GRAP Code": "CA-005",
+        "Line Item": "Prepayments",
+        "Amount": 65000
+      },
+      {
+        "GRAP Code": "NCA-001",
+        "Line Item": "Property, Plant and Equipment",
+        "Amount": 8500000
+      },
+      {
+        "GRAP Code": "NCA-002",
+        "Line Item": "Intangible Assets",
+        "Amount": 750000
+      },
+      {
+        "GRAP Code": "NCA-003",
+        "Line Item": "Investments",
+        "Amount": 2000000
+      }
+    ],
+    "liabilities": [
+      {
+        "GRAP Code": "CL-001",
+        "Line Item": "Payables from Exchange Transactions",
+        "Amount": 685000
+      },
+      {
+        "GRAP Code": "CL-002",
+        "Line Item": "Employee Benefit Obligations (Current)",
+        "Amount": 425000
+      },
+      {
+        "GRAP Code": "CL-003",
+        "Line Item": "Provisions (Current)",
+        "Amount": 280000
+      },
+      {
+        "GRAP Code": "NCL-001",
+        "Line Item": "Employee Benefit Obligations (Non-Current)",
+        "Amount": 1200000
+      },
+      {
+        "GRAP Code": "NCL-002",
+        "Line Item": "Provisions (Non-Current)",
+        "Amount": 450000
+      }
+    ],
+    "net_assets": [
+      {
+        "GRAP Code": "NA-001",
+        "Line Item": "Accumulated Surplus/(Deficit)",
+        "Amount": 8500000
+      }
+    ]
+  },
+  "sofe": {
+    "revenue": [
+      {
+        "GRAP Code": "REV-001",
+        "Line Item": "Revenue from Exchange Transactions",
+        "Amount": 1680000
+      },
+      {
+        "GRAP Code": "REV-002",
+        "Line Item": "Revenue from Non-Exchange Transactions",
+        "Amount": 9800000
+      }
+    ],
+    "expenses": [
+      {
+        "GRAP Code": "EXP-001",
+        "Line Item": "Employee Costs",
+        "Amount": 8550000
+      },
+      {
+        "GRAP Code": "EXP-002",
+        "Line Item": "Depreciation and Amortisation",
+        "Amount": 680000
+      },
+      {
+        "GRAP Code": "EXP-003",
+        "Line Item": "General Expenses",
+        "Amount": 1570000
+      },
+      {
+        "GRAP Code": "EXP-004",
+        "Line Item": "Finance Costs",
+        "Amount": 45000
+      }
+    ]
+  }
+}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - SADPMR Financial Reporting System{% endblock %}
+
+{% block content %}
+
+    <div class="container reports-container">
+        <h1>Financial Reports</h1>
+        <p class="page-subtitle">View and manage generated financial statements</p>
+
+        <div class="reports-section">
+            <div class="report-card">
+                <h3>📊 Statement of Financial Position</h3>
+                <p>Balance sheet showing assets, liabilities, and net assets</p>
+                <button class="btn btn-primary">View Report</button>
+            </div>
+            
+            <div class="report-card">
+                <h3>📈 Statement of Financial Performance</h3>
+                <p>Income statement showing revenue and expenses</p>
+                <button class="btn btn-primary">View Report</button>
+            </div>
+            
+            <div class="report-card">
+                <h3>💰 Cash Flow Statement</h3>
+                <p>Cash movements and liquidity analysis</p>
+                <button class="btn btn-primary">View Report</button>
+            </div>
+            
+            <div class="report-card">
+                <h3>📋 Notes to Financial Statements</h3>
+                <p>Detailed notes and disclosures</p>
+                <button class="btn btn-primary">View Report</button>
+            </div>
+        </div>
+
+        <div class="recent-reports">
+            <h2>Recently Generated Reports</h2>
+            <div class="report-list">
+                <div class="report-item">
+                    <div class="report-info">
+                        <h4>Annual Financial Statements 2025</h4>
+                        <p>Generated on January 29, 2026 at 14:30</p>
+                    </div>
+                    <div class="report-actions">
+                        <button class="btn btn-secondary">View</button>
+                        <button class="btn btn-download">Download PDF</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

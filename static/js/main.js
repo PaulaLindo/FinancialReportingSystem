@@ -1,155 +1,257 @@
-// Main JavaScript for SADPMR Financial Reporting System
+/**
+ * SADPMR Financial Reporting System - Main Application
+ * Refactored main JavaScript with modular architecture
+ */
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Smooth scroll for navigation links
-    const navLinks = document.querySelectorAll('a[href^="#"]');
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href');
-            const targetSection = document.querySelector(targetId);
-            
-            if (targetSection) {
-                targetSection.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+class MainApplication {
+    constructor() {
+        this.elements = {};
+        this.observers = {};
+        this.init();
+    }
+
+    /**
+     * Initialize the application
+     */
+    init() {
+        this.cacheElements();
+        this.setupEventListeners();
+        this.setupIntersectionObservers();
+        this.setupScrollEffects();
+        this.setupAnimations();
+        SADPMRUtils.showBranding();
+    }
+
+    /**
+     * Cache DOM elements
+     */
+    cacheElements() {
+        this.elements = {
+            navLinks: document.querySelectorAll('a[href^="#"]'),
+            sections: document.querySelectorAll('section[id]'),
+            navbar: document.querySelector('.navbar'),
+            featureCards: document.querySelectorAll('.feature-card'),
+            screenshotCards: document.querySelectorAll('.screenshot-card'),
+            workflowSteps: document.querySelectorAll('.workflow-step'),
+            stats: document.querySelectorAll('.stat-number'),
+            pricingCards: document.querySelectorAll('.pricing-card'),
+            pricingSection: document.querySelector('.pricing-section'),
+            playButton: document.querySelector('.play-button'),
+            screenshotPlaceholders: document.querySelectorAll('.screenshot-placeholder'),
+            hero: document.querySelector('.hero'),
+            // About page collapsible headers
+            problemBoxHeaders: document.querySelectorAll('.problem-box h3'),
+            solutionBoxHeaders: document.querySelectorAll('.solution-box h3')
+        };
+    }
+
+    /**
+     * Setup event listeners
+     */
+    setupEventListeners() {
+        this.setupNavigation();
+        this.setupPlayButton();
+        this.setupHoverEffects();
+        this.setupPricingCards();
+        this.setupCollapsibleHeaders();
+    }
+
+    /**
+     * Setup navigation functionality
+     */
+    setupNavigation() {
+        // Smooth scroll for navigation links
+        this.elements.navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href');
+                const targetSection = document.querySelector(targetId);
                 
-                // Update active nav link
-                navLinks.forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
-            }
+                if (targetSection) {
+                    SADPMRUtils.scrollToElement(targetSection);
+                    this.updateActiveNavLink(link);
+                }
+            });
         });
-    });
+    }
 
-    // Intersection Observer for scroll animations
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
+    /**
+     * Update active navigation link
+     */
+    updateActiveNavLink(activeLink) {
+        this.elements.navLinks.forEach(link => link.classList.remove('active'));
+        activeLink.classList.add('active');
+    }
 
-    const fadeInObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.opacity = '0';
-                entry.target.style.transform = 'translateY(30px)';
-                
-                setTimeout(() => {
-                    entry.target.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }, 100);
-                
-                fadeInObserver.unobserve(entry.target);
-            }
+    /**
+     * Setup intersection observers
+     */
+    setupIntersectionObservers() {
+        this.setupFadeInObserver();
+        this.setupNavigationObserver();
+        this.setupStatsObserver();
+        this.setupPricingObserver();
+    }
+
+    /**
+     * Setup fade-in animation observer
+     */
+    setupFadeInObserver() {
+        this.observers.fadeIn = SADPMRUtils.createIntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    SADPMRUtils.addFadeInAnimation([entry.target]);
+                    this.observers.fadeIn.unobserve(entry.target);
+                }
+            });
         });
-    }, observerOptions);
 
-    // Observe feature cards
-    const featureCards = document.querySelectorAll('.feature-card');
-    featureCards.forEach((card, index) => {
-        card.style.transitionDelay = `${index * 0.1}s`;
-        fadeInObserver.observe(card);
-    });
+        // Observe elements
+        [...this.elements.featureCards, ...this.elements.screenshotCards, ...this.elements.workflowSteps]
+            .forEach((element, index) => {
+                element.style.transitionDelay = `${index * 0.1}s`;
+                this.observers.fadeIn.observe(element);
+            });
+    }
 
-    // Observe screenshot cards
-    const screenshotCards = document.querySelectorAll('.screenshot-card');
-    screenshotCards.forEach((card, index) => {
-        card.style.transitionDelay = `${index * 0.15}s`;
-        fadeInObserver.observe(card);
-    });
-
-    // Observe workflow steps
-    const workflowSteps = document.querySelectorAll('.workflow-step');
-    workflowSteps.forEach((step, index) => {
-        step.style.transitionDelay = `${index * 0.2}s`;
-        fadeInObserver.observe(step);
-    });
-
-    // Active section highlighting in navigation
-    const sections = document.querySelectorAll('section[id]');
-    const navObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const currentId = entry.target.getAttribute('id');
-                navLinks.forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === `#${currentId}`) {
-                        link.classList.add('active');
+    /**
+     * Setup navigation observer for active section highlighting
+     */
+    setupNavigationObserver() {
+        this.observers.navigation = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const currentId = entry.target.getAttribute('id');
+                    const activeLink = document.querySelector(`a[href="#${currentId}"]`);
+                    if (activeLink) {
+                        this.updateActiveNavLink(activeLink);
                     }
-                });
+                }
+            });
+        }, { threshold: 0.3 });
+
+        this.elements.sections.forEach(section => {
+            this.observers.navigation.observe(section);
+        });
+    }
+
+    /**
+     * Setup stats counter observer
+     */
+    setupStatsObserver() {
+        this.observers.stats = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const target = entry.target;
+                    const finalValue = target.textContent;
+                    
+                    if (!isNaN(parseInt(finalValue))) {
+                        SADPMRUtils.animateCounter(target, finalValue);
+                    }
+                    
+                    this.observers.stats.unobserve(target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        this.elements.stats.forEach(stat => {
+            this.observers.stats.observe(stat);
+        });
+    }
+
+    /**
+     * Setup pricing section observer
+     */
+    setupPricingObserver() {
+        if (!this.elements.pricingSection) return;
+
+        this.observers.pricing = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const cards = entry.target.querySelectorAll('.pricing-card');
+                    cards.forEach((card, index) => {
+                        setTimeout(() => {
+                            card.style.opacity = '1';
+                            card.style.transform = 'translateY(0)';
+                        }, index * 200);
+                    });
+                    this.observers.pricing.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.2 });
+
+        this.observers.pricing.observe(this.elements.pricingSection);
+        this.initializePricingCards();
+    }
+
+    /**
+     * Initialize pricing cards
+     */
+    initializePricingCards() {
+        if (!this.elements.pricingSection) return;
+
+        const cards = this.elements.pricingSection.querySelectorAll('.pricing-card');
+        cards.forEach(card => {
+            if (!card.classList.contains('featured')) {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                card.style.transition = `all 600ms ${SADPMRUtils.CONFIG.ANIMATION.EASING}`;
             }
         });
-    }, {
-        threshold: 0.3
-    });
+    }
 
-    sections.forEach(section => {
-        navObserver.observe(section);
-    });
+    /**
+     * Setup scroll effects
+     */
+    setupScrollEffects() {
+        let lastScroll = 0;
 
-    // Sticky navbar on scroll
-    const navbar = document.querySelector('.navbar');
-    let lastScroll = 0;
+        window.addEventListener('scroll', SADPMRUtils.throttle(() => {
+            this.handleNavbarShadow();
+            this.handleParallax();
+            lastScroll = window.pageYOffset;
+        }, 16)); // ~60fps
+    }
 
-    window.addEventListener('scroll', () => {
+    /**
+     * Handle navbar shadow on scroll
+     */
+    handleNavbarShadow() {
         const currentScroll = window.pageYOffset;
         
         if (currentScroll > 100) {
-            navbar.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+            this.elements.navbar.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
         } else {
-            navbar.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)';
+            this.elements.navbar.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)';
         }
-        
-        lastScroll = currentScroll;
-    });
-
-    // Animate stats counter
-    const stats = document.querySelectorAll('.stat-number');
-    const statsObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const target = entry.target;
-                const finalValue = target.textContent;
-                
-                // Only animate if it's a number
-                if (!isNaN(parseInt(finalValue))) {
-                    animateCounter(target, finalValue);
-                }
-                
-                statsObserver.unobserve(target);
-            }
-        });
-    }, { threshold: 0.5 });
-
-    stats.forEach(stat => {
-        statsObserver.observe(stat);
-    });
-
-    function animateCounter(element, finalValue) {
-        const isPercentage = finalValue.includes('%');
-        const numValue = parseInt(finalValue);
-        const duration = 2000;
-        const steps = 60;
-        const increment = numValue / steps;
-        let current = 0;
-
-        const timer = setInterval(() => {
-            current += increment;
-            if (current >= numValue) {
-                element.textContent = finalValue;
-                clearInterval(timer);
-            } else {
-                element.textContent = Math.floor(current) + (isPercentage ? '%' : 's');
-            }
-        }, duration / steps);
     }
 
-    // Demo video placeholder click
-    const playButton = document.querySelector('.play-button');
-    if (playButton) {
-        playButton.addEventListener('click', function() {
-            const placeholder = this.parentElement;
+    /**
+     * Handle parallax effect for hero section
+     */
+    handleParallax() {
+        if (!this.elements.hero) return;
+        
+        const scrolled = window.pageYOffset;
+        const parallax = scrolled * 0.5;
+        this.elements.hero.style.backgroundPositionY = `${parallax}px`;
+    }
+
+    /**
+     * Setup animations
+     */
+    setupAnimations() {
+        // Additional animations can be added here
+    }
+
+    /**
+     * Setup play button functionality
+     */
+    setupPlayButton() {
+        if (!this.elements.playButton) return;
+
+        this.elements.playButton.addEventListener('click', () => {
+            const placeholder = this.elements.playButton.parentElement;
             placeholder.innerHTML = `
                 <div style="padding: 2rem; text-align: center;">
                     <h3 style="color: var(--primary-900); margin-bottom: 1rem;">Demo Video</h3>
@@ -165,77 +267,94 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Add hover effect to screenshot placeholders
-    const screenshotPlaceholders = document.querySelectorAll('.screenshot-placeholder');
-    screenshotPlaceholders.forEach(placeholder => {
-        placeholder.addEventListener('mouseenter', function() {
-            this.style.transform = 'scale(1.05)';
-            this.style.transition = 'transform 0.3s ease';
+    /**
+     * Setup hover effects
+     */
+    setupHoverEffects() {
+        // Screenshot placeholders
+        this.elements.screenshotPlaceholders.forEach(placeholder => {
+            placeholder.addEventListener('mouseenter', () => {
+                placeholder.style.transform = 'scale(1.05)';
+                placeholder.style.transition = 'transform 0.3s ease';
+            });
+            
+            placeholder.addEventListener('mouseleave', () => {
+                placeholder.style.transform = 'scale(1)';
+            });
         });
-        
-        placeholder.addEventListener('mouseleave', function() {
-            this.style.transform = 'scale(1)';
-        });
-    });
+    }
 
-    // Pricing card hover effects
-    const pricingCards = document.querySelectorAll('.pricing-card');
-    pricingCards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            if (!this.classList.contains('featured')) {
-                this.style.transform = 'translateY(-8px) scale(1.02)';
+    /**
+     * Setup pricing card hover effects
+     */
+    setupPricingCards() {
+        this.elements.pricingCards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                if (!card.classList.contains('featured')) {
+                    card.style.transform = 'translateY(-8px) scale(1.02)';
+                }
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                if (!card.classList.contains('featured')) {
+                    card.style.transform = 'translateY(0) scale(1)';
+                }
+            });
+        });
+    }
+
+    /**
+     * Setup collapsible headers for About page problem/solution boxes
+     */
+    setupCollapsibleHeaders() {
+        const allHeaders = [...this.elements.problemBoxHeaders, ...this.elements.solutionBoxHeaders];
+        
+        allHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                this.toggleCollapsibleSection(header);
+            });
+        });
+    }
+
+    /**
+     * Toggle collapsible section
+     */
+    toggleCollapsibleSection(header) {
+        const isCollapsed = header.classList.contains('collapsed');
+        const ul = header.nextElementSibling;
+        
+        if (isCollapsed) {
+            // Expand
+            header.classList.remove('collapsed');
+            ul.classList.remove('collapsed');
+        } else {
+            // Collapse
+            header.classList.add('collapsed');
+            ul.classList.add('collapsed');
+        }
+    }
+
+    /**
+     * Cleanup method
+     */
+    destroy() {
+        // Disconnect all observers
+        Object.values(this.observers).forEach(observer => {
+            if (observer && observer.disconnect) {
+                observer.disconnect();
             }
         });
-        
-        card.addEventListener('mouseleave', function() {
-            if (!this.classList.contains('featured')) {
-                this.style.transform = 'translateY(0) scale(1)';
-            }
-        });
-    });
+    }
+}
 
-    // Console easter egg
-    console.log('%c SADPMR Financial Reporting System ', 'background: #0a1128; color: #d4a574; font-size: 18px; padding: 10px; font-weight: bold;');
-    console.log('%c Built with precision for public sector excellence ', 'background: #10b981; color: white; font-size: 12px; padding: 5px;');
-    console.log('%c February 3, 2026 Demo | Schedule 3A PFMA Compliance ', 'color: #1e3a5f; font-size: 11px;');
-    console.log('\n👋 Interested in the technology behind this system?\nGet in touch: demo@sadpmr-system.co.za');
+// Initialize application when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.mainApp = new MainApplication();
 });
 
-// Add parallax effect to hero section
-window.addEventListener('scroll', function() {
-    const hero = document.querySelector('.hero');
-    if (hero) {
-        const scrolled = window.pageYOffset;
-        const parallax = scrolled * 0.5;
-        hero.style.backgroundPositionY = `${parallax}px`;
+// Handle page unload for cleanup
+window.addEventListener('beforeunload', () => {
+    if (window.mainApp) {
+        window.mainApp.destroy();
     }
 });
-
-// Lazy load effect for pricing cards
-const pricingSection = document.querySelector('.pricing-section');
-if (pricingSection) {
-    const pricingObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.querySelectorAll('.pricing-card').forEach((card, index) => {
-                    setTimeout(() => {
-                        card.style.opacity = '1';
-                        card.style.transform = 'translateY(0)';
-                    }, index * 200);
-                });
-                pricingObserver.unobserve(entry.target);
-            }
-        });
-    }, { threshold: 0.2 });
-
-    pricingObserver.observe(pricingSection);
-    
-    // Set initial state
-    pricingSection.querySelectorAll('.pricing-card').forEach(card => {
-        if (!card.classList.contains('featured')) {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(30px)';
-            card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-        }
-    });
-}

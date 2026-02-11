@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Results - SADPMR Financial Reporting System{% endblock %}
+
+{% block content %}
+
+    <div class="container results-container">
+        <h1>Processing Results</h1>
+        <p class="page-subtitle">Results from trial balance processing and GRAP mapping</p>
+
+        <div class="results-section">
+            <div class="results-card">
+                <h3>📊 Financial Statements Generated</h3>
+                <p>Your trial balance has been processed and mapped to GRAP standards</p>
+                <div class="results-details">
+                    <p>Processing completed successfully. View your generated financial statements below.</p>
+                </div>
+            </div>
+
+            <div class="results-summary">
+                <h2>Summary of Results</h2>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <label>Total Assets</label>
+                        <span class="amount">R 0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Total Liabilities</label>
+                        <span class="amount">R 0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Net Assets</label>
+                        <span class="amount">R 0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Total Revenue</label>
+                        <span class="amount">R 0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Total Expenses</label>
+                        <span class="amount">R 0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Surplus/Deficit</label>
+                        <span class="amount">R 0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-statements">
+                <h2>Generated Financial Statements</h2>
+                <div class="statements-grid">
+                    <div class="statement-card">
+                        <h4>📄 Statement of Financial Position</h4>
+                        <p>Balance sheet with complete asset, liability and equity breakdown</p>
+                        <button class="btn btn-primary">View Statement</button>
+                    </div>
+                    <div class="statement-card">
+                        <h4>📈 Statement of Financial Performance</h4>
+                        <p>Income statement with revenue, expenses and surplus/deficit</p>
+                        <button class="btn btn-primary">View Statement</button>
+                    </div>
+                    <div class="statement-card">
+                        <h4>💰 Cash Flow Statement</h4>
+                        <p>Statement of cash flows with operating, investing and financing activities</p>
+                        <button class="btn btn-primary">View Statement</button>
+                    </div>
+                    <div class="statement-card">
+                        <h4>📊 Financial Ratios</h4>
+                        <p>Key financial ratios and performance metrics</p>
+                        <button class="btn btn-primary">View Ratios</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-actions">
+                <h2>Next Steps</h2>
+                <div class="action-buttons">
+                    <button class="btn btn-primary btn-lg">Generate PDF Report</button>
+                    <button class="btn btn-secondary btn-lg">Export to Excel</button>
+                    <button class="btn btn-secondary btn-lg">Download Files</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

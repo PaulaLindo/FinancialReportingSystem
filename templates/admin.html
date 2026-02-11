@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - SADPMR Financial Reporting System{% endblock %}
+
+{% block content %}
+
+    <div class="container admin-container">
+        <h1>Administration</h1>
+        <p class="page-subtitle">System administration and user management</p>
+
+        <div class="admin-section">
+            <div class="admin-card">
+                <h3>👥 User Management</h3>
+                <p>Manage user accounts and permissions</p>
+                <button class="btn btn-primary">Manage Users</button>
+            </div>
+            
+            <div class="admin-card">
+                <h3>🔧 System Settings</h3>
+                <p>Configure system parameters and GRAP mappings</p>
+                <button class="btn btn-primary">Settings</button>
+            </div>
+            
+            <div class="admin-card">
+                <h3>📊 System Logs</h3>
+                <p>View system activity and audit logs</p>
+                <button class="btn btn-primary">View Logs</button>
+            </div>
+            
+            <div class="admin-card">
+                <h3>💾 Data Backup</h3>
+                <p>Backup and restore system data</p>
+                <button class="btn btn-primary">Backup Data</button>
+            </div>
+        </div>
+
+        <div class="system-status">
+            <h2>System Status</h2>
+            <div class="status-grid">
+                <div class="status-item">
+                    <h4>Database</h4>
+                    <p class="status-ok">✅ Connected</p>
+                </div>
+                <div class="status-item">
+                    <h4>File Storage</h4>
+                    <p class="status-ok">✅ Available</p>
+                </div>
+                <div class="status-item">
+                    <h4>PDF Generation</h4>
+                    <p class="status-ok">✅ Operational</p>
+                </div>
+                <div class="status-item">
+                    <h4>GRAP Engine</h4>
+                    <p class="status-ok">✅ Ready</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="recent-activity">
+            <h2>Recent Activity</h2>
+            <div class="activity-list">
+                <div class="activity-item">
+                    <div class="activity-info">
+                        <h4>Trial Balance Uploaded</h4>
+                        <p>By Thabo Mthembu (Accountant) • 2 hours ago</p>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-info">
+                        <h4>Financial Statements Generated</h4>
+                        <p>By Sarah Nkosi (CFO) • 4 hours ago</p>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-info">
+                        <h4>PDF Report Downloaded</h4>
+                        <p>By AGSA Auditor • 1 day ago</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

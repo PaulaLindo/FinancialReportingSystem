@@ -4,6 +4,7 @@ Utility functions for formatting and calculations
 """
 
 import pandas as pd
+from utils.constants import RATIO_BENCHMARKS
 
 
 def format_currency(amount, currency='R'):
@@ -22,12 +23,12 @@ def calculate_ratios(sofp_data, sofe_data):
         # Extract totals
         total_assets = sofp_data['assets']['Amount'].sum()
         current_assets = sofp_data['assets'][
-            sofp_data['assets']['GRAP Code'].str.contains('CA-')
+            sofp_data['assets']['GRAP Code'].str.startswith('CA-')
         ]['Amount'].sum()
         
         total_liabilities = sofp_data['liabilities']['Amount'].sum()
         current_liabilities = sofp_data['liabilities'][
-            sofp_data['liabilities']['GRAP Code'].str.contains('CL-')
+            sofp_data['liabilities']['GRAP Code'].str.startswith('CL-')
         ]['Amount'].sum()
         
         total_revenue = sofe_data['revenue']['Amount'].sum()

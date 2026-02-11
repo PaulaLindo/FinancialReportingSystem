@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug - Role Information</title>
+</head>
+<body>
+    <h1>Debug: Current User Information</h1>
+    
+    <h2>Session Data:</h2>
+    <pre>&lt;SecureCookieSession {&#39;_permanent&#39;: True, &#39;full_name&#39;: &#39;Sarah Nkosi&#39;, &#39;role&#39;: &#39;CFO&#39;, &#39;user_id&#39;: 1, &#39;username&#39;: &#39;cfo@sadpmr.gov.za&#39;}&gt;</pre>
+    
+    <h2>Current User Object:</h2>
+    <pre>&lt;models.auth_models.User object at 0x000002E6D4C214F0&gt;</pre>
+    
+    
+    <h2>User Details:</h2>
+    <ul>
+        <li>ID: 1</li>
+        <li>Username: cfo@sadpmr.gov.za</li>
+        <li>Full Name: Sarah Nkosi</li>
+        <li>Role: CFO</li>
+        <li>Can Upload: True</li>
+        <li>Can Process: True</li>
+        <li>Can Approve: True</li>
+        <li>Can Generate PDF: True</li>
+    </ul>
+    
+    <h2>Role Checks:</h2>
+    <ul>
+        <li>Is CFO: True</li>
+        <li>Is Accountant: False</li>
+        <li>Is Clerk: False</li>
+        <li>Is Auditor: False</li>
+    </ul>
+    
+    
+    <h2>Navigation Logic Test:</h2>
+    <ul>
+        <li>Show Upload Link: YES</li>
+        <li>Show CFO Links: YES</li>
+    </ul>
+    
+    <p><a href="/login">Go to Login</a> | <a href="/">Go to Dashboard</a></p>
+</body>
+</html>

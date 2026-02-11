@@ -1,0 +1,45 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "cfo@sadpmr.gov.za",
+      "password_hash": "scrypt:32768:8:1$4SxZAZllqtLNuBko$ae7a5bbd38477cfd99e06cc87f6f799f1485ed0ff8d9cba80b8c91b375a290be543f58d84434346ef16a7ef73a2add29df68d51c968dfef3df184a78f4a5ce0f",
+      "full_name": "Sarah Nkosi",
+      "role": "CFO",
+      "email": "cfo@sadpmr.gov.za",
+      "created_at": "2026-01-29T02:25:07.658077",
+      "is_active": true
+    },
+    {
+      "id": 2,
+      "username": "accountant@sadpmr.gov.za",
+      "password_hash": "scrypt:32768:8:1$h5Qlk2G1xnuhwn7J$d6ae300d526560b8fca492b2e7b2645802a7a28ac86ac419197bb176474143491a375585de089d43a70f1ef6e588146a4e5aafb4f56f88b5b7503ed5eda9eb99",
+      "full_name": "Thabo Mthembu",
+      "role": "ACCOUNTANT",
+      "email": "accountant@sadpmr.gov.za",
+      "created_at": "2026-01-29T02:25:07.752095",
+      "is_active": true
+    },
+    {
+      "id": 3,
+      "username": "clerk@sadpmr.gov.za",
+      "password_hash": "scrypt:32768:8:1$WIBGRhx2yG2G44PY$c0ba31e30fe15cbcc1b252aa74e1eb21433ac0cd82fbbb13d119b871da4206028d83639d7dd113f12d96614529a615bc601052de65e54a8cd5e8b5658ba5c109",
+      "full_name": "Lerato Dlamini",
+      "role": "CLERK",
+      "email": "clerk@sadpmr.gov.za",
+      "created_at": "2026-01-29T02:25:07.840300",
+      "is_active": true
+    },
+    {
+      "id": 4,
+      "username": "auditor@agsa.gov.za",
+      "password_hash": "scrypt:32768:8:1$I2gd7pFAMnMDKcqU$b66804a7aff8611096a3b23cd30f4a367708fed5fa136393883d543e673204bcb7e9e34c090ca30fc234f89ec035c2eaa4410b214f8bb3c36eff1b618f8925c8",
+      "full_name": "AGSA Auditor",
+      "role": "AUDITOR",
+      "email": "auditor@agsa.gov.za",
+      "created_at": "2026-01-29T02:25:07.923141",
+      "is_active": true
+    }
+  ],
+  "sessions": []
+}

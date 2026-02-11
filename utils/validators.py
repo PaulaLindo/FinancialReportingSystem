@@ -5,14 +5,15 @@ Data validation functions for trial balances and file formats
 
 import pandas as pd
 import os
+from utils.constants import ALLOWED_EXTENSIONS, COLUMN_MAPPINGS, REQUIRED_COLUMNS, TRIAL_BALANCE_TOLERANCE
 
 
 def validate_file_format(filepath):
     """Validate uploaded file format and structure"""
     try:
         # Check file extension
-        if not filepath.lower().endswith(('.xlsx', '.xls', '.csv')):
-            return False, "Invalid file format. Please upload Excel (.xlsx, .xls) or CSV files."
+        if not any(filepath.lower().endswith(f'.{ext}') for ext in ALLOWED_EXTENSIONS):
+            return False, f"Invalid file format. Please upload {', '.join(ALLOWED_EXTENSIONS).upper()} files."
         
         # Try to read the file
         if filepath.lower().endswith('.xlsx'):
@@ -25,24 +26,13 @@ def validate_file_format(filepath):
             return False, "The uploaded file is empty."
         
         # Check minimum required columns
-        required_columns = ['Account Code', 'Account Description']
         available_columns = [col.strip() for col in df.columns]
         
-        # Handle common column name variations
-        column_mapping = {
-            'Acc Code': 'Account Code',
-            'AccCode': 'Account Code',
-            'Account': 'Account Code',
-            'Description': 'Account Description',
-            'Debit': 'Debit Balance',
-            'Credit': 'Credit Balance'
-        }
-        
         # Apply column mapping
-        df.columns = [column_mapping.get(col.strip(), col.strip()) for col in df.columns]
+        df.columns = [COLUMN_MAPPINGS.get(col.strip(), col.strip()) for col in df.columns]
         
         # Check for required columns after mapping
-        missing_columns = [col for col in required_columns if col not in df.columns]
+        missing_columns = [col for col in REQUIRED_COLUMNS if col not in df.columns]
         if missing_columns:
             return False, f"Missing required columns: {', '.join(missing_columns)}"
         
@@ -90,7 +80,7 @@ def validate_trial_balance(df):
         total_debit = df['Debit Balance'].sum()
         total_credit = df['Credit Balance'].sum()
         
-        if abs(total_debit - total_credit) > 0.01:  # Allow small rounding differences
+        if abs(total_debit - total_credit) > TRIAL_BALANCE_TOLERANCE:
             warnings.append(f"Trial balance doesn't balance: Debit R{total_debit:,.2f} vs Credit R{total_credit:,.2f}")
     
     # Check for negative values in unusual places

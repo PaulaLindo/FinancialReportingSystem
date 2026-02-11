@@ -1,108 +1,166 @@
-// Mobile Menu Functionality for SADPMR Financial Reporting System
-
-document.addEventListener('DOMContentLoaded', function() {
-    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-    const navMenu = document.getElementById('navMenu');
-    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
-    
-    if (!mobileMenuToggle || !navMenu || !mobileMenuOverlay) {
-        console.warn('Mobile menu elements not found - may not be on a page with navigation');
-        return;
+class MobileMenu {
+    constructor() {
+        this.elements = {};
+        this.isOpen = false;
+        this.boundMethods = {};
+        this.init();
     }
-    
-    // Toggle mobile menu
-    mobileMenuToggle.addEventListener('click', function(e) {
-        e.stopPropagation();
-        toggleMenu();
-    });
-    
-    // Close menu when clicking overlay
-    mobileMenuOverlay.addEventListener('click', function() {
-        closeMenu();
-    });
-    
-    // Close menu when clicking outside the menu
-    document.addEventListener('click', function(e) {
-        const isClickInsideMenu = navMenu.contains(e.target);
-        const isClickOnToggle = mobileMenuToggle.contains(e.target);
-        const isMenuOpen = navMenu.classList.contains('active');
-        
-        if (isMenuOpen && !isClickInsideMenu && !isClickOnToggle) {
-            closeMenu();
+
+    init() {
+        this.cacheElements();
+        if (!this.validateElements()) {
+            console.warn('Mobile menu not found');
+            return;
         }
-    });
-    
-    // Close menu when clicking nav links - target links inside nav-menu
-    const navLinks = navMenu.querySelectorAll('.nav-menu a');
-    navLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            closeMenu();
+        this.bindMethods();
+        this.setupEventListeners();
+    }
+
+    cacheElements() {
+        this.elements = {
+            toggle: document.getElementById('mobileMenuToggle'),
+            menu: document.getElementById('navMenu'),
+            overlay: document.getElementById('mobileMenuOverlay'),
+            navLinks: null
+        };
+    }
+
+    validateElements() {
+        const { toggle, menu, overlay } = this.elements;
+        return toggle && menu && overlay;
+    }
+
+    bindMethods() {
+        this.boundMethods = {
+            toggle: this.toggle.bind(this),
+            close: this.close.bind(this),
+            handleKeydown: this.handleKeydown.bind(this),
+            handleResize: this.handleResize.bind(this)
+        };
+    }
+
+    setupEventListeners() {
+        const { toggle, overlay, menu } = this.elements;
+        
+        toggle.addEventListener('click', this.boundMethods.toggle);
+        overlay.addEventListener('click', this.boundMethods.close);
+        
+        // Add document click handler to close menu when clicking outside
+        document.addEventListener('click', (event) => this.handleDocumentClick(event));
+        // Add touch support for mobile
+        document.addEventListener('touchend', (event) => this.handleDocumentClick(event));
+        
+        document.addEventListener('keydown', this.boundMethods.handleKeydown);
+        window.addEventListener('resize', this.boundMethods.handleResize);
+        
+        this.setupNavLinkListeners();
+    }
+
+    handleDocumentClick(event) {
+        if (!this.isOpen) return;
+        
+        // Check if click is outside the menu and toggle button
+        const menu = this.elements.menu;
+        const toggle = this.elements.toggle;
+        
+        const isClickOnMenu = menu && menu.contains(event.target);
+        const isClickOnToggle = toggle && toggle.contains(event.target);
+        const isClickOnOverlay = event.target.id === 'mobileMenuOverlay';
+        
+        // Close if clicked outside menu/toggle or on overlay
+        if (!isClickOnMenu && !isClickOnToggle) {
+            this.close();
+        }
+    }
+
+    setupNavLinkListeners() {
+        const navLinks = this.elements.menu.querySelectorAll('.nav-menu a');
+        this.elements.navLinks = navLinks;
+        
+        navLinks.forEach(link => {
+            link.addEventListener('click', this.boundMethods.close);
         });
-    });
-    
-    // Close menu on escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && navMenu.classList.contains('active')) {
-            closeMenu();
-        }
-    });
-    
-    // Close menu when resizing to desktop
-    window.addEventListener('resize', function() {
-        if (window.innerWidth > 768 && navMenu.classList.contains('active')) {
-            closeMenu();
-        }
-    });
-    
-    function toggleMenu() {
-        const isOpen = navMenu.classList.contains('active');
-        
-        if (isOpen) {
-            closeMenu();
-        } else {
-            openMenu();
-        }
     }
-    
-    function openMenu() {
-        navMenu.classList.add('active');
-        mobileMenuOverlay.classList.add('active');
-        mobileMenuToggle.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-    
-    function closeMenu() {
-        navMenu.classList.remove('active');
-        mobileMenuOverlay.classList.remove('active');
-        mobileMenuToggle.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-});
 
-// Global function for onclick handlers (backup)
-function toggleMobileMenu() {
-    const navMenu = document.getElementById('navMenu');
-    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
-    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-    
-    if (!navMenu || !mobileMenuOverlay || !mobileMenuToggle) {
-        console.error('Elements not found in global function');
-        return;
+    toggle(event) {
+        if (event) event.stopPropagation();
+        
+        if (this.isOpen) {
+            this.close();
+        } else {
+            this.open();
+        }
     }
-    
-    const isOpen = navMenu.classList.contains('active');
-    
-    if (isOpen) {
-        navMenu.classList.remove('active');
-        mobileMenuOverlay.classList.remove('active');
-        mobileMenuToggle.classList.remove('active');
-        document.body.style.overflow = '';
-    } else {
-        navMenu.classList.add('active');
-        mobileMenuOverlay.classList.add('active');
-        mobileMenuToggle.classList.add('active');
+
+    open() {
+        if (this.isOpen) return;
+        
+        const { menu, overlay, toggle } = this.elements;
+        
+        menu.classList.add('active');
+        overlay.classList.add('active');
+        toggle.classList.add('active');
         document.body.style.overflow = 'hidden';
+        
+        this.isOpen = true;
+    }
+
+    close() {
+        if (!this.isOpen) return;
+        
+        const { menu, overlay, toggle } = this.elements;
+        
+        menu.classList.remove('active');
+        overlay.classList.remove('active');
+        toggle.classList.remove('active');
+        document.body.style.overflow = '';
+        
+        this.isOpen = false;
+    }
+
+    handleKeydown(event) {
+        if (!this.isOpen) return;
+        
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            this.close();
+        }
+    }
+
+    handleResize() {
+        if (!this.isOpen) return;
+        
+        if (window.innerWidth > 768) {
+            this.close();
+        }
+    }
+
+    destroy() {
+        const { toggle, overlay } = this.elements;
+        
+        if (toggle) toggle.removeEventListener('click', this.boundMethods.toggle);
+        if (overlay) overlay.removeEventListener('click', this.boundMethods.close);
+        
+        // Remove document event listeners
+        document.removeEventListener('click', (event) => this.handleDocumentClick(event));
+        document.removeEventListener('touchend', (event) => this.handleDocumentClick(event));
+        document.removeEventListener('keydown', this.boundMethods.handleKeydown);
+        window.removeEventListener('resize', this.boundMethods.handleResize);
+        
+        if (this.elements.navLinks) {
+            this.elements.navLinks.forEach(link => {
+                link.removeEventListener('click', this.boundMethods.close);
+            });
+        }
+        
+        if (this.isOpen) this.close();
     }
 }
 
-console.log('Mobile menu initialization complete');
+document.addEventListener('DOMContentLoaded', () => {
+    window.mobileMenu = new MobileMenu();
+});
+
+window.addEventListener('beforeunload', () => {
+    if (window.mobileMenu) window.mobileMenu.destroy();
+});

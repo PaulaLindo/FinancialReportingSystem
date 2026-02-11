@@ -6,14 +6,14 @@ Phase 2: Enhanced Financial Statement Generation with PDF Export
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import cm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
-
-
+from utils.constants import (
+    COLUMN_MAPPINGS, 
+    ASSET_CODES, 
+    LIABILITY_CODES, 
+    EQUITY_CODES, 
+    REVENUE_CODES, 
+    EXPENSE_CODES
+)
 class GRAPMappingEngine:
     """Core GRAP mapping engine for financial statement generation"""
     
@@ -82,21 +82,30 @@ class GRAPMappingEngine:
         # Standardize column names
         df.columns = df.columns.str.strip()
         
-        # Handle column name variations
-        col_mapping = {
-            'Acc Code': 'Account Code',
-            'AccCode': 'Account Code',
-            'Account': 'Account Code',
-            'Description': 'Account Description',
-            'Debit': 'Debit Balance',
-            'Credit': 'Credit Balance'
-        }
+        # Debug: Print actual column names
+        print(f"Actual columns in file: {list(df.columns)}")
         
-        df.rename(columns=col_mapping, inplace=True)
+        # Check if this looks like a trial balance file
+        required_keywords = ['account', 'debit', 'credit', 'balance']
+        column_str = ' '.join(df.columns).lower()
+        
+        if not any(keyword in column_str for keyword in required_keywords):
+            raise ValueError(f"This doesn't appear to be a trial balance file. Expected columns like 'Account Code', 'Account Description', 'Debit Balance', 'Credit Balance'. Found columns: {list(df.columns)}. Please upload a proper trial balance file.")
+        
+        # Handle column name variations - only rename if source column exists and target doesn't
+        for source_col, target_col in COLUMN_MAPPINGS.items():
+            if source_col in df.columns and target_col not in df.columns:
+                df.rename(columns={source_col: target_col}, inplace=True)
+        
+        print(f"Columns after mapping: {list(df.columns)}")
         
         # Calculate net balance
         if 'Net Balance' not in df.columns:
-            df['Net Balance'] = df['Debit Balance'] - df['Credit Balance']
+            if 'Debit Balance' in df.columns and 'Credit Balance' in df.columns:
+                df['Net Balance'] = df['Debit Balance'] - df['Credit Balance']
+            else:
+                available_cols = [col for col in df.columns if 'debit' in col.lower() or 'credit' in col.lower()]
+                raise ValueError(f"Required columns 'Debit Balance' and 'Credit Balance' not found. Available columns: {list(df.columns)}. Similar columns: {available_cols}")
         
         return df
     
@@ -121,9 +130,9 @@ class GRAPMappingEngine:
         sofp.columns = ['GRAP Code', 'Line Item', 'Amount']
         
         # Separate components
-        assets = sofp[sofp['GRAP Code'].str.contains('CA-|NCA-', na=False)].copy()
-        liabilities = sofp[sofp['GRAP Code'].str.contains('CL-|NCL-', na=False)].copy()
-        net_assets = sofp[sofp['GRAP Code'].str.contains('NA-', na=False)].copy()
+        assets = sofp[sofp['GRAP Code'].str.startswith(tuple(ASSET_CODES), na=False)].copy()
+        liabilities = sofp[sofp['GRAP Code'].str.startswith(tuple(LIABILITY_CODES), na=False)].copy()
+        net_assets = sofp[sofp['GRAP Code'].str.startswith(tuple(EQUITY_CODES), na=False)].copy()
         
         # Convert to positive values for presentation
         liabilities['Amount'] = liabilities['Amount'].abs()
@@ -137,8 +146,8 @@ class GRAPMappingEngine:
         sofe.columns = ['GRAP Code', 'Line Item', 'Amount']
         
         # Separate revenue and expenses
-        revenue = sofe[sofe['GRAP Code'].str.contains('REV-', na=False)].copy()
-        expenses = sofe[sofe['GRAP Code'].str.contains('EXP-', na=False)].copy()
+        revenue = sofe[sofe['GRAP Code'].str.startswith(tuple(REVENUE_CODES), na=False)].copy()
+        expenses = sofe[sofe['GRAP Code'].str.startswith(tuple(EXPENSE_CODES), na=False)].copy()
         
         revenue['Amount'] = revenue['Amount'].abs()
         
@@ -153,9 +162,14 @@ class GRAPMappingEngine:
         """Calculate key financial ratios"""
         # Extract totals
         total_assets = sofp['assets']['Amount'].sum()
-        current_assets = sofp['assets'][sofp['assets']['GRAP Code'].str.contains('CA-')]['Amount'].sum()
+        current_assets = sofp['assets'][
+            sofp['assets']['GRAP Code'].str.startswith(tuple(['CA-']), na=False)
+        ]['Amount'].sum()
+        
         total_liabilities = sofp['liabilities']['Amount'].sum()
-        current_liabilities = sofp['liabilities'][sofp['liabilities']['GRAP Code'].str.contains('CL-')]['Amount'].sum()
+        current_liabilities = sofp['liabilities'][
+            sofp['liabilities']['GRAP Code'].str.startswith(tuple(['CL-']), na=False)
+        ]['Amount'].sum()
         
         total_revenue = sofe['revenue']['Amount'].sum()
         total_expenses = sofe['expenses']['Amount'].sum()
@@ -170,226 +184,59 @@ class GRAPMappingEngine:
         }
         
         return ratios
+    
+    def generate_cash_flow_statement(self, sofp, sofe, mapped_df):
+        """Generate Cash Flow Statement using Indirect Method"""
+        # Indirect method: Start with surplus/deficit, add back non-cash items
+        net_surplus = sofe['surplus']
+        
+        # Non-cash items
+        depreciation = sofe['expenses'][
+            sofe['expenses']['GRAP Code'] == 'EXP-002'
+        ]['Amount'].sum() if len(sofe['expenses']) > 0 else 0
+        
+        # Working capital changes (simplified)
+        receivables_change = mapped_df[mapped_df['grap_code'].str.startswith('CA-00', na=False)]['Net Balance'].sum()
+        payables_change = mapped_df[mapped_df['grap_code'].str.startswith('CL-00', na=False)]['Net Balance'].sum()
+        
+        # Operating cash flow
+        operating_cash = net_surplus + depreciation - (receivables_change - payables_change)
+        
+        # Investing activities (simplified)
+        ppe_changes = mapped_df[mapped_df['grap_code'] == 'NCA-001']['Net Balance'].sum()
+        investing_cash = -abs(ppe_changes) if ppe_changes < 0 else 0
+        
+        # Financing activities (simplified)
+        borrowing_changes = mapped_df[mapped_df['grap_code'].str.startswith('NCL-', na=False)]['Net Balance'].sum()
+        financing_cash = borrowing_changes
+        
+        # Net cash movement
+        net_cash_movement = operating_cash + investing_cash + financing_cash
+        
+        # Structure for presentation
+        cash_flow_data = {
+            'operating': [
+                {'Line Item': 'Net Surplus/(Deficit)', 'Amount': net_surplus},
+                {'Line Item': 'Add: Depreciation & Amortisation', 'Amount': depreciation},
+                {'Line Item': 'Changes in Working Capital', 'Amount': -(receivables_change - payables_change)},
+                {'Line Item': 'Net Cash from Operating Activities', 'Amount': operating_cash}
+            ],
+            'investing': [
+                {'Line Item': 'Capital Expenditure', 'Amount': investing_cash},
+                {'Line Item': 'Net Cash from Investing Activities', 'Amount': investing_cash}
+            ],
+            'financing': [
+                {'Line Item': 'Borrowing Activities', 'Amount': financing_cash},
+                {'Line Item': 'Net Cash from Financing Activities', 'Amount': financing_cash}
+            ],
+            'net_movement': net_cash_movement
+        }
+        
+        return cash_flow_data
 
 
 def generate_pdf_report(results, output_path):
-    """Generate professional PDF report with GRAP-compliant formatting"""
-    doc = SimpleDocTemplate(output_path, pagesize=A4,
-                           topMargin=2*cm, bottomMargin=2*cm,
-                           leftMargin=2.5*cm, rightMargin=2.5*cm)
-    
-    story = []
-    styles = getSampleStyleSheet()
-    
-    # Custom styles
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=16,
-        textColor=colors.HexColor('#1a237e'),
-        spaceAfter=20,
-        alignment=TA_CENTER,
-        fontName='Helvetica-Bold'
-    )
-    
-    heading_style = ParagraphStyle(
-        'CustomHeading',
-        parent=styles['Heading2'],
-        fontSize=12,
-        textColor=colors.HexColor('#283593'),
-        spaceAfter=12,
-        fontName='Helvetica-Bold'
-    )
-    
-    # Document title
-    story.append(Paragraph("SOUTH AFRICAN DIAMOND AND PRECIOUS METALS REGULATOR", title_style))
-    story.append(Paragraph("ANNUAL FINANCIAL STATEMENTS", title_style))
-    story.append(Paragraph(f"For the year ended 31 March {datetime.now().year}", styles['Normal']))
-    story.append(Spacer(1, 1*cm))
-    
-    # Statement of Financial Position
-    story.append(Paragraph("STATEMENT OF FINANCIAL POSITION", heading_style))
-    story.append(Paragraph(f"as at 31 March {datetime.now().year}", styles['Normal']))
-    story.append(Spacer(1, 0.5*cm))
-    
-    # Assets table
-    assets_data = [['Note', 'ASSETS', f'{datetime.now().year}\nR']]
-    
-    for item in results['sofp']['assets']:
-        assets_data.append(['', item['Line Item'], f"{item['Amount']:,.2f}"])
-    
-    assets_data.append(['', 'TOTAL ASSETS', f"{results['summary']['total_assets']:,.2f}"])
-    
-    assets_table = Table(assets_data, colWidths=[2*cm, 12*cm, 3*cm])
-    assets_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#1a237e')),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#f5f5f5')),
-    ]))
-    
-    story.append(assets_table)
-    story.append(Spacer(1, 0.5*cm))
-    
-    # Liabilities table
-    liabilities_data = [['Note', 'LIABILITIES', f'{datetime.now().year}\nR']]
-    
-    for item in results['sofp']['liabilities']:
-        liabilities_data.append(['', item['Line Item'], f"{item['Amount']:,.2f}"])
-    
-    liabilities_data.append(['', 'TOTAL LIABILITIES', f"{results['summary']['total_liabilities']:,.2f}"])
-    
-    liabilities_table = Table(liabilities_data, colWidths=[2*cm, 12*cm, 3*cm])
-    liabilities_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#1a237e')),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#f5f5f5')),
-    ]))
-    
-    story.append(liabilities_table)
-    story.append(Spacer(1, 0.5*cm))
-    
-    # Net Assets table
-    net_assets_data = [
-        ['Note', 'NET ASSETS', f'{datetime.now().year}\nR'],
-        ['', 'Accumulated Surplus/(Deficit)', f"{results['summary']['net_assets']:,.2f}"],
-        ['', 'TOTAL NET ASSETS', f"{results['summary']['net_assets']:,.2f}"]
-    ]
-    
-    net_assets_table = Table(net_assets_data, colWidths=[2*cm, 12*cm, 3*cm])
-    net_assets_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e3f2fd')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#1a237e')),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#f5f5f5')),
-    ]))
-    
-    story.append(net_assets_table)
-    story.append(Spacer(1, 1*cm))
-    
-    # Statement of Financial Performance
-    story.append(Paragraph("STATEMENT OF FINANCIAL AND ECONOMIC PERFORMANCE", heading_style))
-    story.append(Paragraph(f"for the year ended 31 March {datetime.now().year}", styles['Normal']))
-    story.append(Spacer(1, 0.5*cm))
-    
-    # Revenue table
-    revenue_data = [['Note', 'REVENUE', f'{datetime.now().year}\nR']]
-    
-    for item in results['sofe']['revenue']:
-        revenue_data.append(['', item['Line Item'], f"{item['Amount']:,.2f}"])
-    
-    revenue_data.append(['', 'TOTAL REVENUE', f"{results['summary']['total_revenue']:,.2f}"])
-    
-    revenue_table = Table(revenue_data, colWidths=[2*cm, 12*cm, 3*cm])
-    revenue_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e8f5e8')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#1b5e20')),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#f5f5f5')),
-    ]))
-    
-    story.append(revenue_table)
-    story.append(Spacer(1, 0.5*cm))
-    
-    # Expenses table
-    expenses_data = [['Note', 'EXPENSES', f'{datetime.now().year}\nR']]
-    
-    for item in results['sofe']['expenses']:
-        expenses_data.append(['', item['Line Item'], f"{item['Amount']:,.2f}"])
-    
-    expenses_data.append(['', 'TOTAL EXPENSES', f"{results['summary']['total_expenses']:,.2f}"])
-    
-    expenses_table = Table(expenses_data, colWidths=[2*cm, 12*cm, 3*cm])
-    expenses_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#ffebee')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#c62828')),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#f5f5f5')),
-    ]))
-    
-    story.append(expenses_table)
-    story.append(Spacer(1, 0.5*cm))
-    
-    # Surplus/Deficit
-    surplus_data = [
-        ['Note', 'SURPLUS/(DEFICIT) FOR THE YEAR', f'{datetime.now().year}\nR'],
-        ['', '', f"{results['summary']['surplus_deficit']:,.2f}"]
-    ]
-    
-    surplus_table = Table(surplus_data, colWidths=[2*cm, 12*cm, 3*cm])
-    surplus_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#fff3e0')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#e65100')),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#f5f5f5')),
-    ]))
-    
-    story.append(surplus_table)
-    story.append(Spacer(1, 1*cm))
-    
-    # Financial Ratios
-    story.append(Paragraph("KEY FINANCIAL RATIOS", heading_style))
-    story.append(Spacer(1, 0.5*cm))
-    
-    ratios_data = [['Ratio', 'Value', 'Benchmark']]
-    ratios_data.extend([
-        ['Current Ratio', f"{results['summary']['ratios']['current_ratio']:.2f}", '≥ 1.5'],
-        ['Debt to Equity', f"{results['summary']['ratios']['debt_to_equity']:.2f}", '≤ 1.0'],
-        ['Operating Margin (%)', f"{results['summary']['ratios']['operating_margin']:.2f}%", '≥ 10%'],
-        ['Return on Assets (%)', f"{results['summary']['ratios']['return_on_assets']:.2f}%", '≥ 5%']
-    ])
-    
-    ratios_table = Table(ratios_data, colWidths=[6*cm, 4*cm, 4*cm])
-    ratios_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f3e5f5')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#4a148c')),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('ALIGN', (1, 0), (2, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-    ]))
-    
-    story.append(ratios_table)
-    
-    # Build PDF
-    doc.build(story)
-    return output_path
+    """Generate PDF financial report - wrapper function"""
+    from services.pdf_service import PDFService
+    service = PDFService()
+    return service.generate_financial_statements_pdf(results, output_path)

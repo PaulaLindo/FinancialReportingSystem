@@ -1,0 +1,45 @@
+{% extends "base_auth.html" %}
+
+{% block title %}Debug - SADPMR Financial Reporting System{% endblock %}
+
+{% block content %}
+    <h1>Debug: Current User Information</h1>
+    
+    <h2>Session Data:</h2>
+    <pre>{{ session }}</pre>
+    
+    <h2>Current User Object:</h2>
+    <pre>{{ current_user }}</pre>
+    
+    {% if current_user %}
+    <h2>User Details:</h2>
+    <ul>
+        <li>ID: {{ current_user.id }}</li>
+        <li>Username: {{ current_user.username }}</li>
+        <li>Full Name: {{ current_user.full_name }}</li>
+        <li>Role: {{ current_user.role }}</li>
+        <li>Can Upload: {{ current_user.can_upload() }}</li>
+        <li>Can Process: {{ current_user.can_process() }}</li>
+        <li>Can Approve: {{ current_user.can_approve() }}</li>
+        <li>Can Generate PDF: {{ current_user.can_generate_pdf() }}</li>
+    </ul>
+    
+    <h2>Role Checks:</h2>
+    <ul>
+        <li>Is CFO: {{ current_user.role == 'CFO' }}</li>
+        <li>Is Accountant: {{ current_user.role == 'ACCOUNTANT' }}</li>
+        <li>Is Clerk: {{ current_user.role == 'CLERK' }}</li>
+        <li>Is Auditor: {{ current_user.role == 'AUDITOR' }}</li>
+    </ul>
+    {% else %}
+    <h2>No user logged in!</h2>
+    {% endif %}
+    
+    <h2>Navigation Logic Test:</h2>
+    <ul>
+        <li>Show Upload Link: {% if current_user and current_user.can_upload() %}YES{% else %}NO{% endif %}</li>
+        <li>Show CFO Links: {% if current_user and current_user.role == 'CFO' %}YES{% else %}NO{% endif %}</li>
+    </ul>
+    
+    <p><a href="/login">Go to Login</a> | <a href="/">Go to Dashboard</a></p>
+{% endblock %}

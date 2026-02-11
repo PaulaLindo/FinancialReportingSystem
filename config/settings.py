@@ -5,43 +5,44 @@ Application configuration for different environments
 
 import os
 from datetime import timedelta
+from utils.constants import (
+    MAX_FILE_SIZE_BYTES, ALLOWED_EXTENSIONS, GRAP_MAPPING_VERSION,
+    GRAP_COMPLIANCE_YEAR, PDF_PAGE_SIZE, PDF_MARGIN_TOP_CM,
+    PDF_MARGIN_BOTTOM_CM, PDF_MARGIN_LEFT_CM, PDF_MARGIN_RIGHT_CM,
+    RATIO_BENCHMARKS, SESSION_LIFETIME_HOURS, SECRET_KEY_DEFAULT
+)
 
 
 class Config:
     """Base configuration class"""
     
     # Flask Configuration
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'sadpmr-demo-2025-secure-key'
+    SECRET_KEY = os.environ.get('SECRET_KEY') or SECRET_KEY_DEFAULT
     
     # File Upload Configuration
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads')
     OUTPUT_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'outputs')
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+    MAX_CONTENT_LENGTH = MAX_FILE_SIZE_BYTES
     
     # Allowed file extensions
-    ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv'}
+    ALLOWED_EXTENSIONS = ALLOWED_EXTENSIONS
     
     # GRAP Configuration
-    GRAP_MAPPING_VERSION = '2.0'
-    GRAP_COMPLIANCE_YEAR = 2026
+    GRAP_MAPPING_VERSION = GRAP_MAPPING_VERSION
+    GRAP_COMPLIANCE_YEAR = GRAP_COMPLIANCE_YEAR
     
     # PDF Configuration
-    PDF_PAGE_SIZE = 'A4'
-    PDF_MARGIN_TOP = 2.0  # cm
-    PDF_MARGIN_BOTTOM = 2.0  # cm
-    PDF_MARGIN_LEFT = 2.5  # cm
-    PDF_MARGIN_RIGHT = 2.5  # cm
+    PDF_PAGE_SIZE = PDF_PAGE_SIZE
+    PDF_MARGIN_TOP = PDF_MARGIN_TOP_CM
+    PDF_MARGIN_BOTTOM = PDF_MARGIN_BOTTOM_CM
+    PDF_MARGIN_LEFT = PDF_MARGIN_LEFT_CM
+    PDF_MARGIN_RIGHT = PDF_MARGIN_RIGHT_CM
     
     # Financial Ratios Benchmarks
-    RATIO_BENCHMARKS = {
-        'current_ratio': {'min': 1.5, 'target': 2.0},
-        'debt_to_equity': {'max': 1.0, 'target': 0.5},
-        'operating_margin': {'min': 10.0, 'target': 15.0},
-        'return_on_assets': {'min': 5.0, 'target': 8.0}
-    }
+    RATIO_BENCHMARKS = RATIO_BENCHMARKS
     
     # Session Configuration
-    PERMANENT_SESSION_LIFETIME = timedelta(hours=1)
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=SESSION_LIFETIME_HOURS)
     
     # Security Configuration
     WTF_CSRF_ENABLED = True

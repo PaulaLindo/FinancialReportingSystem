@@ -9,7 +9,7 @@ from functools import wraps
 import os
 import pandas as pd
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 import sys
 
 # Import our Phase 1 mapping engine and auth models
@@ -26,21 +26,9 @@ app.config['SECRET_KEY'] = 'sadpmr-demo-2025-secure-key-auth-enabled'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['OUTPUT_FOLDER'] = 'outputs'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)  # 1 hour session
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
-app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF protection
-app.config['SESSION_REFRESH_EACH_REQUEST'] = True  # Refresh session on each request
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour session
 
 ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv'}
-
-# Before request handler to ensure persistent sessions
-@app.before_request
-def make_session_permanent():
-    """Make sessions permanent on each request if user is logged in"""
-    if 'user_id' in session:
-        session.permanent = True
-        app.permanent_session_lifetime = timedelta(hours=1)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -87,18 +75,6 @@ def get_current_user():
     return None
 
 
-# Debug route to check session
-@app.route('/debug-session')
-def debug_session():
-    """Debug session contents"""
-    return {
-        'session_keys': list(session.keys()),
-        'user_id': session.get('user_id'),
-        'username': session.get('username'),
-        'current_user': get_current_user().__dict__ if get_current_user() else None
-    }
-
-
 # Authentication Routes
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -129,7 +105,7 @@ def logout():
     """Logout user"""
     username = session.get('full_name', 'User')
     session.clear()
-    # Don't show flash message on logout to avoid "welcome back" on login page
+    flash(f'Goodbye, {username}! You have been logged out.', 'info')
     return redirect(url_for('login'))
 
 
@@ -179,17 +155,6 @@ def upload_trial_balance():
         # Quick validation
         try:
             df = pd.read_excel(filepath) if filepath.endswith('.xlsx') else pd.read_csv(filepath)
-            
-            # Validate that this looks like a trial balance file
-            required_keywords = ['account', 'debit', 'credit', 'balance']
-            column_str = ' '.join(df.columns).lower()
-            
-            if not any(keyword in column_str for keyword in required_keywords):
-                return jsonify({
-                    'success': False,
-                    'error': f"This doesn't appear to be a trial balance file. Expected columns like 'Account Code', 'Account Description', 'Debit Balance', 'Credit Balance'. Found columns: {list(df.columns)}. Please upload a proper trial balance file."
-                }), 400
-            
             row_count = len(df)
             
             return jsonify({
@@ -244,7 +209,6 @@ def process_trial_balance():
         # Step 4: Generate statements
         sofp = engine.generate_statement_of_financial_position(mapped_data)
         sofe = engine.generate_statement_of_performance(mapped_data)
-        scf = engine.generate_cash_flow_statement(sofp, sofe, mapped_data)
         
         # Step 5: Calculate key ratios
         ratios = engine.calculate_ratios(sofp, sofe)
@@ -276,8 +240,7 @@ def process_trial_balance():
                 'sofe': {
                     'revenue': sofe['revenue'].to_dict('records'),
                     'expenses': sofe['expenses'].to_dict('records')
-                },
-                'scf': scf
+                }
             }, f, indent=2)
         
         return jsonify({
@@ -361,33 +324,6 @@ def results_page():
     return render_template('results.html', user=user)
 
 
-@app.route('/reports')
-@login_required
-def reports_page():
-    """Reports page - displays generated reports"""
-    user = get_current_user()
-    return render_template('reports.html', user=user)
-
-
-@app.route('/export')
-@login_required
-def export_page():
-    """Export page - export statements in various formats"""
-    user = get_current_user()
-    return render_template('export.html', user=user)
-
-
-@app.route('/admin')
-@login_required
-def admin_page():
-    """Administration page - CFO only"""
-    user = get_current_user()
-    if user.role != 'CFO':
-        flash('You do not have permission to access the administration panel.', 'error')
-        return redirect(url_for('index'))
-    return render_template('admin.html', user=user)
-
-
 @app.route('/about')
 @login_required
 def about_page():
@@ -398,12 +334,60 @@ def about_page():
     return render_template('about.html', user=user)
 
 
-# Make user functions available in templates - MUST be at module level!
+@app.route('/reports')
+@login_required
+def reports_page():
+    """
+    Reports Page - CFO only
+    """
+    user = get_current_user()
+    if user.role != 'CFO':
+        flash('Access denied. CFO privileges required.', 'error')
+        return redirect(url_for('index'))
+    return render_template('reports.html', user=user)
+
+
+@app.route('/export')
+@login_required
+def export_page():
+    """
+    Export Page - CFO only
+    """
+    user = get_current_user()
+    if user.role != 'CFO':
+        flash('Access denied. CFO privileges required.', 'error')
+        return redirect(url_for('index'))
+    return render_template('export.html', user=user)
+
+
+@app.route('/admin')
+@login_required
+def admin_page():
+    """
+    Admin Page - CFO only
+    """
+    user = get_current_user()
+    if user.role != 'CFO':
+        flash('Access denied. CFO privileges required.', 'error')
+        return redirect(url_for('index'))
+    return render_template('admin.html', user=user)
+
+
+@app.route('/debug')
+def debug_page():
+    """
+    Debug page to test role-based access
+    """
+    from flask import session
+    user = get_current_user()
+    return render_template('debug.html', user=user, session=session)
+
+
+# Make user functions available in templates
 @app.context_processor
 def inject_user():
-    current_user = get_current_user()
     return {
-        'current_user': current_user,
+        'current_user': get_current_user(),
         'get_role_description': get_role_description,
         'get_role_color': get_role_color
     }
