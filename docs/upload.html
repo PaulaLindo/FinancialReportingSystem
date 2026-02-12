@@ -74,7 +74,7 @@
                         
                     </span>
                 </div>
-                <a href="logout.html" class="logout-btn">Logout</a>
+                <a href="dashboard-logged-out.html" class="logout-btn" onclick="handleLogout(event)">Logout</a>
             </div>
             
             <div class="auth-menu">
@@ -206,6 +206,24 @@
     <script src="js/mobile-menu.js"></script>
     
 <script src="js/upload.js"></script>
+
+<script>
+    function handleLogout(event) {
+        if (event) {
+            event.preventDefault();
+        }
+        console.log('Logout clicked');
+        try {
+            sessionStorage.removeItem('demoUser');
+            console.log('Session cleared, redirecting...');
+            window.location.href = 'dashboard-logged-out.html';
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Fallback redirect
+            window.location.href = 'dashboard-logged-out.html';
+        }
+    }
+</script>
 
 </body>
 </html>

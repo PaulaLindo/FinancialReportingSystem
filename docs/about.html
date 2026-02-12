@@ -41,7 +41,7 @@
                     <span class="user-name">Sarah Nkosi</span>
                     <span class="user-role" style="background: #d4a574">CFO</span>
                 </div>
-                <a href="javascript:void(0)" onclick="handleLogout()" class="logout-btn">Logout</a>
+                <a href="dashboard-logged-out.html" class="logout-btn" onclick="handleLogout(event)">Logout</a>
             </div>
             
             <div class="auth-menu">
@@ -165,9 +165,20 @@
     </footer>
 
     <script>
-        function handleLogout() {
-            sessionStorage.removeItem('demoUser');
-            window.location.href = 'dashboard-logged-out.html';
+        function handleLogout(event) {
+            if (event) {
+                event.preventDefault();
+            }
+            console.log('Logout clicked');
+            try {
+                sessionStorage.removeItem('demoUser');
+                console.log('Session cleared, redirecting...');
+                window.location.href = 'dashboard-logged-out.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Fallback redirect
+                window.location.href = 'dashboard-logged-out.html';
+            }
         }
     </script>
     <script src="js/utils.js"></script>
