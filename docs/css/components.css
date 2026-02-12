@@ -214,12 +214,14 @@
     box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
 }
 
+.login-btn:hover,
 .logout-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
     background: #dc2626;
 }
 
+.login-btn:active,
 .logout-btn:active {
     transform: translateY(0);
 }

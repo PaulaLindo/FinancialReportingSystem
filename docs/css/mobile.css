@@ -161,10 +161,12 @@
     font-size: 0.75rem;
 }
 
+.login-btn,
 .logout-btn {
     padding: var(--space-2) var(--space-3);
     font-size: clamp(1.25rem, 2.5vw, 1.25rem);
     margin-bottom: var(--space-3);
+    width: 100%;
 }
 
 /* ======================================== */
