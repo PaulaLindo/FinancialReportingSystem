@@ -10,7 +10,6 @@
     <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
     <title>About - SADPMR Financial Reporting System</title>
     <link rel="stylesheet" href="css/styles.css">
-    
 </head>
 <body>
     <nav class="navbar">
@@ -40,17 +39,15 @@
             <div class="user-menu">
                 <div class="user-info">
                     <span class="user-name">Sarah Nkosi</span>
-                    <span class="user-role" style="background: #d4a574">
-                        
-                    </span>
+                    <span class="user-role" style="background: #d4a574">CFO</span>
                 </div>
-                <a href="logout.html" class="logout-btn">Logout</a>
+                <a href="javascript:void(0)" onclick="handleLogout()" class="logout-btn">Logout</a>
             </div>
             
             <div class="auth-menu">
                 <a href="login.html" class="login-btn">Login</a>
             </div>
-                    </div>
+        </div>
     </div>
     
     <!-- Mobile Menu Overlay -->
@@ -58,7 +55,7 @@
 </nav>
 
     <div class="container about-container">
-        <h1>About the SADPMR Financial Reporting System</h1>
+        <h1>About SADPMR Financial Reporting System</h1>
 
         <div class="about-section">
             <h2>Overview</h2>
@@ -112,15 +109,15 @@
                 </div>
                 <div class="feature-item">
                     <h4>🔐 AGSA Compliance</h4>
-                    <p>Every transaction, mapping change, and approval is logged with timestamp and user ID. The system provides the complete audit trail required by the Auditor-General South Africa.</p>
+                    <p>Every transaction, mapping change, and approval is logged with timestamp and user ID. The system provides a complete audit trail required by the Auditor-General South Africa.</p>
                 </div>
                 <div class="feature-item">
                     <h4>👥 Multi-User Collaboration</h4>
                     <p>Role-based access control allows:</p>
                     <ul>
                         <li><strong>CFO:</strong> Full access, approval authority</li>
-                        <li><strong>Accountants:</strong> Upload Trail Balance, modify mappings, generate reports</li>
-                        <li><strong>Clerks:</strong> Upload Trail Balance only</li>
+                        <li><strong>Accountants:</strong> Upload Trial Balance, modify mappings, generate reports</li>
+                        <li><strong>Clerks:</strong> Upload Trial Balance only</li>
                         <li><strong>Auditors:</strong> View-only access</li>
                     </ul>
                 </div>
@@ -159,7 +156,7 @@
             <a href="upload.html" class="btn btn-primary btn-large">Try It Now</a>
             
             <a href="index.html" class="btn btn-primary btn-large">View Dashboard</a>
-                    </div>
+        </div>
     </div>
 
     <footer>
@@ -169,8 +166,14 @@
         </div>
     </footer>
 
+    <script>
+        function handleLogout() {
+            sessionStorage.removeItem('demoUser');
+            window.location.href = 'dashboard-logged-out.html';
+        }
+    </script>
     <script src="js/utils.js"></script>
     <script src="js/main.js"></script>
     <script src="js/mobile-menu.js"></script>
-    </body>
+</body>
 </html>
