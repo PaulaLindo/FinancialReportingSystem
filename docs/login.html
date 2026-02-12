@@ -141,9 +141,22 @@
 
     <script>
         function quickLogin(username, password) {
-            document.getElementById('username').value = username;
-            document.getElementById('password').value = password;
-            document.querySelector('form').submit();
+            // Store user info in sessionStorage for demo
+            const demoUsers = {
+                'cfo@sadpmr.gov.za': { role: 'CFO', name: 'Sarah Nkosi', redirect: 'dashboard-logged-in.html', canUpload: true },
+                'accountant@sadpmr.gov.za': { role: 'Accountant', name: 'John Smith', redirect: 'dashboard-logged-in.html', canUpload: true },
+                'clerk@sadpmr.gov.za': { role: 'Clerk', name: 'Mike Davis', redirect: 'dashboard-logged-in.html', canUpload: true },
+                'auditor@agsa.gov.za': { role: 'Auditor', name: 'Patience Moyo', redirect: 'dashboard-logged-in.html', canUpload: false }
+            };
+            
+            const user = demoUsers[username];
+            if (user && password === 'demo123') {
+                sessionStorage.setItem('demoUser', JSON.stringify(user));
+                // Redirect directly to dashboard, bypassing form submission
+                window.location.href = user.redirect;
+            } else {
+                alert('Invalid credentials. Use the demo accounts shown below.');
+            }
         }
 
         // Auto-hide alerts after 5 seconds
