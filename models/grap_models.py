@@ -177,10 +177,10 @@ class GRAPMappingEngine:
         
         # Calculate ratios with error handling
         ratios = {
-            'current_ratio': round(current_assets / current_liabilities, 2) if current_liabilities > 0 else 0,
-            'debt_to_equity': round(total_liabilities / net_assets, 2) if net_assets > 0 else 0,
-            'operating_margin': round((total_revenue - total_expenses) / total_revenue * 100, 2) if total_revenue > 0 else 0,
-            'return_on_assets': round(sofe['surplus'] / total_assets * 100, 2) if total_assets > 0 else 0
+            'current_ratio': float(round(current_assets / current_liabilities, 2)) if current_liabilities > 0 else 0.0,
+            'debt_to_equity': float(round(total_liabilities / net_assets, 2)) if net_assets > 0 else 0.0,
+            'operating_margin': float(round((total_revenue - total_expenses) / total_revenue * 100, 2)) if total_revenue > 0 else 0.0,
+            'return_on_assets': float(round(sofe['surplus'] / total_assets * 100, 2)) if total_assets > 0 else 0.0
         }
         
         return ratios
@@ -216,20 +216,20 @@ class GRAPMappingEngine:
         # Structure for presentation
         cash_flow_data = {
             'operating': [
-                {'Line Item': 'Net Surplus/(Deficit)', 'Amount': net_surplus},
-                {'Line Item': 'Add: Depreciation & Amortisation', 'Amount': depreciation},
-                {'Line Item': 'Changes in Working Capital', 'Amount': -(receivables_change - payables_change)},
-                {'Line Item': 'Net Cash from Operating Activities', 'Amount': operating_cash}
+                {'Line Item': 'Net Surplus/(Deficit)', 'Amount': float(net_surplus)},
+                {'Line Item': 'Add: Depreciation & Amortisation', 'Amount': float(depreciation)},
+                {'Line Item': 'Changes in Working Capital', 'Amount': float(-(receivables_change - payables_change))},
+                {'Line Item': 'Net Cash from Operating Activities', 'Amount': float(operating_cash)}
             ],
             'investing': [
-                {'Line Item': 'Capital Expenditure', 'Amount': investing_cash},
-                {'Line Item': 'Net Cash from Investing Activities', 'Amount': investing_cash}
+                {'Line Item': 'Capital Expenditure', 'Amount': float(investing_cash)},
+                {'Line Item': 'Net Cash from Investing Activities', 'Amount': float(investing_cash)}
             ],
             'financing': [
-                {'Line Item': 'Borrowing Activities', 'Amount': financing_cash},
-                {'Line Item': 'Net Cash from Financing Activities', 'Amount': financing_cash}
+                {'Line Item': 'Borrowing Activities', 'Amount': float(financing_cash)},
+                {'Line Item': 'Net Cash from Financing Activities', 'Amount': float(financing_cash)}
             ],
-            'net_movement': net_cash_movement
+            'net_movement': float(net_cash_movement)
         }
         
         return cash_flow_data

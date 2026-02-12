@@ -175,7 +175,6 @@
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-lg);
-    background: rgba(255, 255, 255, 0.8);
     border: 1px solid rgba(226, 232, 240, 0.6);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);

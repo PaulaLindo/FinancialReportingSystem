@@ -16,10 +16,10 @@
             <ul class="nav-menu">
                 <li><a href="/" {% if request.endpoint == 'index' %}class="active"{% endif %}>Dashboard</a></li>
                 {% if current_user and current_user.can_upload() %}
-                <li><a href="/upload" {% if request.endpoint == 'upload_page' %}class="active"{% endif %}>Upload TB</a></li>
+                <li><a href="/upload" {% if request.endpoint == 'upload_page' %}class="active"{% endif %}>Upload Trail Balance</a></li>
                 {% endif %}
                 {% if current_user and current_user.role == 'CFO' %}
-                <li><a href="/reports" {% if request.endpoint == 'results_page' %}class="active"{% endif %}>Reports</a></li>
+                <li><a href="/reports" {% if request.endpoint == 'reports_page' %}class="active"{% endif %}>Reports</a></li>
                 <li><a href="/export" {% if request.endpoint == 'export_page' %}class="active"{% endif %}>Export</a></li>
                 <li><a href="/admin" {% if request.endpoint == 'admin_page' %}class="active"{% endif %}>Admin</a></li>
                 {% endif %}
@@ -29,8 +29,8 @@
             <div class="user-menu">
                 <div class="user-info">
                     <span class="user-name">{{ current_user.full_name }}</span>
-                    <span class="user-role" style="background: {{ get_role_color(current_user.role) }}">
-                        {{ current_user.role }}
+                    <span class="user-role" style="background: {{ get_role_color(current_user.role or 'USER') }}">
+                        {{ current_user.role or 'USER' }}
                     </span>
                 </div>
                 <a href="/logout" class="logout-btn">Logout</a>

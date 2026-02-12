@@ -22,9 +22,13 @@ app = Flask(__name__,
            template_folder='../templates', 
            static_folder='../static',
            static_url_path='/static')
+
+# Get the project root directory (parent of controllers)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 app.config['SECRET_KEY'] = 'sadpmr-demo-2025-secure-key-auth-enabled'
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['OUTPUT_FOLDER'] = 'outputs'
+app.config['UPLOAD_FOLDER'] = os.path.join(project_root, 'uploads')
+app.config['OUTPUT_FOLDER'] = os.path.join(project_root, 'outputs')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)  # 1 hour session
 app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
@@ -263,22 +267,42 @@ def process_trial_balance():
         
         # Store results in session (in production, use database)
         results_filename = f"results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        results_path = os.path.join('data', results_filename)
+        results_path = os.path.join(project_root, 'data', results_filename)
+        
+        # Convert DataFrames to JSON-serializable format
+        def convert_df_to_serializable(df):
+            """Convert DataFrame to JSON-serializable format, handling int64 and other numpy types"""
+            records = []
+            for _, row in df.iterrows():
+                record = {}
+                for col in df.columns:
+                    value = row[col]
+                    # Convert numpy types to native Python types
+                    if hasattr(value, 'item'):
+                        value = value.item()
+                    elif pd.isna(value):
+                        value = None
+                    record[col] = value
+                records.append(record)
+            return records
+        
+        # Prepare JSON-serializable data
+        json_data = {
+            'summary': summary,
+            'sofp': {
+                'assets': convert_df_to_serializable(sofp['assets']),
+                'liabilities': convert_df_to_serializable(sofp['liabilities']),
+                'net_assets': convert_df_to_serializable(sofp['net_assets'])
+            },
+            'sofe': {
+                'revenue': convert_df_to_serializable(sofe['revenue']),
+                'expenses': convert_df_to_serializable(sofe['expenses'])
+            },
+            'scf': scf
+        }
         
         with open(results_path, 'w') as f:
-            json.dump({
-                'summary': summary,
-                'sofp': {
-                    'assets': sofp['assets'].to_dict('records'),
-                    'liabilities': sofp['liabilities'].to_dict('records'),
-                    'net_assets': sofp['net_assets'].to_dict('records')
-                },
-                'sofe': {
-                    'revenue': sofe['revenue'].to_dict('records'),
-                    'expenses': sofe['expenses'].to_dict('records')
-                },
-                'scf': scf
-            }, f, indent=2)
+            json.dump(json_data, f, indent=2)
         
         return jsonify({
             'success': True,
@@ -307,7 +331,7 @@ def generate_pdf():
         if not results_file:
             return jsonify({'success': False, 'error': 'No results file specified'}), 400
         
-        results_path = os.path.join('data', results_file)
+        results_path = os.path.join(project_root, 'data', results_file)
         
         if not os.path.exists(results_path):
             return jsonify({'success': False, 'error': 'Results file not found'}), 404
@@ -413,7 +437,7 @@ if __name__ == '__main__':
     # Ensure directories exist
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
-    os.makedirs('data', exist_ok=True)
+    os.makedirs(os.path.join(project_root, 'data'), exist_ok=True)
     
     print("\n" + "="*70)
     print("SADPMR FINANCIAL REPORTING SYSTEM - AUTHENTICATED DEMO SERVER")
