@@ -10,38 +10,58 @@
     <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
     <title>Upload Trial Balance - SADPMR Financial Reporting System</title>
     <link rel="stylesheet" href="css/styles.css">
-</head>
+    </head>
 <body>
     <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <h2>SADPMR Financial Reporting System</h2>
-                <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
-            </div>
-            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
-                <span></span><span></span><span></span>
-            </button>
-            <div class="nav-wrapper" id="navMenu">
-                <ul class="nav-menu">
-                    <li><a href="dashboard.html">Dashboard</a></li>
-                    <li><a href="upload.html" class="active">Upload TB</a></li>
-                    <li><a href="about.html">About</a></li>
-                </ul>
-                <div class="user-menu">
-                    <div class="user-info">
-                        <span class="user-name" id="userName">Demo User</span>
-                        <span class="user-role" id="userRole" style="background: #28a745">Administrator</span>
-                    </div>
-                    <a href="index.html" class="logout-btn">Logout</a>
-                </div>
-            </div>
+    <div class="container">
+        <div class="nav-brand">
+            <h2>SADPMR Financial Reporting System</h2>
+            <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
         </div>
-        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
-    </nav>
+        
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        
+        <div class="nav-wrapper" id="navMenu">
+            <ul class="nav-menu">
+                <li><a href="index.html" class="active">Dashboard</a></li>
+                
+                <li><a href="upload.html" class="active">Upload Trail Balance</a></li>
+                                
+                <li><a href="reports.html" class="active">Reports</a></li>
+                <li><a href="export.html" class="active">Export</a></li>
+                <li><a href="admin.html" class="active">Admin</a></li>
+                                <li><a href="about.html" class="active">About</a></li>
+            </ul>
+            
+            <div class="user-menu">
+                <div class="user-info">
+                    <span class="user-name">Sarah Nkosi</span>
+                    <span class="user-role" style="background: #d4a574">
+                        
+                    </span>
+                </div>
+                <a href="logout.html" class="logout-btn">Logout</a>
+            </div>
+            
+            <div class="auth-menu">
+                <a href="login.html" class="login-btn">Login</a>
+            </div>
+                    </div>
+    </div>
+    
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+</nav>
 
     <div class="container upload-container">
         <h1>Upload Trial Balance</h1>
         <p class="page-subtitle">Import your Trial Balance from Pastel or Excel to generate GRAP-compliant financial statements</p>
+
         <div class="upload-section">
             <div class="upload-box" id="uploadBox">
                 <div class="upload-icon">📤</div>
@@ -50,6 +70,7 @@
                 <p class="upload-hint">Supported formats: Excel (.xlsx, .xls), CSV (.csv)</p>
                 <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display: none;">
             </div>
+
             <div id="fileInfo" class="file-info" style="display: none;">
                 <div class="file-details">
                     <h4>Selected File:</h4>
@@ -59,43 +80,80 @@
                 </div>
                 <button id="processBtn" class="btn btn-primary">Process Trial Balance</button>
             </div>
+
             <div id="processingLoader" class="loader" style="display: none;">
                 <div class="spinner"></div>
                 <p>Processing your Trial Balance...</p>
                 <p class="loader-subtext">Mapping accounts to GRAP line items</p>
             </div>
+
             <div id="errorMessage" class="error-box" style="display: none;"></div>
         </div>
+
         <div id="resultsSection" class="results-section" style="display: none;">
             <h2>Financial Statements Generated Successfully! ✓</h2>
+            
             <div class="summary-cards">
-                <div class="summary-card"><h4>Total Assets</h4><p class="amount" id="totalAssets">R 0.00</p></div>
-                <div class="summary-card"><h4>Total Liabilities</h4><p class="amount" id="totalLiabilities">R 0.00</p></div>
-                <div class="summary-card"><h4>Net Assets</h4><p class="amount" id="netAssets">R 0.00</p></div>
-                <div class="summary-card"><h4>Surplus/(Deficit)</h4><p class="amount" id="surplus">R 0.00</p></div>
+                <div class="summary-card">
+                    <h4>Total Assets</h4>
+                    <p class="amount" id="totalAssets">R 0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h4>Total Liabilities</h4>
+                    <p class="amount" id="totalLiabilities">R 0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h4>Net Assets</h4>
+                    <p class="amount" id="netAssets">R 0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h4>Surplus/(Deficit)</h4>
+                    <p class="amount" id="surplus">R 0.00</p>
+                </div>
             </div>
+
             <div class="ratio-analysis">
                 <h3>Key Financial Ratios</h3>
                 <div class="ratios-grid">
-                    <div class="ratio-card"><p class="ratio-label">Current Ratio</p><p class="ratio-value" id="currentRatio">0.00</p><p class="ratio-desc">Liquidity measure</p></div>
-                    <div class="ratio-card"><p class="ratio-label">Debt-to-Equity</p><p class="ratio-value" id="debtToEquity">0.00</p><p class="ratio-desc">Leverage indicator</p></div>
-                    <div class="ratio-card"><p class="ratio-label">Operating Margin</p><p class="ratio-value" id="operatingMargin">0.00%</p><p class="ratio-desc">Profitability ratio</p></div>
-                    <div class="ratio-card"><p class="ratio-label">Return on Assets</p><p class="ratio-value" id="returnOnAssets">0.00%</p><p class="ratio-desc">Efficiency measure</p></div>
+                    <div class="ratio-card">
+                        <p class="ratio-label">Current Ratio</p>
+                        <p class="ratio-value" id="currentRatio">0.00</p>
+                        <p class="ratio-desc">Liquidity measure</p>
+                    </div>
+                    <div class="ratio-card">
+                        <p class="ratio-label">Debt-to-Equity</p>
+                        <p class="ratio-value" id="debtToEquity">0.00</p>
+                        <p class="ratio-desc">Leverage indicator</p>
+                    </div>
+                    <div class="ratio-card">
+                        <p class="ratio-label">Operating Margin</p>
+                        <p class="ratio-value" id="operatingMargin">0.00%</p>
+                        <p class="ratio-desc">Profitability ratio</p>
+                    </div>
+                    <div class="ratio-card">
+                        <p class="ratio-label">Return on Assets</p>
+                        <p class="ratio-value" id="returnOnAssets">0.00%</p>
+                        <p class="ratio-desc">Efficiency measure</p>
+                    </div>
                 </div>
             </div>
+
             <div class="action-buttons">
                 <button id="generatePdfBtn" class="btn btn-primary btn-large">Generate PDF Report</button>
-                <button id="uploadAnotherBtn" class="btn btn-secondary">Upload Another TB</button>
+                <button id="uploadAnotherBtn" class="btn btn-secondary">Upload Another Trail Balance</button>
             </div>
+
             <div id="pdfLoader" class="loader" style="display: none;">
                 <div class="spinner"></div>
                 <p>Generating PDF Report...</p>
             </div>
+
             <div id="pdfSuccess" class="success-box" style="display: none;">
                 <h3>✓ PDF Generated Successfully!</h3>
                 <a id="downloadLink" href="#" class="btn btn-download" download>Download Financial Statements PDF</a>
             </div>
         </div>
+
         <div class="requirements-section">
             <h3>Trial Balance Requirements</h3>
             <ul>
@@ -113,22 +171,12 @@
             <p class="footer-note">Demo Version - February 3, 2026 Presentation</p>
         </div>
     </footer>
+
     <script src="js/utils.js"></script>
     <script src="js/main.js"></script>
     <script src="js/mobile-menu.js"></script>
-    <script src="js/upload.js"></script>
-    <script>
-        // Display logged-in user info
-        window.addEventListener('load', function() {
-            const userEmail = sessionStorage.getItem('user_email');
-            const userRole = sessionStorage.getItem('user_role');
-            if (userEmail) {
-                document.getElementById('userName').textContent = userEmail.split('@')[0];
-                if (userRole) {
-                    document.getElementById('userRole').textContent = userRole;
-                }
-            }
-        });
-    </script>
+    
+<script src="js/upload.js"></script>
+
 </body>
 </html>

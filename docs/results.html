@@ -10,42 +10,53 @@
     <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
     <title>Results - SADPMR Financial Reporting System</title>
     <link rel="stylesheet" href="css/styles.css">
-</head>
+    </head>
 <body>
     <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <h2>SADPMR Financial Reporting System</h2>
-                <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
-            </div>
-            
-            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            
-            <div class="nav-wrapper" id="navMenu">
-                <ul class="nav-menu">
-                    <li><a href="index.html">Dashboard</a></li>
-                    <li><a href="upload.html">Upload TB</a></li>
-                    <li><a href="reports.html">Reports</a></li>
-                    <li><a href="export.html">Export</a></li>
-                    <li><a href="admin.html">Admin</a></li>
-                    <li><a href="about.html">About</a></li>
-                </ul>
-                <div class="user-menu">
-                    <div class="user-info">
-                        <span class="user-name">Demo User</span>
-                        <span class="user-role" style="background: #28a745">CFO</span>
-                    </div>
-                    <a href="login.html" class="logout-btn">Logout</a>
-                </div>
-            </div>
+    <div class="container">
+        <div class="nav-brand">
+            <h2>SADPMR Financial Reporting System</h2>
+            <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
         </div>
         
-        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
-    </nav>
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        
+        <div class="nav-wrapper" id="navMenu">
+            <ul class="nav-menu">
+                <li><a href="index.html" class="active">Dashboard</a></li>
+                
+                <li><a href="upload.html" class="active">Upload Trail Balance</a></li>
+                                
+                <li><a href="reports.html" class="active">Reports</a></li>
+                <li><a href="export.html" class="active">Export</a></li>
+                <li><a href="admin.html" class="active">Admin</a></li>
+                                <li><a href="about.html" class="active">About</a></li>
+            </ul>
+            
+            <div class="user-menu">
+                <div class="user-info">
+                    <span class="user-name">Sarah Nkosi</span>
+                    <span class="user-role" style="background: #d4a574">
+                        
+                    </span>
+                </div>
+                <a href="logout.html" class="logout-btn">Logout</a>
+            </div>
+            
+            <div class="auth-menu">
+                <a href="login.html" class="login-btn">Login</a>
+            </div>
+                    </div>
+    </div>
+    
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+</nav>
 
     <div class="container results-container">
         <h1>Processing Results</h1>
@@ -137,25 +148,5 @@
     <script src="js/utils.js"></script>
     <script src="js/main.js"></script>
     <script src="js/mobile-menu.js"></script>
-    <script>
-        // Check authentication on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const userEmail = sessionStorage.getItem('user_email');
-            const userRole = sessionStorage.getItem('user_role');
-            
-            // Redirect to login if not authenticated
-            if (!userEmail || !userRole) {
-                window.location.href = 'login.html';
-                return;
-            }
-            
-            // Check if user has access to results (CFO or Accountant)
-            if (userRole !== 'CFO' && userRole !== 'Accountant') {
-                alert('Access denied. Results access required.');
-                window.location.href = 'index.html';
-                return;
-            }
-        });
-    </script>
-</body>
+    </body>
 </html>

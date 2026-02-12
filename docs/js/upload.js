@@ -49,6 +49,15 @@ class UploadService {
             pdfSuccess: document.getElementById('pdfSuccess'),
             downloadLink: document.getElementById('downloadLink')
         };
+        
+        // Log missing elements for debugging
+        const missingElements = Object.keys(this.elements)
+            .filter(key => !this.elements[key])
+            .map(key => key);
+            
+        if (missingElements.length > 0) {
+            console.warn('Missing elements in upload service:', missingElements);
+        }
     }
 
     /**
@@ -355,8 +364,29 @@ class UploadService {
         this.hideError();
         this.elements.fileInput.value = '';
         
-        // Scroll to top
-        SADPMRUtils.scrollToElement(document.body, { top: 0 });
+        // Hide PDF related elements
+        if (this.elements.pdfLoader) {
+            this.elements.pdfLoader.style.display = 'none';
+        }
+        if (this.elements.pdfSuccess) {
+            this.elements.pdfSuccess.style.display = 'none';
+        }
+        
+        // Scroll to upload area
+        const uploadSection = this.elements.uploadBox.closest('.upload-section');
+        if (uploadSection) {
+            SADPMRUtils.scrollToElement(uploadSection, { top: 100 });
+        } else {
+            SADPMRUtils.scrollToElement(this.elements.uploadBox, { top: 100 });
+        }
+        
+        // Focus on upload box for better UX
+        this.elements.uploadBox.focus();
+        
+        // Open file explorer dialog
+        setTimeout(() => {
+            this.elements.fileInput.click();
+        }, 300); // Small delay to ensure UI is updated
     }
 
     /**

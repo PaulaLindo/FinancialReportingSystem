@@ -53,7 +53,7 @@
     z-index: 1001;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: var(--space-5) 0;
+    padding: var(--space-4) 0 var(--space-4) 0;
     display: flex;
     flex-direction: column;
     /* Override desktop nav-wrapper styles */
@@ -66,7 +66,7 @@
     right: 0;
 }
 
-/* Navigation Menu Links */
+/* Navigation Menu Links - Enhanced Mobile Design */
 .nav-menu {
     display: flex;
     flex-direction: column;
@@ -78,13 +78,17 @@
     width: 100%;
 }
 
+.nav-menu li {
+    width: 100%;
+}
+
 .nav-menu a {
     display: block;
     padding: var(--space-4) var(--space-5);
     color: var(--primary-900);
     text-decoration: none;
     font-weight: 500;
-    font-size: clamp(1.25rem, 2.5vw, 1.25rem);
+    font-size: clamp(1.25rem, 3vw, 1.25rem);
     letter-spacing: 0.005em;
     position: relative;
     transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -93,6 +97,7 @@
     border-radius: 0;
     box-shadow: none;
     transform: none;
+    text-align: left;
 }
 
 .nav-menu a::before {
@@ -112,6 +117,7 @@
     background: rgba(212, 165, 116, 0.08);
     padding-left: calc(var(--space-5) + 8px);
     color: var(--accent-taupe);
+    text-decoration: none;
 }
 
 .nav-menu a:hover::before {
@@ -122,71 +128,43 @@
 .nav-menu a.active {
     background: rgba(212, 165, 116, 0.15);
     color: var(--accent-taupe-dark);
+    font-weight: 600;
+    border-left-color: var(--accent-taupe);
+    border-left-width: 4px;
 }
 
 .nav-menu a.active::before {
     transform: scaleY(1);
+    background: linear-gradient(180deg, var(--accent-taupe) 0%, var(--accent-taupe-dark) 100%);
+    width: 4px;
 }
 
-/* User Menu & Auth Menu */
+/* User Menu & Auth Menu - Enhanced Mobile Design */
 .user-menu,
 .auth-menu {
+    padding: var(--space-3) var(--space-5) var(--space-4) var(--space-5);
     margin-top: auto;
-    padding: var(--space-4) var(--space-5) var(--space-6) var(--space-5);
-    border-top: 1px solid rgba(212, 165, 116, 0.1);
-    display: flex;
-    flex-direction: column;
     gap: var(--space-3);
 }
 
 .user-info {
-    display: flex;
-    flex-direction: column;
     gap: var(--space-2);
+    padding: var(--space-3);
 }
 
 .user-name {
-    font-weight: 600;
-    color: var(--primary-900);
-    font-size: clamp(0.95rem, 2.5vw, 1.125rem);
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
 }
 
 .user-role {
-    display: inline-block;
     padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-lg);
     font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--white);
-    text-transform: uppercase;
-    text-align: center;
 }
 
-.logout-btn,
-.login-btn {
-    display: block;
-    padding: var(--space-3) var(--space-4);
-    text-align: center;
-    border-radius: var(--radius-lg);
-    text-decoration: none;
-    font-weight: 600;
+.logout-btn {
+    padding: var(--space-2) var(--space-3);
     font-size: clamp(1.25rem, 2.5vw, 1.25rem);
-    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    background: linear-gradient(135deg, var(--accent-taupe) 0%, var(--accent-taupe-dark) 100%);
-    color: var(--white);
-    border: 1px solid rgba(212, 165, 116, 0.2);
-}
-
-.logout-btn:hover,
-.login-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(212, 165, 116, 0.25);
-    background: linear-gradient(135deg, var(--accent-taupe-dark) 0%, var(--accent-taupe) 100%);
-}
-
-.logout-btn:active,
-.login-btn:active {
-    transform: translateY(0);
+    margin-bottom: var(--space-3);
 }
 
 /* ======================================== */
@@ -589,7 +567,6 @@
 .cta-section .btn, .cta-section-about .btn {
     font-size: clamp(1.25rem, 3.5vw, 1.25rem);
     padding: var(--space-3) var(--space-4);
-    border-radius: var(--radius-lg);
 }
 
 /* ======================================== */
@@ -949,6 +926,274 @@ footer p {
 }
 
 /* ======================================== */
+/* MODERN MOBILE LOGIN PAGE STYLING */
+/* Enhanced Visual Hierarchy & Scalability */
+/* ======================================== */
+
+/* Login Container - Mobile Optimized */
+.login-container {
+    min-height: 100vh;
+    padding: var(--space-4);
+}
+
+/* Login Box - Enhanced Mobile Design */
+.login-box {
+    padding: var(--space-6) var(--space-5);
+}
+
+/* Login Header - Mobile Optimized */
+.login-header {
+    margin-bottom: var(--space-6);
+}
+
+.login-logo {
+    width: clamp(60px, 15vw, 80px);
+    height: clamp(60px, 15vw, 80px);
+    margin: 0 auto var(--space-4);
+    font-size: clamp(2rem, 6vw, 2.5rem);
+}
+
+.login-header h1 {
+    font-size: clamp(1.5rem, 5vw, 1.75rem);
+    margin-bottom: var(--space-2);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.login-header p {
+    font-size: clamp(0.875rem, 2.5vw, 0.938rem);
+    line-height: 1.5;
+}
+
+/* Form Groups - Enhanced Mobile Design */
+.form-group {
+    margin-bottom: var(--space-5);
+}
+
+.form-label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-size: clamp(0.875rem, 2.5vw, 0.938rem);
+    letter-spacing: 0.01em;
+}
+
+.form-input {
+    width: 100%;
+    padding: var(--space-4) var(--space-4);
+    font-size: clamp(1rem, 3vw, 1rem);
+    font-family: var(--font-body);
+    min-height: 50px;
+}
+
+/* Login Button - Enhanced Mobile Design */
+.login-button {
+    width: 100%;
+    padding: var(--space-4) var(--space-5);
+    font-size: clamp(1rem, 3vw, 1rem);
+    font-weight: 600;
+    min-height: 52px;
+}
+
+/* Demo Credentials - Enhanced Mobile Design */
+.demo-credentials {
+    padding: var(--space-5);
+    margin-top: var(--space-6);
+}
+
+.demo-credentials h3 {
+    font-size: clamp(0.875rem, 2.5vw, 0.875rem);
+    margin-bottom: var(--space-4);
+    letter-spacing: 0.05em;
+}
+
+.demo-account {
+    padding: var(--space-3) 0;
+    gap: var(--space-2);
+    font-size: clamp(0.875rem, 2.5vw, 0.875rem);
+}
+
+.demo-account:hover {
+    padding-left: var(--space-2);
+    margin: 0 calc(-1 * var(--space-2));
+    padding-right: var(--space-2);
+}
+
+.demo-role {
+    gap: var(--space-2);
+    font-size: clamp(0.875rem, 2.5vw, 0.875rem);
+}
+
+.demo-email {
+    font-size: clamp(0.75rem, 2.5vw, 0.813rem);
+    line-height: 1.4;
+}
+
+/* Role Badges - Enhanced Mobile Design */
+.role-badge {
+    padding: var(--space-1) var(--space-2);
+    font-size: clamp(0.625rem, 2vw, 0.75rem);
+    letter-spacing: 0.05em;
+}
+
+/* Quick Login - Enhanced Mobile Design */
+.quick-login {
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+}
+
+.quick-login-btn {
+    padding: var(--space-3) var(--space-4);
+    font-size: clamp(0.875rem, 2.5vw, 0.813rem);
+    font-weight: 600;
+    min-height: 48px;
+}
+
+/* Alert Messages - Enhanced Mobile Design */
+.alert {
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+    font-size: clamp(0.875rem, 2.5vw, 0.938rem);
+    line-height: 1.5;
+}
+
+/* ======================================== */
+/* ENHANCED MOBILE ANIMATIONS */
+/* ======================================== */
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes slideInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes float {
+    0%, 100% { 
+        transform: translateY(0); 
+    }
+    50% { 
+        transform: translateY(-10px); 
+    }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ======================================== */
+/* MOBILE ACCESSIBILITY & TOUCH OPTIMIZATIONS */
+/* ======================================== */
+
+/* Touch-friendly hover states */
+@media (hover: none) and (pointer: coarse) {
+    .login-box,
+    .form-input,
+    .login-button,
+    .quick-login-btn {
+        transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .form-input:active {
+        background: rgba(212, 165, 116, 0.05);
+        transform: scale(0.98);
+    }
+    
+    .login-button:active,
+    .quick-login-btn:active {
+        transform: scale(0.95);
+    }
+}
+
+/* Focus states for accessibility */
+.form-input:focus,
+.login-button:focus,
+.quick-login-btn:focus {
+    outline: 2px solid var(--accent-taupe);
+    outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .login-box {
+        border: 3px solid var(--accent-taupe);
+    }
+    
+    .form-input {
+        border-width: 3px;
+        border-color: var(--primary-900);
+    }
+    
+    .login-button {
+        border: 3px solid var(--accent-taupe-dark);
+    }
+}
+
+
+/* ======================================== */
 /* MODERN MOBILE UPLOAD PAGE STYLING */
 /* Enhanced Visual Hierarchy & Scalability */
 /* ======================================== */
@@ -983,8 +1228,7 @@ footer p {
 /* Upload Icon - Enhanced Mobile */
 .upload-icon {
     font-size: clamp(3rem, 8vw, 4rem);
-    margin-bottom: var(--space-4);
-    padding: var(--space-3);
+    padding: var(--space-1);
 }
 
 .upload-box h3 {
@@ -1005,24 +1249,44 @@ footer p {
     margin-top: var(--space-2);
 }
 
-/* File Info - Mobile Optimized */
+/* File Info - Enhanced Mobile Design */
 .file-info {
     padding: var(--space-5);
+    margin-bottom: var(--space-4);
+}
+
+.file-details {
+    margin-bottom: var(--space-5);
 }
 
 .file-details h4 {
     font-size: clamp(1.25rem, 4vw, 1.5rem);
-    margin-bottom: var(--space-3);
+    margin-bottom: var(--space-4);
+    gap: var(--space-2);
+}
+
+.file-details h4::before {
+    font-size: clamp(1.5rem, 4.5vw, 1.75rem);
 }
 
 .file-details p {
-    font-size: clamp(1rem, 3vw, 1.25rem);
-    margin-bottom: var(--space-2);
-    line-height: 1.5;
+    font-size: clamp(1rem, 3vw, 1.125rem);
+    margin-bottom: var(--space-3);
+    line-height: 1.6;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
 }
 
 .file-details p strong {
     font-weight: 700;
+    color: var(--primary-900);
+    min-width: 80px;
+}
+
+#processBtn {
+    padding: var(--space-4) var(--space-5);
+    font-size: clamp(1.125rem, 3.5vw, 1.25rem);
+    min-height: 52px;
 }
 
 /* Loader - Enhanced Mobile */
@@ -1167,12 +1431,6 @@ footer p {
     font-size: clamp(1.25rem, 3vw, 1.25rem);
     font-weight: 600;
     min-height: 50px;
-}
-
-.btn-large {
-    font-size: clamp(1.25rem, 3.5vw, 1.25rem);
-    padding: var(--space-4);
-    min-height: 55px;
 }
 
 /* Requirements Section - Mobile Optimized */
@@ -1354,24 +1612,6 @@ footer p {
     
     .ratio-card {
         border: 2px solid var(--accent-taupe);
-    }
-}
-
-/* Dark mode support (if implemented) */
-@media (prefers-color-scheme: dark) {
-    .upload-section {
-        background: linear-gradient(135deg, var(--primary-800) 0%, var(--primary-900) 100%);
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    .upload-box {
-        background: linear-gradient(135deg, var(--primary-700) 0%, var(--primary-800) 100%);
-        border-color: rgba(255, 255, 255, 0.2);
-    }
-    
-    .upload-box h3,
-    .upload-box p {
-        color: var(--white);
     }
 }
 

@@ -65,11 +65,18 @@ class MainApplication {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const targetId = link.getAttribute('href');
-                const targetSection = document.querySelector(targetId);
                 
-                if (targetSection) {
-                    SADPMRUtils.scrollToElement(targetSection);
-                    this.updateActiveNavLink(link);
+                // Only process if it's an anchor link (starts with #)
+                if (targetId && targetId.startsWith('#')) {
+                    const targetSection = document.querySelector(targetId);
+                    
+                    if (targetSection) {
+                        SADPMRUtils.scrollToElement(targetSection);
+                        this.updateActiveNavLink(link);
+                    }
+                } else if (targetId && !targetId.startsWith('#')) {
+                    // For regular links (like /download/*), let them work normally
+                    window.location.href = targetId;
                 }
             });
         });
@@ -217,6 +224,8 @@ class MainApplication {
      * Handle navbar shadow on scroll
      */
     handleNavbarShadow() {
+        if (!this.elements.navbar) return;
+        
         const currentScroll = window.pageYOffset;
         
         if (currentScroll > 100) {

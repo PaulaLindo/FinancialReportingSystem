@@ -347,7 +347,7 @@
     text-align: center;
     cursor: pointer;
     transition: all var(--transition-slow);
-    background: linear-gradient(135deg, var(--gray-50) 0%, rgba(255, 255, 255, 0.8) 100%);
+    background: linear-gradient(135deg, var(--white) 0%, rgba(255, 255, 255, 0.95) 100%);
     position: relative;
     overflow: hidden;
     z-index: 1;
@@ -360,11 +360,11 @@
     width: 0;
     height: 0;
     background: linear-gradient(45deg, 
-            var(--accent-taupe) 0%, 
-            var(--primary-600) 25%, 
-            var(--accent-taupe) 50%, 
-            var(--primary-600) 75%, 
-            var(--accent-taupe) 100%);
+            var(--white) 0%, 
+            rgba(255, 255, 255, 0.9) 25%, 
+            var(--white) 50%, 
+            rgba(255, 255, 255, 0.9) 75%, 
+            var(--white) 100%);
     border-radius: var(--radius-xl);
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -386,7 +386,7 @@
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-2xl);
-    background: linear-gradient(135deg, rgba(212, 165, 116, 0.15) 0%, rgba(212, 165, 116, 0.08) 100%);
+    background: var(--accent-taupe);
     border: 3px solid rgba(212, 165, 116, 0.2);
     box-shadow: 0 8px 32px rgba(212, 165, 116, 0.15);
     animation: float 4s ease-in-out infinite;
@@ -450,27 +450,113 @@
 
 
 .file-info {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
-    border-radius: var(--radius-2xl);
-    border: 2px solid var(--success);
-    animation: slideInLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.15);
-    text-align: center;
+    background: linear-gradient(135deg, var(--white) 100%, rgba(212, 165, 116, 0.03) 0%);
+    border-radius: var(--radius-xl);
+    border: 1px solid rgba(212, 165, 116, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.file-info::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-taupe) 0%, var(--accent-taupe-dark) 100%);
 }
 
 .file-details h4 {
-    color: var(--success);
+    color: var(--primary-900);
     font-weight: 700;
+    display: flex;
+    align-items: center;
 }
+
+.file-details h4::before {
+    content: '📄';
+}
+
 
 .file-details p {
     color: var(--gray-700);
-    font-weight: 500;
+    display: flex;
+    align-items: center;
+    background: rgba(212, 165, 116, 0.05);
+    border-radius: var(--radius-lg);
+    border-left: 3px solid var(--accent-taupe);
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.file-details p:hover {
+    background: rgba(212, 165, 116, 0.08);
+    transform: translateX(4px);
 }
 
 .file-details p strong {
     color: var(--primary-900);
     font-weight: 700;
+}
+
+.file-details p#fileName::before {
+    content: '📋';
+}
+
+.file-details p#fileSize::before {
+    content: '💾';
+}
+
+.file-details p#fileRows::before {
+    content: '📊';
+}
+
+#processBtn {
+    width: 100%;
+    font-weight: 600;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, var(--accent-taupe) 0%, var(--accent-taupe-dark) 100%);
+    color: var(--white);
+    border: none;
+    cursor: pointer;
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(212, 165, 116, 0.25);
+    position: relative;
+    overflow: hidden;
+}
+
+#processBtn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
+    transform: translateX(-100%);
+    transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#processBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(212, 165, 116, 0.35);
+    background: linear-gradient(135deg, var(--accent-taupe-dark) 0%, var(--accent-taupe) 100%);
+}
+
+#processBtn:hover::before {
+    transform: translateX(0);
+}
+
+#processBtn:active {
+    transform: translateY(0);
+}
+
+#processBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.15);
 }
 
 /* Loader - Enhanced Mobile */

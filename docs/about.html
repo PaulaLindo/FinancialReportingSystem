@@ -10,34 +10,53 @@
     <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
     <title>About - SADPMR Financial Reporting System</title>
     <link rel="stylesheet" href="css/styles.css">
-</head>
+    </head>
 <body>
     <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <h2>SADPMR Financial Reporting System</h2>
-                <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
-            </div>
-            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
-                <span></span><span></span><span></span>
-            </button>
-            <div class="nav-wrapper" id="navMenu">
-                <ul class="nav-menu">
-                    <li><a href="dashboard.html">Dashboard</a></li>
-                    <li><a href="upload.html">Upload TB</a></li>
-                    <li><a href="about.html" class="active">About</a></li>
-                </ul>
-                <div class="user-menu">
-                    <div class="user-info">
-                        <span class="user-name" id="userName">Demo User</span>
-                        <span class="user-role" id="userRole" style="background: #28a745">Administrator</span>
-                    </div>
-                    <a href="index.html" class="logout-btn">Logout</a>
-                </div>
-            </div>
+    <div class="container">
+        <div class="nav-brand">
+            <h2>SADPMR Financial Reporting System</h2>
+            <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
         </div>
-        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
-    </nav>
+        
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        
+        <div class="nav-wrapper" id="navMenu">
+            <ul class="nav-menu">
+                <li><a href="index.html" class="active">Dashboard</a></li>
+                
+                <li><a href="upload.html" class="active">Upload Trail Balance</a></li>
+                                
+                <li><a href="reports.html" class="active">Reports</a></li>
+                <li><a href="export.html" class="active">Export</a></li>
+                <li><a href="admin.html" class="active">Admin</a></li>
+                                <li><a href="about.html" class="active">About</a></li>
+            </ul>
+            
+            <div class="user-menu">
+                <div class="user-info">
+                    <span class="user-name">Sarah Nkosi</span>
+                    <span class="user-role" style="background: #d4a574">
+                        
+                    </span>
+                </div>
+                <a href="logout.html" class="logout-btn">Logout</a>
+            </div>
+            
+            <div class="auth-menu">
+                <a href="login.html" class="login-btn">Login</a>
+            </div>
+                    </div>
+    </div>
+    
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+</nav>
 
     <div class="container about-container">
         <h1>About the SADPMR Financial Reporting System</h1>
@@ -101,8 +120,8 @@
                     <p>Role-based access control allows:</p>
                     <ul>
                         <li><strong>CFO:</strong> Full access, approval authority</li>
-                        <li><strong>Accountants:</strong> Upload TB, modify mappings, generate reports</li>
-                        <li><strong>Clerks:</strong> Upload TB only</li>
+                        <li><strong>Accountants:</strong> Upload Trail Balance, modify mappings, generate reports</li>
+                        <li><strong>Clerks:</strong> Upload Trail Balance only</li>
                         <li><strong>Auditors:</strong> View-only access</li>
                     </ul>
                 </div>
@@ -137,8 +156,11 @@
         <div class="cta-section-about">
             <h2>Ready to See It in Action?</h2>
             <p>Upload a Trial Balance and experience the automation firsthand</p>
+            
             <a href="upload.html" class="btn btn-primary btn-large">Try It Now</a>
-        </div>
+            
+            <a href="index.html" class="btn btn-primary btn-large">View Dashboard</a>
+                    </div>
     </div>
 
     <footer>
@@ -147,21 +169,9 @@
             <p class="footer-note">Demo Version - February 3, 2026 Presentation</p>
         </div>
     </footer>
+
     <script src="js/utils.js"></script>
     <script src="js/main.js"></script>
     <script src="js/mobile-menu.js"></script>
-    <script>
-        // Display logged-in user info
-        window.addEventListener('load', function() {
-            const userEmail = sessionStorage.getItem('user_email');
-            const userRole = sessionStorage.getItem('user_role');
-            if (userEmail) {
-                document.getElementById('userName').textContent = userEmail.split('@')[0];
-                if (userRole) {
-                    document.getElementById('userRole').textContent = userRole;
-                }
-            }
-        });
-    </script>
-</body>
+    </body>
 </html>
