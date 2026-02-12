@@ -155,6 +155,21 @@
     align-items: center;
 }
 
+/* Hide auth-menu by default in logged-in pages */
+.auth-menu {
+    display: none;
+}
+
+/* Show auth-menu in logged-out pages */
+.logged-out .auth-menu {
+    display: flex;
+}
+
+/* Hide user-menu in logged-out pages */
+.logged-out .user-menu {
+    display: none;
+}
+
 .user-info {
     display: flex;
     align-items: center;
