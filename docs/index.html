@@ -21,10 +21,10 @@
             
             // Demo credentials
             const demoUsers = {
-                'cfo@sadpmr.gov.za': { role: 'CFO', name: 'Sarah Nkosi', redirect: 'index.html' },
-                'accountant@sadpmr.gov.za': { role: 'Accountant', name: 'John Smith', redirect: 'index.html' },
-                'clerk@sadpmr.gov.za': { role: 'Clerk', name: 'Mike Davis', redirect: 'index.html' },
-                'auditor@agsa.gov.za': { role: 'Auditor', name: 'Patience Moyo', redirect: 'index.html' }
+                'cfo@sadpmr.gov.za': { role: 'CFO', name: 'Sarah Nkosi', redirect: 'index.html', canUpload: true },
+                'accountant@sadpmr.gov.za': { role: 'Accountant', name: 'John Smith', redirect: 'index.html', canUpload: true },
+                'clerk@sadpmr.gov.za': { role: 'Clerk', name: 'Mike Davis', redirect: 'index.html', canUpload: true },
+                'auditor@agsa.gov.za': { role: 'Auditor', name: 'Patience Moyo', redirect: 'index.html', canUpload: false }
             };
             
             if (demoUsers[username] && password === 'demo123') {
@@ -39,6 +39,84 @@
                 alert('Invalid credentials. Use demo credentials shown below.');
             }
         }
+        
+        // Update UI based on login state
+        function updateUIForUser() {
+            const user = JSON.parse(sessionStorage.getItem('demoUser') || 'null');
+            const heroContainer = document.querySelector('.hero .container');
+            
+            if (user && heroContainer) {
+                // Show logged-in content
+                heroContainer.innerHTML = `
+                    <h1>Welcome back, ${user.name}!</h1>
+                    <p class="hero-subtitle">${getRoleDescription(user.role)}</p>
+                    ${user.canUpload ? `
+                    <div class="hero-buttons">
+                        <a href="upload.html" class="btn btn-primary">Upload Trial Balance</a>
+                        <a href="about.html" class="btn btn-secondary">Learn More</a>
+                    </div>
+                    ` : `
+                    <div class="hero-buttons">
+                        <a href="about.html" class="btn btn-secondary">Learn More</a>
+                    </div>
+                    `}
+                `;
+                
+                // Update navbar user info
+                const userName = document.querySelector('.user-name');
+                const userRole = document.querySelector('.user-role');
+                if (userName) userName.textContent = user.name;
+                if (userRole) {
+                    userRole.textContent = user.role;
+                    userRole.style.background = getRoleColor(user.role);
+                }
+                
+                // Show user menu, hide auth menu
+                const userMenu = document.querySelector('.user-menu');
+                const authMenu = document.querySelector('.auth-menu');
+                if (userMenu) userMenu.style.display = 'block';
+                if (authMenu) authMenu.style.display = 'none';
+            } else {
+                // Show logged-out content
+                heroContainer.innerHTML = `
+                    <h1>Automated Financial Reporting for Schedule 3A Entities</h1>
+                    <p class="hero-subtitle">Transform your Trial Balance into GRAP-compliant Financial Statements in under 30 seconds</p>
+                    <div class="hero-buttons">
+                        <a href="login.html" class="btn btn-primary">Login to Get Started</a>
+                        <a href="about.html" class="btn btn-secondary">Learn More</a>
+                    </div>
+                `;
+                
+                // Hide user menu, show auth menu
+                const userMenu = document.querySelector('.user-menu');
+                const authMenu = document.querySelector('.auth-menu');
+                if (userMenu) userMenu.style.display = 'none';
+                if (authMenu) authMenu.style.display = 'block';
+            }
+        }
+        
+        function getRoleDescription(role) {
+            const descriptions = {
+                'CFO': 'Chief Financial Officer - Full system access',
+                'Accountant': 'Accountant - Process & Reports access',
+                'Clerk': 'Clerk - Upload only access',
+                'Auditor': 'Auditor - View only access'
+            };
+            return descriptions[role] || 'User';
+        }
+        
+        function getRoleColor(role) {
+            const colors = {
+                'CFO': '#d4a574',
+                'Accountant': '#4a90e2',
+                'Clerk': '#7fba00',
+                'Auditor': '#ff6b35'
+            };
+            return colors[role] || '#666';
+        }
+        
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', updateUIForUser);
     </script></head>
 <body>
     <nav class="navbar">
