@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="css/login.css">
 
     <script>
-        function handleLoginForm(event, redirectUrl) {
+        function handleLoginForm(event) {
             event.preventDefault();
             
             // Simple demo login validation
@@ -58,7 +58,7 @@
                             
                         </div>
 
-            <form onsubmit="handleLoginForm(event, 'index.html')" method="GET">
+            <form onsubmit="handleLoginForm(event)" method="GET">
                 <div class="form-group">
                     <label for="username" class="form-label">Email Address</label>
                     <input 
