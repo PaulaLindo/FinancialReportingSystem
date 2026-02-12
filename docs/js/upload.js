@@ -191,31 +191,29 @@ class UploadService {
     }
 
     /**
-     * Upload file to server
+     * Upload file to server (DEMO VERSION for GitHub Pages)
      */
     async uploadFile(file) {
         this.setProcessingState(true, 'Uploading file...');
         
-        const formData = new FormData();
-        formData.append('file', file);
-        
         try {
-            const data = await SADPMRUtils.safeFetch('/api/upload', {
-                method: 'POST',
-                body: formData
-            });
+            // Simulate file processing for demo
+            await new Promise(resolve => setTimeout(resolve, 2000));
             
-            if (data.success) {
-                this.showFileInfo(file, data);
-                this.state.uploadedFilePath = data.filepath;
-            } else {
-                throw new Error(data.error || 'Upload failed');
-            }
+            // Mock successful upload with demo data
+            const mockResponse = {
+                success: true,
+                filename: file.name,
+                size: file.size,
+                rows: Math.floor(Math.random() * 100) + 50, // Random 50-150 rows
+                message: 'File uploaded successfully'
+            };
+            
+            this.displayFileInfo(mockResponse);
+            this.setProcessingState(false);
             
         } catch (error) {
-            this.showError('Upload failed: ' + error.message);
-            throw error;
-        } finally {
+            this.showError('File upload failed: ' + error.message);
             this.setProcessingState(false);
         }
     }
@@ -248,28 +246,23 @@ class UploadService {
             this.setProcessingState(true, 'Processing your Trial Balance...', 'Mapping accounts to GRAP line items');
             this.hideError();
             
-            const data = await SADPMRUtils.safeFetch('/api/process', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    filepath: this.state.uploadedFilePath
-                })
-            });
+            // Simulate processing for demo
+            await new Promise(resolve => setTimeout(resolve, 3000));
             
-            if (data.success) {
-                this.state.resultsFile = data.results_file;
-                this.displayResults(data.summary);
-            } else {
-                if (data.unmapped_accounts) {
-                    this.showError('Unmapped accounts detected. Please review the mapping configuration.');
-                    console.error('Unmapped accounts:', data.unmapped_accounts);
-                } else {
-                    this.showError(data.error || 'Processing failed');
+            // Mock successful processing with demo data
+            const mockResults = {
+                success: true,
+                results_file: 'demo_results_' + Date.now() + '.json',
+                summary: {
+                    total_accounts: Math.floor(Math.random() * 50) + 100,
+                    mapped_accounts: Math.floor(Math.random() * 40) + 80,
+                    unmapped_accounts: Math.floor(Math.random() * 5),
+                    processing_time: '2.3 seconds'
                 }
-                this.elements.fileInfo.style.display = 'block';
-            }
+            };
+            
+            this.state.resultsFile = mockResults.results_file;
+            this.displayResults(mockResults.summary);
             
         } catch (error) {
             this.showError('Processing failed: ' + error.message);
@@ -314,32 +307,28 @@ class UploadService {
         
         const { pdfLoader, pdfSuccess } = this.elements;
         
-        pdfLoader.style.display = 'block';
-        pdfSuccess.style.display = 'none';
-        
         try {
-            const data = await SADPMRUtils.safeFetch('/api/generate-pdf', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    results_file: this.state.resultsFile
-                })
-            });
+            pdfLoader.style.display = 'block';
+            pdfSuccess.style.display = 'none';
             
-            if (data.success) {
-                // Update download link
-                const downloadLink = this.elements.downloadLink;
-                if (downloadLink) {
-                    downloadLink.href = data.download_url;
-                    downloadLink.download = data.pdf_filename;
-                }
-                
-                pdfSuccess.style.display = 'block';
-            } else {
-                this.showError('PDF generation failed: ' + (data.error || 'Unknown error'));
+            // Simulate PDF generation for demo
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Mock successful PDF generation
+            const mockPdfData = {
+                success: true,
+                download_url: 'data:application/pdf;base64,JVBERi0xLjQK...mockpdfdata...',
+                pdf_filename: 'SADPMR_Financial_Statements_' + new Date().toISOString().split('T')[0] + '.pdf'
+            };
+            
+            // Update download link
+            const downloadLink = this.elements.downloadLink;
+            if (downloadLink) {
+                downloadLink.href = mockPdfData.download_url;
+                downloadLink.download = mockPdfData.pdf_filename;
             }
+            
+            pdfSuccess.style.display = 'block';
             
         } catch (error) {
             this.showError('PDF generation failed: ' + error.message);
