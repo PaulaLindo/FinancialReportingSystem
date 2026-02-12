@@ -34,8 +34,8 @@
                 const user = demoUsers[username];
                 sessionStorage.setItem('demoUser', JSON.stringify(user));
                 
-                // Redirect to dashboard
-                window.location.href = user.redirect || redirectUrl || 'index.html';
+                // Redirect to logged-in dashboard
+                window.location.href = 'dashboard-logged-in.html';
             } else {
                 // Show error message
                 alert('Invalid credentials. Use demo credentials shown below.');

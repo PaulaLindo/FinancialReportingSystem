@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a1128">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
+    <title>Dashboard - SADPMR Financial Reporting System</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+    <div class="container">
+        <div class="nav-brand">
+            <h2>SADPMR Financial Reporting System</h2>
+            <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
+        </div>
+        
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        
+        <div class="nav-wrapper" id="navMenu">
+            <ul class="nav-menu">
+                <li><a href="dashboard-logged-out.html" class="active">Dashboard</a></li>
+                <li><a href="about.html">About</a></li>
+            </ul>
+            
+            <div class="user-menu" style="display: none;">
+                <div class="user-info">
+                    <span class="user-name">Sarah Nkosi</span>
+                    <span class="user-role" style="background: #d4a574">CFO</span>
+                </div>
+                <a href="javascript:void(0)" onclick="handleLogout()" class="logout-btn">Logout</a>
+            </div>
+            
+            <div class="auth-menu">
+                <a href="login.html" class="login-btn">Login</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+</nav>
+
+    <div class="hero">
+        <div class="container">
+            <h1>Automated Financial Reporting for Schedule 3A Entities</h1>
+            <p class="hero-subtitle">Transform your Trial Balance into GRAP-compliant Financial Statements in under 30 seconds</p>
+            <div class="hero-buttons">
+                <a href="login.html" class="btn btn-primary">Login to Get Started</a>
+                <a href="about.html" class="btn btn-secondary">Learn More</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container features-section">
+        <h2 class="section-title">Key Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Automated Mapping</h3>
+                <p>Intelligent mapping of Trial Balance accounts to GRAP line items with zero manual intervention</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">✅</div>
+                <h3>GRAP Compliance</h3>
+                <p>100% compliant with Generally Recognised Accounting Practice standards approved by ASB</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>30-Second Processing</h3>
+                <p>Transform your Trial Balance into complete financial statements in under 30 seconds</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🔐</div>
+                <h3>Role-Based Access</h3>
+                <p>Secure access control with role-based permissions for different user types</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/mobile-menu.js"></script>
+</body>
+</html>

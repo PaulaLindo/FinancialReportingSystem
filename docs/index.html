@@ -115,8 +115,15 @@
             return colors[role] || '#666';
         }
         
-        // Run on page load
-        document.addEventListener('DOMContentLoaded', updateUIForUser);
+        // Run on page load - redirect to appropriate dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = JSON.parse(sessionStorage.getItem('demoUser') || 'null');
+            if (user) {
+                window.location.href = 'dashboard-logged-in.html';
+            } else {
+                window.location.href = 'dashboard-logged-out.html';
+            }
+        });
     </script></head>
 <body>
     <nav class="navbar">
