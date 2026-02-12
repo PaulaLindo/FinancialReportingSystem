@@ -91,13 +91,13 @@ def convert_template_to_static(template_content, filename, templates_dir=None):
     content = re.sub(r'\{%\s+extra_(js|css)\s+%\}.*?\{%\s+endblock\s+%\}', '', content, flags=re.DOTALL)
     
     # Remove if/for blocks while keeping their body content
-    content = re.sub(r'\{%\s+if\s+[^%]*?%\}(.*?)\{%\s+elif[^%]*?%\}.*?\{%\s+endif\s+%\}', 
+    content = re.sub(r'\{%\s+if\s+[^%]*?%\}(.*?)\{%\s+elif[^%]*?%\}.*?\{%\s+endif\s*%\}', 
                      r'\1', content, flags=re.DOTALL)
-    content = re.sub(r'\{%\s+if\s+[^%]*?%\}(.*?)\{%\s+else\s+%\}.*?\{%\s+endif\s+%\}', 
+    content = re.sub(r'\{%\s+if\s+[^%]*?%\}(.*?)\{%\s+else\s+%\}.*?\{%\s+endif\s*%\}', 
                      r'\1', content, flags=re.DOTALL)
-    content = re.sub(r'\{%\s+if\s+[^%]*?%\}(.*?)\{%\s+endif\s+%\}', 
+    content = re.sub(r'\{%\s+if\s+[^%]*?%\}(.*?)\{%\s+endif\s*%\}', 
                      r'\1', content, flags=re.DOTALL)
-    content = re.sub(r'\{%\s+for\s+[^%]*?%\}(.*?)\{%\s+endfor\s+%\}', 
+    content = re.sub(r'\{%\s+for\s+[^%]*?%\}(.*?)\{%\s+endfor\s*%\}', 
                      r'\1', content, flags=re.DOTALL)
     
     # Convert Flask url_for to static paths
@@ -118,6 +118,18 @@ def convert_template_to_static(template_content, filename, templates_dir=None):
     content = re.sub(r"href='/([a-z_-]+)'", r"href='\1.html'", content)
     content = re.sub(r"href='/'", "href='index.html'", content)
     
+    # Handle form submissions - convert POST forms to JavaScript handlers
+    content = re.sub(
+        r'<form[^>]*method="POST"[^>]*action="([^"]*)"[^>]*>',
+        lambda m: f'<form onsubmit="handleLoginForm(event, \'{m.group(1)}\')" method="GET">',
+        content
+    )
+    content = re.sub(
+        r'<form[^>]*method="POST"[^>]*>',
+        '<form onsubmit="handleLoginForm(event, \'index.html\')" method="GET">',
+        content
+    )
+    
     # Handle Flask url_for calls with parameters
     content = re.sub(r"\{\{\s*url_for\('([a-z_]+)'[^}]*\)\s*\}\}", 
                      lambda m: f'{m.group(1)}.html', content)
@@ -133,6 +145,38 @@ def convert_template_to_static(template_content, filename, templates_dir=None):
     if is_extending:
         # Check for a complete HTML structure
         if not content.strip().startswith('<!DOCTYPE'):
+            # Add login handler script to head section
+            login_script = """
+    <script>
+        function handleLoginForm(event, redirectUrl) {
+            event.preventDefault();
+            
+            // Simple demo login validation
+            const username = document.getElementById('username')?.value || '';
+            const password = document.getElementById('password')?.value || '';
+            
+            // Demo credentials
+            const demoUsers = {
+                'cfo@sadpmr.gov.za': { role: 'CFO', name: 'Sarah Nkosi', redirect: 'index.html' },
+                'accountant@sadpmr.gov.za': { role: 'Accountant', name: 'John Smith', redirect: 'index.html' },
+                'clerk@sadpmr.gov.za': { role: 'Clerk', name: 'Mike Davis', redirect: 'index.html' },
+                'auditor@agsa.gov.za': { role: 'Auditor', name: 'Patience Moyo', redirect: 'index.html' }
+            };
+            
+            if (demoUsers[username] && password === 'demo123') {
+                // Store user info in sessionStorage for demo
+                const user = demoUsers[username];
+                sessionStorage.setItem('demoUser', JSON.stringify(user));
+                
+                // Redirect to dashboard
+                window.location.href = user.redirect || redirectUrl || 'index.html';
+            } else {
+                // Show error message
+                alert('Invalid credentials. Use demo credentials shown below.');
+            }
+        }
+    </script>"""
+            
             # Wrap the content in a proper HTML structure
             html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -145,7 +189,7 @@ def convert_template_to_static(template_content, filename, templates_dir=None):
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
     <title>{title}</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css">{login_script}
 </head>
 <body>
 {content}
@@ -213,6 +257,43 @@ def sync_static_to_docs():
                 # Read template content and convert to static HTML
                 template_content = template_file.read_text(encoding='utf-8')
                 static_content = convert_template_to_static(template_content, template_file.name, templates_dir)
+                
+                # Add JavaScript form handler to all pages (especially login)
+                if 'handleLoginForm' not in static_content:
+                    # Insert the login handler script before closing head tag
+                    login_script = """
+    <script>
+        function handleLoginForm(event, redirectUrl) {
+            event.preventDefault();
+            
+            // Simple demo login validation
+            const username = document.getElementById('username')?.value || '';
+            const password = document.getElementById('password')?.value || '';
+            
+            // Demo credentials
+            const demoUsers = {
+                'cfo@sadpmr.gov.za': { role: 'CFO', name: 'Sarah Nkosi', redirect: 'index.html' },
+                'accountant@sadpmr.gov.za': { role: 'Accountant', name: 'John Smith', redirect: 'index.html' },
+                'clerk@sadpmr.gov.za': { role: 'Clerk', name: 'Mike Davis', redirect: 'index.html' },
+                'auditor@agsa.gov.za': { role: 'Auditor', name: 'Patience Moyo', redirect: 'index.html' }
+            };
+            
+            if (demoUsers[username] && password === 'demo123') {
+                // Store user info in sessionStorage for demo
+                const user = demoUsers[username];
+                sessionStorage.setItem('demoUser', JSON.stringify(user));
+                
+                // Redirect to dashboard
+                window.location.href = user.redirect || redirectUrl || 'index.html';
+            } else {
+                // Show error message
+                alert('Invalid credentials. Use demo credentials shown below.');
+            }
+        }
+    </script>"""
+                    
+                    # Insert before closing head tag
+                    static_content = static_content.replace('</head>', f'{login_script}</head>')
                 
                 # Write converted content to docs/
                 dest_file.write_text(static_content, encoding='utf-8')
