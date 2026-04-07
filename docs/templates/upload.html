@@ -1,92 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0a1128">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
-    <title>Upload Trial Balance - SADPMR Financial Reporting System</title>
-    <link rel="stylesheet" href="css/styles.css">
-    
-    <script>
-        function handleLoginForm(event, redirectUrl) {
-            event.preventDefault();
-            
-            // Simple demo login validation
-            const username = document.getElementById('username')?.value || '';
-            const password = document.getElementById('password')?.value || '';
-            
-            // Demo credentials
-            const demoUsers = {
-                'cfo@sadpmr.gov.za': { role: 'CFO', name: 'Sarah Nkosi', redirect: 'index.html' },
-                'accountant@sadpmr.gov.za': { role: 'Accountant', name: 'John Smith', redirect: 'index.html' },
-                'clerk@sadpmr.gov.za': { role: 'Clerk', name: 'Mike Davis', redirect: 'index.html' },
-                'auditor@agsa.gov.za': { role: 'Auditor', name: 'Patience Moyo', redirect: 'index.html' }
-            };
-            
-            if (demoUsers[username] && password === 'demo123') {
-                // Store user info in sessionStorage for demo
-                const user = demoUsers[username];
-                sessionStorage.setItem('demoUser', JSON.stringify(user));
-                
-                // Redirect to dashboard
-                window.location.href = user.redirect || redirectUrl || 'index.html';
-            } else {
-                // Show error message
-                alert('Invalid credentials. Use demo credentials shown below.');
-            }
-        }
-    </script></head>
-<body>
-    <nav class="navbar">
-    <div class="container-content">
-        <div class="nav-brand">
-            <h2>SADPMR Financial Reporting System</h2>
-            <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
-        </div>
-        
-        <!-- Mobile Menu Toggle -->
-        <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
-            <span></span>
-            <span></span>
-            <span></span>
-        </button>
-        
-        <div class="nav-wrapper" id="navMenu">
-            
-            <ul class="nav-menu">
-                <li><a href="index.html" class="active">Dashboard</a></li>
-                
-                <li><a href="upload.html" class="active">Upload Trial Balance</a></li>
-                                
-                <li><a href="reports.html" class="active">Reports</a></li>
-                <li><a href="export.html" class="active">Export</a></li>
-                <li><a href="admin.html" class="active">Admin</a></li>
-                                <li><a href="about.html" class="active">About</a></li>
-            </ul>
-            
-            <div class="user-menu">
-                <div class="user-info">
-                    <span class="user-name">Sarah Nkosi</span>
-                    <span class="user-role user-role--">
-                        
-                    </span>
-                </div>
-                <a href="logout.html" class="logout-btn">Logout</a>
-            </div>
-            
-            <div class="auth-menu">
-                <a href="login.html" class="login-btn">Login</a>
-            </div>
-                    </div>
-    </div>
-    
-    <!-- Mobile Menu Overlay -->
-    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
-</nav>
+{% extends "base.html" %}
+
+{% block title %}Upload Trial Balance - SADPMR Financial Reporting System{% endblock %}
+
+{% block content %}
 
     <div class="container-content upload-container">
         <h1 class="text-center">Upload Trial Balance</h1>
@@ -195,18 +111,8 @@
         </div>
     </div>
 
-    <footer>
-        <div class="container-content">
-            <p>&copy; 2025 SADPMR Financial Reporting System | Developed for Schedule 3A PFMA Compliance</p>
-            <p class="footer-note">Demo Version - February 3, 2026 Presentation</p>
-        </div>
-    </footer>
+{% endblock %}
 
-    <script src="js/utils.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/navigation-fluid.js"></script>
-    
-<script src="js/upload.js"></script>
-
-</body>
-</html>
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+{% endblock %}

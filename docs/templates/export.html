@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Export - SADPMR Financial Reporting System{% endblock %}
+
+{% block content %}
+
+    <div class="container export-container">
+        <h1>Export Center</h1>
+        <p class="page-subtitle">Export financial statements in various formats</p>
+
+        <div class="export-section">
+            <div class="export-card">
+                <h3>📄 PDF Report</h3>
+                <p>Complete financial statements in PDF format for AGSA submission</p>
+                <button class="btn btn-primary">Generate PDF</button>
+            </div>
+            
+            <div class="export-card">
+                <h3>📊 Excel Workbook</h3>
+                <p>Financial statements in Excel format with detailed calculations</p>
+                <button class="btn btn-primary">Export to Excel</button>
+            </div>
+            
+            <div class="export-card">
+                <h3>📋 CSV Data</h3>
+                <p>Raw data export for further analysis and reporting</p>
+                <button class="btn btn-primary">Export CSV</button>
+            </div>
+            
+            <div class="export-card">
+                <h3>🗃️ Archive Package</h3>
+                <p>Complete package with all statements, notes, and supporting documents</p>
+                <button class="btn btn-primary">Download Archive</button>
+            </div>
+        </div>
+
+        <div class="export-history">
+            <h2>Export History</h2>
+            <div class="export-list">
+                <div class="export-item">
+                    <div class="export-info">
+                        <h4>Annual Financial Statements 2025</h4>
+                        <p>PDF • 2.4 MB • Generated on January 29, 2026 at 14:30</p>
+                    </div>
+                    <div class="export-actions">
+                        <button class="btn btn-download">Download</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

@@ -1,21 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0a1128">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
-    <title>Login - SADPMR Financial Reporting System</title>
-    <link rel="stylesheet" href="css/styles.css">
-    
-<link rel="stylesheet" href="css/login.css">
+{% extends "base_auth.html" %}
 
-</head>
-<body>
-    
+{% block title %}Login - SADPMR Financial Reporting System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+{% endblock %}
+
+{% block content %}
     <div class="login-container">
         <div class="login-box">
             <div class="login-header">
@@ -24,11 +15,17 @@
                 <p>SADPMR Financial Reporting System</p>
             </div>
 
-                        <div class="alert alert-">
-                            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
                         </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
 
-            <form onsubmit="handleLoginForm(event, 'login.html')" method="GET">
+            <form method="POST" action="{{ url_for('login') }}" id="loginForm" novalidate>
                 <div class="form-group">
                     <label for="username" class="form-label">Email Address</label>
                     <input 
@@ -167,7 +164,4 @@
             });
         }, 5000);
     </script>
-
-    <script src="js/utils.js"></script>
-    </body>
-</html>
+{% endblock %}
