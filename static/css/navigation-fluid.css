@@ -1,0 +1,745 @@
+/* Fluid Navigation System - CSS Only - No Breakpoints */
+/* SADPMR Financial Reporting System */
+
+/* ======================================== */
+/* CONTAINER CLASSES */
+/* ======================================== */
+
+.container-content {
+    max-width: var(--container-2xl);
+    margin: 0 auto;
+    padding: 0 var(--fluid-space-md);
+    position: relative;
+}
+
+/* ======================================== */
+/* NAVIGATION CONTAINER */
+/* ======================================== */
+
+.navbar {
+    background: white;
+    padding: var(--fluid-space-lg) 0;
+    position: relative;
+    z-index: 1000;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Navigation Container - Flexbox Layout */
+.navbar .container-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+/* ======================================== */
+/* NAVIGATION BRAND */
+/* ======================================== */
+
+.nav-brand {
+    display: grid;
+    gap: var(--fluid-space-xs);
+}
+
+.nav-brand h2 {
+    font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+    font-weight: var(--font-bold);
+    color: var(--primary-900);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.nav-brand .tagline {
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* ======================================== */
+/* NAVIGATION WRAPPER - FLUID DRAWER */
+/* ======================================== */
+
+.nav-wrapper {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: clamp(350px, 85vw, 500px);
+    height: 100vh;
+    background: linear-gradient(180deg, var(--white) 0%, var(--gray-50) 100%);
+    box-shadow: 
+        -4px 0 20px rgba(0, 0, 0, 0.1),
+        0 4px 25px rgba(0, 0, 0, 0.08),
+        0 10px 40px rgba(0, 0, 0, 0.06);
+    transition: right 400ms cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+/* Mobile close button */
+.nav-wrapper .mobile-close-btn {
+    display: none;
+    align-items: center;
+    justify-content: flex-end;
+    padding: var(--fluid-space-md) var(--fluid-space-xl);
+    background: var(--white);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.nav-wrapper .mobile-close-btn button {
+    display: grid;
+    place-items: center;
+    width: clamp(32px, 4vw, 40px);
+    height: clamp(32px, 4vw, 40px);
+    background: var(--gray-100);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-secondary);
+    font-size: clamp(18px, 2.5vw, 24px);
+}
+
+.nav-wrapper .mobile-close-btn button:hover {
+    background: var(--gray-200);
+    color: var(--text-primary);
+    transform: scale(1.05);
+}
+
+.nav-wrapper .mobile-close-btn button:focus {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
+}
+
+/* Active State - Slide In */
+.nav-wrapper.active {
+    right: 0;
+}
+
+/* ======================================== */
+/* MOBILE NAVIGATION STYLES - HIGH SPECIFICITY */
+/* ======================================== */
+
+    /* Force mobile navigation to be vertical with proper spacing */
+@media (max-width: 1023px) {
+    .nav-wrapper {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .nav-wrapper .nav-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        flex: 1;
+        padding: 0;
+        margin-top: var(--fluid-space-6xl); /* Even more spacing from toggle */
+    }
+    
+    .nav-wrapper .nav-menu li {
+        width: 100%;
+        position: relative;
+        list-style: none;
+    }
+    
+    .nav-wrapper .nav-menu a {
+        display: flex;
+        align-items: center;
+        padding: var(--fluid-space-lg) var(--fluid-space-xl);
+        text-align: left;
+        text-decoration: none;
+        color: var(--text-primary);
+        font-size: var(--fluid-text-base);
+        font-weight: 500;
+        border: none;
+        border-bottom: 1px solid var(--border-light);
+        transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        box-sizing: border-box;
+    }
+    
+    .nav-wrapper .nav-menu a.active {
+        background: var(--primary-100);
+        color: var(--primary-800);
+        font-weight: 600;
+        border-left: 4px solid var(--primary-600);
+        border-bottom: 1px solid var(--primary-200);
+        padding: var(--fluid-space-lg) var(--fluid-space-xl);
+        margin: 0;
+        border-radius: 0;
+        width: 100%;
+        position: relative;
+        box-sizing: border-box;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+    }
+    
+    /* Ensure non-active items don't have active styling */
+    .nav-wrapper .nav-menu a:not(.active) {
+        background: transparent;
+        color: var(--text-primary);
+        font-weight: 500;
+        border-left: none;
+        border-bottom: 1px solid var(--border-light);
+        padding: var(--fluid-space-lg) var(--fluid-space-xl);
+        margin: 0;
+        border-radius: 0;
+        width: 100%;
+        outline: none;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        box-sizing: border-box;
+    }
+    
+    .nav-wrapper .nav-menu a:hover:not(.active) {
+        background: var(--gray-50);
+        color: var(--text-primary);
+        transform: translateX(2px);
+    }
+
+/* ======================================== */
+/* DESKTOP NAVIGATION STYLES - HIGH SPECIFICITY */
+/* ======================================== */
+
+/* Force desktop navigation to be horizontal with proper alignment */
+@media (min-width: 1024px) {
+    .nav-wrapper .nav-menu {
+        display: flex;
+        flex-direction: row;
+        gap: var(--fluid-space-sm);
+        align-items: center;
+        align-self: center; /* Lower the menu to center vertically */
+    }
+    
+    .nav-wrapper .nav-menu li {
+        position: relative;
+        list-style: none;
+    }
+    
+    .nav-wrapper .nav-menu a {
+        display: flex;
+        align-items: center;
+        padding: var(--fluid-space-md) var(--fluid-space-xl); /* Wider padding */
+        text-decoration: none;
+        color: var(--text-secondary);
+        font-size: var(--fluid-text-sm);
+        font-weight: 500;
+        border-radius: var(--radius-md);
+        transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .nav-wrapper .nav-menu a:focus {
+        outline: 2px solid var(--primary-500);
+        outline-offset: 2px;
+    }
+}
+
+/* ======================================== */
+/* NAVIGATION MENU - FLUID GRID */
+/* ======================================== */
+
+/* Navigation menu styles handled by navigation-consolidated.css */
+
+/* ======================================== */
+/* USER MENU - FLUID GRID */
+/* ======================================== */
+
+/* User menu styles handled by navigation-consolidated.css */
+
+/* REMOVED: Conflicting with component-utilities.css high-specificity styles */
+/* User role styles are now properly scoped in component-utilities.css */
+
+.logout-btn,
+.login-btn {
+    display: grid;
+    place-items: center;
+    padding: var(--fluid-space-sm) var(--fluid-space-lg);
+    background: var(--primary-600);
+    color: var(--white);
+    text-decoration: none;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    font-size: clamp(0.875rem, 1.5vw, 1rem);
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logout-btn:hover,
+.login-btn:hover {
+    background: var(--primary-700);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ======================================== */
+/* MOBILE MENU TOGGLE */
+/* ======================================== */
+
+.mobile-menu-toggle {
+    position: relative;
+    display: grid; /* Force visible on mobile - override component utilities */
+    place-items: center;
+    width: clamp(36px, 5vw, 44px);
+    height: clamp(36px, 5vw, 44px);
+    background: var(--primary-600);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1002;
+    margin-left: var(--fluid-space-md);
+    visibility: visible; /* Ensure button is visible */
+    opacity: 1; /* Ensure full opacity */
+}
+
+.mobile-menu-toggle:hover {
+    background: var(--primary-700);
+    transform: scale(1.05);
+}
+
+.mobile-menu-toggle:focus {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
+}
+
+/* Hamburger Menu Lines */
+.mobile-menu-toggle span {
+    width: clamp(20px, 3.5vw, 24px);
+    height: clamp(3px, 0.4vw, 4px);
+    background: var(--white);
+    border-radius: var(--radius-xs);
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: block; /* Force spans to be visible */
+    opacity: 1; /* Ensure full opacity by default */
+    z-index: 1; /* Ensure proper stacking */
+    visibility: visible; /* Ensure visibility */
+}
+
+.mobile-menu-toggle span:nth-child(1) {
+    transform: translateX(-50%) translateY(-8px);
+}
+
+.mobile-menu-toggle span:nth-child(2) {
+    transform: translateX(-50%) translateY(0);
+}
+
+.mobile-menu-toggle span:nth-child(3) {
+    transform: translateX(-50%) translateY(8px);
+}
+
+/* Active State - Transform to X */
+.mobile-menu-toggle.active span:nth-child(1) {
+    transform: translateX(-50%) translateY(0) rotate(45deg);
+}
+
+.mobile-menu-toggle.active span:nth-child(2) {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0);
+}
+
+.mobile-menu-toggle.active span:nth-child(3) {
+    transform: translateX(-50%) translateY(0) rotate(-45deg);
+}
+
+/* Visibility State Classes */
+.mobile-menu-toggle--visible {
+    display: grid;
+    visibility: visible;
+    opacity: 1;
+}
+
+.mobile-menu-toggle--hidden {
+    display: none;
+}
+
+/* ======================================== */
+/* MOBILE MENU OVERLAY */
+/* ======================================== */
+
+.mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 998;
+}
+
+.mobile-menu-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* ======================================== */
+/* RESPONSIVE BEHAVIOR - NO BREAKPOINTS */
+/* ======================================== */
+/* FLUID NAVIGATION - NO FIXED BREAKPOINTS */
+/* ======================================== */
+
+/* The navigation automatically reflows based on available space */
+/* All sizing uses clamp() and viewport units for true fluidity */
+
+/* Navigation automatically adjusts to container width */
+.navbar .grid-container {
+    display: grid;
+    grid-template-columns: clamp(200px, 30vw, 400px) 1fr clamp(40px, 6vw, 60px);
+    gap: var(--fluid-space-md);
+    align-items: center;
+    width: 100%;
+}
+
+/* Navigation brand scales with viewport */
+.nav-brand h2 {
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
+    line-height: 1.2;
+}
+
+/* Tagline responsive behavior */
+.nav-brand .tagline {
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+    color: var(--text-muted);
+    display: block;
+}
+
+/* Mobile menu toggle scales fluidly */
+/* Navigation wrapper adapts to viewport */
+.nav-wrapper {
+    width: clamp(350px, 85vw, 500px);
+}
+
+/* ======================================== */
+/* DESKTOP BEHAVIOR - HIDE MOBILE TOGGLE */
+/* ======================================== */
+
+@media (min-width: 1024px) {
+    /* Hide mobile menu toggle on desktop */
+    .mobile-menu-toggle {
+        display: none;
+    }
+    
+    /* Show navigation inline on desktop */
+    .nav-wrapper {
+        position: static;
+        width: auto;
+        height: auto;
+        background: transparent;
+        box-shadow: none;
+        padding: 0;
+        grid-template-rows: auto;
+        grid-template-columns: 1fr;
+    }
+    
+    /* Reset mobile menu overlay on desktop */
+    .mobile-menu-overlay {
+        display: none;
+    }
+    
+    /* Desktop navigation container */
+    .navbar .grid-container {
+        grid-template-columns: clamp(200px, 30vw, 400px) 1fr auto;
+        gap: var(--fluid-space-lg);
+        align-items: center;
+    }
+    
+    /* Desktop navigation menu */
+    .nav-menu {
+        display: flex;
+        flex-direction: row;
+        gap: var(--fluid-space-sm);
+        align-items: center;
+        align-self: center; /* Lower the menu to center vertically */
+    }
+    
+    /* Enhanced navigation menu items */
+    .nav-menu li {
+        position: relative;
+        list-style: none;
+    }
+    
+    .nav-menu a {
+        display: flex;
+        align-items: center;
+        padding: var(--fluid-space-md) var(--fluid-space-xl); /* Wider padding */
+        text-decoration: none;
+        color: var(--text-secondary);
+        font-size: var(--fluid-text-sm);
+        font-weight: 500;
+        border-radius: var(--radius-md);
+        transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .nav-menu a:focus {
+        outline: 2px solid var(--primary-500);
+        outline-offset: 2px;
+    }
+    
+    /* Desktop user menu */
+    .user-menu,
+    .auth-menu {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--fluid-space-xs);
+        padding: var(--fluid-space-sm) var(--fluid-space-md);
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--border-light);
+        position: relative;
+    }
+    
+    /* User info section */
+    .user-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--fluid-space-xs);
+        text-align: center;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .user-name {
+        font-size: var(--fluid-text-sm);
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+        line-height: 1.2;
+        text-align: center;
+        width: 100%;
+    }
+    
+    .user-role {
+        display: inline-block;
+        font-size: var(--fluid-text-xs);
+        font-weight: 500;
+        padding: var(--fluid-space-xs) var(--fluid-space-sm);
+        border-radius: var(--radius-full);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 200ms ease;
+        text-align: center;
+        margin: 0;
+        white-space: nowrap;
+    }
+    
+    /* Role badge styles handled by component-utilities.css */
+    
+    /* Enhanced logout button */
+    .logout-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: var(--fluid-space-sm) var(--fluid-space-md);
+        font-size: var(--fluid-text-xs);
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        background: var(--white);
+        transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .logout-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, var(--danger-50), transparent);
+        transition: left 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: -1;
+    }
+    
+    .logout-btn:hover {
+        color: var(--danger-600);
+        border-color: var(--danger-300);
+        background: var(--danger-50);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+    }
+    
+    .logout-btn:hover::before {
+        left: 100%;
+    }
+    
+    .logout-btn:focus {
+        outline: 2px solid var(--danger-500);
+        outline-offset: 2px;
+    }
+}
+
+/* ======================================== */
+/* MOBILE BEHAVIOR - SHOW MOBILE TOGGLE */
+/* ======================================== */
+
+@media (max-width: 1023px) {
+    /* Show mobile menu toggle on mobile/tablet */
+    .mobile-menu-toggle {
+        display: grid !important; /* Force visible on mobile - override all conflicts */
+        visibility: visible !important; /* Explicit visibility */
+        opacity: 1 !important; /* Full opacity */
+        z-index: 1002 !important; /* Ensure proper stacking */
+    }
+    
+    /* Show mobile close button on mobile */
+    .nav-wrapper .mobile-close-btn {
+        display: flex;
+    }
+    
+    /* Hide navigation menu by default on mobile */
+    .nav-wrapper {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: clamp(350px, 90vw, 450px);
+        height: 100vh;
+        background: white;
+        box-shadow: var(--shadow-xl);
+        transition: right 400ms cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 999;
+        overflow-y: auto;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Mobile user menu */
+    .user-menu,
+    .auth-menu {
+        padding: var(--fluid-space-lg) var(--fluid-space-xl);
+        margin: 0;
+        border-top: 2px solid var(--border-light);
+        background: var(--gray-50);
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    /* Mobile user info section */
+    .user-menu .user-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--fluid-space-sm);
+        text-align: center;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .user-menu .user-name {
+        font-size: var(--fluid-text-base);
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+        line-height: 1.2;
+        text-align: center;
+        width: 100%;
+    }
+    
+    .user-menu .user-role {
+        display: inline-block;
+        font-size: var(--fluid-text-sm);
+        font-weight: 500;
+        padding: var(--fluid-space-sm) var(--fluid-space-md);
+        border-radius: var(--radius-full);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 200ms ease;
+        text-align: center;
+        margin: 0;
+        white-space: nowrap;
+    }
+    
+        
+        
+    /* Mobile logout button */
+    .logout-btn {
+        width: 100%;
+        justify-content: center;
+        margin-top: var(--fluid-space-md);
+        padding: var(--fluid-space-md);
+        font-size: var(--fluid-text-base);
+        background: var(--danger-600);
+        color: var(--white);
+        border: none;
+        border-radius: var(--radius-md);
+    }
+    
+    .logout-btn:hover {
+        background: var(--danger-700);
+        transform: none;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+    }
+    
+    /* Mobile navigation container */
+    .navbar .grid-container {
+        grid-template-columns: 1fr auto;
+        gap: var(--fluid-space-md);
+        align-items: center;
+    }
+}
+
+/* ======================================== */
+/* ACCESSIBILITY */
+/* ======================================== */
+
+/* Focus Management */
+.nav-menu a:focus,
+.logout-btn:focus,
+.login-btn:focus {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
+}
+
+/* Accessibility styles handled by navigation-consolidated.css */
+
+/* ======================================== */
+/* TOUCH DEVICE OPTIMIZATIONS */
+/* ======================================== */
+
+@media (hover: none) and (pointer: coarse) {
+    .nav-menu a {
+        transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+}
+
+/* ======================================== */
+/* PRINT STYLES */
+/* ======================================== */
+
+@media print {
+    .nav-wrapper,
+    .mobile-menu-overlay {
+        display: none;
+    }
+    
+    .navbar {
+        box-shadow: none;
+        border-bottom: 1px solid var(--border-primary);
+    }
+}
+}

@@ -4,47 +4,47 @@
 
 {% block content %}
 
-    <div class="container reports-container">
-        <h1>Financial Reports</h1>
+    <div class="container-content reports-container">
+        <h1 class="text-center">Financial Reports</h1>
         <p class="page-subtitle">View and manage generated financial statements</p>
 
-        <div class="reports-section">
+        <div class="reports-section grid-auto-fit">
             <div class="report-card">
-                <h3>📊 Statement of Financial Position</h3>
+                <h3 class="text-center">📊 Statement of Financial Position</h3>
                 <p>Balance sheet showing assets, liabilities, and net assets</p>
-                <button class="btn btn-primary">View Report</button>
+                <a href="/statement-financial-position" class="btn btn-primary" type="button">View Report</a>
             </div>
             
             <div class="report-card">
-                <h3>📈 Statement of Financial Performance</h3>
+                <h3 class="text-center">📈 Statement of Financial Performance</h3>
                 <p>Income statement showing revenue and expenses</p>
-                <button class="btn btn-primary">View Report</button>
+                <a href="/statement-financial-performance" class="btn btn-primary" type="button">View Report</a>
             </div>
             
             <div class="report-card">
-                <h3>💰 Cash Flow Statement</h3>
+                <h3 class="text-center">💰 Statement of Cash Flows</h3>
                 <p>Cash movements and liquidity analysis</p>
-                <button class="btn btn-primary">View Report</button>
+                <a href="/statement-cash-flows" class="btn btn-primary" type="button">View Report</a>
             </div>
             
             <div class="report-card">
-                <h3>📋 Notes to Financial Statements</h3>
+                <h3 class="text-center">📋 Notes to Financial Statements</h3>
                 <p>Detailed notes and disclosures</p>
-                <button class="btn btn-primary">View Report</button>
+                <button class="btn btn-primary" type="button">View Report</button>
             </div>
         </div>
 
-        <div class="recent-reports">
-            <h2>Recently Generated Reports</h2>
-            <div class="report-list">
+        <div class="recent-reports grid-container">
+            <h2 class="text-center">Recently Generated Reports</h2>
+            <div class="report-list grid-auto-fit">
                 <div class="report-item">
                     <div class="report-info">
                         <h4>Annual Financial Statements 2025</h4>
                         <p>Generated on January 29, 2026 at 14:30</p>
                     </div>
-                    <div class="report-actions">
-                        <button class="btn btn-secondary">View</button>
-                        <button class="btn btn-download">Download PDF</button>
+                    <div class="report-actions grid-auto-fit">
+                        <button class="btn btn-secondary" type="button">View</button>
+                        <button class="btn btn-download" type="button">Download PDF</button>
                     </div>
                 </div>
             </div>

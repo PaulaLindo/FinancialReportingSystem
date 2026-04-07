@@ -42,7 +42,7 @@
     </script></head>
 <body>
     <nav class="navbar">
-    <div class="container">
+    <div class="container-content">
         <div class="nav-brand">
             <h2>SADPMR Financial Reporting System</h2>
             <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
@@ -56,19 +56,24 @@
         </button>
         
         <div class="nav-wrapper" id="navMenu">
+            
             <ul class="nav-menu">
-                <li><a href="index.html">Dashboard</a></li>
-                <li><a href="upload.html">Upload Trail Balance</a></li>         
-                <li><a href="reports.html">Reports</a></li>
-                <li><a href="export.html">Export</a></li>
-                <li><a href="admin.html">Admin</a></li>
-                <li><a href="about.html">About</a></li>
+                <li><a href="index.html" class="active">Dashboard</a></li>
+                
+                <li><a href="upload.html" class="active">Upload Trial Balance</a></li>
+                                
+                <li><a href="reports.html" class="active">Reports</a></li>
+                <li><a href="export.html" class="active">Export</a></li>
+                <li><a href="admin.html" class="active">Admin</a></li>
+                                <li><a href="about.html" class="active">About</a></li>
             </ul>
             
             <div class="user-menu">
                 <div class="user-info">
                     <span class="user-name">Sarah Nkosi</span>
-                    <span class="user-role" style="background: #d4a574">CFO</span>
+                    <span class="user-role user-role--">
+                        
+                    </span>
                 </div>
                 <a href="logout.html" class="logout-btn">Logout</a>
             </div>
@@ -83,22 +88,49 @@
     <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
 </nav>
 
-    <div class="container results-container">
-        <h1>Processing Results</h1>
+    <div class="container-content results-container">
+        <h1 class="text-center">Processing Results</h1>
         <p class="page-subtitle">Results from trial balance processing and GRAP mapping</p>
 
         <div class="results-section">
             <div class="results-card">
-                <h3>📊 Financial Statements Generated</h3>
+                <h3 class="text-center">📊 Financial Statements Generated</h3>
                 <p>Your trial balance has been processed and mapped to GRAP standards</p>
                 <div class="results-details">
                     <p>Processing completed successfully. View your generated financial statements below.</p>
                 </div>
             </div>
 
+            <div class="pdf-preview-container">
+                <div class="pdf-preview-header">
+                    <h2 class="text-center pdf-preview-title">Financial Statements Preview</h2>
+                    <div class="pdf-preview-actions">
+                        <button class="pdf-download" id="downloadPdf" type="button" aria-label="Download PDF">Download PDF</button>
+                        <button class="pdf-fullscreen-btn" id="fullscreenBtn" type="button" aria-label="Full screen view" aria-expanded="false">Full Screen</button>
+                    </div>
+                    <div class="pdf-preview-info">
+                        <p>Scroll through the PDF preview below or download the complete financial statements</p>
+                    </div>
+                </div>
+                <div class="pdf-viewer-wrapper">
+                    <iframe id="pdfPreview" class="pdf-viewer" src="" title="Financial Statements Preview" aria-label="Financial Statements PDF Preview"></iframe>
+                </div>
+            </div>
+
+            <!-- Full Screen PDF Preview Container -->
+            <div class="pdf-fullscreen-container" id="pdfFullscreenContainer" aria-hidden="true">
+                <div class="pdf-fullscreen-content">
+                    <iframe id="pdfFullscreenViewer" class="pdf-fullscreen-iframe" src="" title="Full Screen Financial Statements Preview" aria-label="Full Screen Financial Statements PDF Preview"></iframe>
+                    <div class="pdf-fullscreen-controls">
+                        <button class="pdf-fullscreen-download" id="fullscreenDownloadBtn" type="button" aria-label="Download PDF in full screen">Download PDF</button>
+                        <button class="pdf-fullscreen-close" id="fullscreenCloseBtn" type="button" aria-label="Close full screen view" title="Close (Escape)">✕</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="results-summary">
-                <h2>Summary of Results</h2>
-                <div class="summary-grid">
+                <h2 class="text-center">Summary of Results</h2>
+                <div class="summary-grid grid-auto-fit-md">
                     <div class="summary-item">
                         <label>Total Assets</label>
                         <span class="amount">R 0.00</span>
@@ -127,44 +159,44 @@
             </div>
 
             <div class="results-statements">
-                <h2>Generated Financial Statements</h2>
-                <div class="statements-grid">
+                <h2 class="text-center">Generated Financial Statements</h2>
+                <div class="statements-grid grid-auto-fit-md">
                     <div class="statement-card">
-                        <h4>📄 Statement of Financial Position</h4>
+                        <h4 class="text-left">📄 Statement of Financial Position</h4>
                         <p>Balance sheet with complete asset, liability and equity breakdown</p>
-                        <button class="btn btn-primary">View Statement</button>
+                        <a href="statement-financial-position.html" class="btn btn-primary" type="button">View Statement</a>
                     </div>
                     <div class="statement-card">
-                        <h4>📈 Statement of Financial Performance</h4>
+                        <h4 class="text-left">📈 Statement of Financial Performance</h4>
                         <p>Income statement with revenue, expenses and surplus/deficit</p>
-                        <button class="btn btn-primary">View Statement</button>
+                        <a href="statement-financial-performance.html" class="btn btn-primary" type="button">View Statement</a>
                     </div>
                     <div class="statement-card">
-                        <h4>💰 Cash Flow Statement</h4>
+                        <h4 class="text-left">💰 Statement of Cash Flows</h4>
                         <p>Statement of cash flows with operating, investing and financing activities</p>
-                        <button class="btn btn-primary">View Statement</button>
+                        <a href="statement-cash-flows.html" class="btn btn-primary" type="button">View Statement</a>
                     </div>
                     <div class="statement-card">
-                        <h4>📊 Financial Ratios</h4>
+                        <h4 class="text-left">📊 Financial Ratios</h4>
                         <p>Key financial ratios and performance metrics</p>
-                        <button class="btn btn-primary">View Ratios</button>
+                        <button class="btn btn-primary" type="button">View Ratios</button>
                     </div>
                 </div>
             </div>
 
             <div class="results-actions">
-                <h2>Next Steps</h2>
-                <div class="action-buttons">
-                    <button class="btn btn-primary btn-lg">Generate PDF Report</button>
-                    <button class="btn btn-secondary btn-lg">Export to Excel</button>
-                    <button class="btn btn-secondary btn-lg">Download Files</button>
+                <h2 class="text-center">Next Steps</h2>
+                <div class="action-buttons grid-auto-fit">
+                    <button id="generatePdfBtn" class="btn btn-primary btn-lg" type="button">Generate PDF Report</button>
+                    <button id="uploadAnotherBtn" class="btn btn-secondary" type="button">Upload Another Trail Balance</button>
+                    <button class="btn btn-secondary" type="button">Download Files</button>
                 </div>
             </div>
         </div>
     </div>
 
     <footer>
-        <div class="container">
+        <div class="container-content">
             <p>&copy; 2025 SADPMR Financial Reporting System | Developed for Schedule 3A PFMA Compliance</p>
             <p class="footer-note">Demo Version - February 3, 2026 Presentation</p>
         </div>
@@ -172,6 +204,397 @@
 
     <script src="js/utils.js"></script>
     <script src="js/main.js"></script>
-    <script src="js/mobile-menu.js"></script>
-    </body>
+    <script src="js/navigation-fluid.js"></script>
+    
+<script>
+// PDF Preview System
+(function() {
+    'use strict';
+    
+    const pdfPreview = document.getElementById('pdfPreview');
+    const downloadBtn = document.getElementById('downloadPdf');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const generatePdfBtn = document.getElementById('generatePdfBtn');
+    
+    // PDF loading states
+    const loadingStates = {
+        LOADING: 'loading',
+        SUCCESS: 'success',
+        ERROR: 'error',
+        READY: 'ready'
+    };
+    
+    // Initialize PDF preview
+    function initPdfPreview() {
+        if (pdfPreview) {
+            // Don't show loading automatically - only when user clicks download
+            // Set initial ready state instead
+            showPdfReady();
+        }
+        
+        // Setup event listeners
+        setupEventListeners();
+    }
+    
+    // Setup event listeners
+    function setupEventListeners() {
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', handleDownload);
+        }
+        
+        if (fullscreenBtn) {
+            fullscreenBtn.addEventListener('click', handleFullscreen);
+        }
+        
+        if (generatePdfBtn) {
+            generatePdfBtn.addEventListener('click', handleGeneratePdf);
+        }
+        
+        // Fullscreen close button
+        const fullscreenCloseBtn = document.getElementById('fullscreenCloseBtn');
+        if (fullscreenCloseBtn) {
+            fullscreenCloseBtn.addEventListener('click', closeFullscreen);
+        }
+        
+        // Fullscreen download button
+        const fullscreenDownloadBtn = document.getElementById('fullscreenDownloadBtn');
+        if (fullscreenDownloadBtn) {
+            fullscreenDownloadBtn.addEventListener('click', handleFullscreenDownload);
+        }
+        
+        // Handle escape key for fullscreen
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeFullscreen();
+            }
+        });
+        
+        // Handle window resize for responsive PDF
+        window.addEventListener('resize', handleResize);
+    }
+    
+    // Load PDF preview
+    function loadPdfPreview() {
+        if (!pdfPreview) return;
+        
+        // For demo purposes, use a sample PDF URL
+        // In production, this would be the actual generated PDF URL
+        const pdfUrl = '/static/sample-financial-statements.pdf';
+        
+        try {
+            pdfPreview.src = pdfUrl;
+            pdfPreview.onload = function() {
+                showPdfReady();
+            };
+            
+            pdfPreview.onerror = function() {
+                showPdfError();
+            };
+            
+        } catch (error) {
+            console.error('Error loading PDF:', error);
+            showPdfError();
+        }
+    }
+    
+    // Show PDF loading state
+    function showPdfLoading() {
+        if (!pdfPreview) return;
+        
+        const container = pdfPreview.parentElement;
+        const loadingHtml = `
+            <div class="pdf-loading">
+                <div class="pdf-loading-spinner"></div>
+                <p class="pdf-loading-text">Loading Financial Statements...</p>
+                <p class="pdf-loading-hint">Please wait while we prepare your PDF preview</p>
+            </div>
+        `;
+        
+        container.innerHTML = loadingHtml;
+    }
+    
+    // Show PDF ready state
+    function showPdfReady() {
+        if (!pdfPreview) return;
+        
+        const container = pdfPreview.parentElement;
+        const readyHtml = `
+            <div class="pdf-ready">
+                <div class="pdf-ready-icon">📄</div>
+                <h3 class="text-center">Financial Statements Ready</h3>
+                <p class="pdf-ready-message">Click "Download PDF" to generate and view your complete financial statements</p>
+                <p class="pdf-ready-hint">PDF will include all three financial statements with GRAP compliance</p>
+            </div>
+        `;
+        
+        container.innerHTML = readyHtml;
+        
+        // Update download button
+        if (downloadBtn) {
+            downloadBtn.disabled = false;
+            downloadBtn.textContent = 'Download PDF';
+        }
+        
+        // Update fullscreen button
+        if (fullscreenBtn) {
+            fullscreenBtn.disabled = true;
+            fullscreenBtn.textContent = 'Preview Available After Download';
+        }
+    }
+    
+    // Show PDF error state
+    function showPdfError() {
+        if (!pdfPreview) return;
+        
+        const container = pdfPreview.parentElement;
+        const errorHtml = `
+            <div class="pdf-error">
+                <div class="pdf-error-icon">⚠️</div>
+                <h3 class="text-center">PDF Preview Error</h3>
+                <p class="pdf-error-message">Unable to load the PDF preview. Please try downloading the file instead.</p>
+                <p class="pdf-error-hint">If the problem persists, please contact support.</p>
+            </div>
+        `;
+        
+        container.innerHTML = errorHtml;
+        
+        // Update download button
+        if (downloadBtn) {
+            downloadBtn.disabled = false;
+            downloadBtn.textContent = 'Download PDF';
+        }
+        
+        // Disable fullscreen button
+        if (fullscreenBtn) {
+            fullscreenBtn.disabled = true;
+            fullscreenBtn.textContent = 'Preview Unavailable';
+        }
+    }
+    
+    // Handle download
+    function handleDownload(e) {
+        e.preventDefault();
+        
+        if (!downloadBtn || downloadBtn.disabled) return;
+        
+        // Show loading state when user clicks download
+        showPdfLoading();
+        
+        // Update button to show loading
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = 'Generating PDF...';
+        
+        // Simulate PDF generation and download
+        setTimeout(() => {
+            // In production, this would trigger the actual download
+            const pdfUrl = '/static/sample-financial-statements.pdf';
+            
+            // Create hidden download link
+            const link = document.createElement('a');
+            link.href = pdfUrl;
+            link.download = 'financial-statements.pdf';
+            link.classList.add('report__download-link');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Show PDF preview after download
+            loadPdfPreview();
+            
+            // Show success feedback
+            showDownloadSuccess();
+        }, 2000); // Simulate 2-second generation time
+    }
+    
+    // Show download success feedback
+    function showDownloadSuccess() {
+        if (!downloadBtn) return;
+        // Update button appearance
+        const originalText = downloadBtn.textContent;
+        downloadBtn.textContent = '✓ Downloaded';
+        downloadBtn.classList.add('download-button--success');
+        
+        setTimeout(() => {
+            downloadBtn.textContent = originalText;
+            downloadBtn.classList.remove('download-button--success');
+        }, 2000);
+    }
+    
+    // Handle fullscreen
+    function handleFullscreen(e) {
+        e.preventDefault();
+        
+        if (!fullscreenBtn || fullscreenBtn.disabled) return;
+        
+        const isFullscreen = fullscreenBtn.getAttribute('aria-expanded') === 'true';
+        
+        if (isFullscreen) {
+            closeFullscreen();
+        } else {
+            openFullscreen();
+        }
+    }
+    
+    // Open fullscreen
+    function openFullscreen() {
+        if (!pdfPreview) return;
+        
+        const fullscreenContainer = document.getElementById('pdfFullscreenContainer');
+        const fullscreenViewer = document.getElementById('pdfFullscreenViewer');
+        
+        if (!fullscreenContainer || !fullscreenViewer) return;
+        
+        // Set fullscreen viewer source
+        fullscreenViewer.src = pdfPreview.src;
+        
+        // Update button state
+        if (fullscreenBtn) {
+            fullscreenBtn.setAttribute('aria-expanded', 'true');
+            fullscreenBtn.textContent = 'Close Full Screen';
+        }
+        
+        // Show fullscreen container
+        fullscreenContainer.setAttribute('aria-hidden', 'false');
+        fullscreenContainer.classList.add('active');
+        
+        // Focus on close button for accessibility
+        setTimeout(() => {
+            const closeBtn = document.getElementById('fullscreenCloseBtn');
+            if (closeBtn) {
+                closeBtn.focus();
+            }
+        }, 100);
+        
+        // Prevent body scroll
+        document.body.classList.add('body-scroll-locked');
+    }
+    
+    // Close fullscreen
+    function closeFullscreen() {
+        const fullscreenContainer = document.getElementById('pdfFullscreenContainer');
+        
+        if (fullscreenContainer) {
+            fullscreenContainer.classList.remove('active');
+            fullscreenContainer.setAttribute('aria-hidden', 'true');
+        }
+        
+        // Update button state
+        if (fullscreenBtn) {
+            fullscreenBtn.setAttribute('aria-expanded', 'false');
+            fullscreenBtn.textContent = 'Full Screen';
+        }
+        
+        // Restore body scroll
+        document.body.classList.remove('body-scroll-locked');
+        
+        // Focus back on fullscreen button
+        setTimeout(() => {
+            if (fullscreenBtn) {
+                fullscreenBtn.focus();
+            }
+        }, 100);
+    }
+    
+    // Handle fullscreen download
+    function handleFullscreenDownload(e) {
+        e.preventDefault();
+        
+        // In production, this would trigger the actual download
+        const pdfUrl = '/static/sample-financial-statements.pdf';
+        
+        // Create hidden download link
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.download = 'financial-statements.pdf';
+        link.classList.add('report__download-link');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Show success feedback
+        showFullscreenDownloadSuccess();
+    }
+    
+    // Show fullscreen download success feedback
+    function showFullscreenDownloadSuccess() {
+        const fullscreenDownloadBtn = document.getElementById('fullscreenDownloadBtn');
+        if (!fullscreenDownloadBtn) return;
+        
+        // Update button appearance
+        const originalText = fullscreenDownloadBtn.textContent;
+        fullscreenDownloadBtn.textContent = '✓ Downloaded';
+        fullscreenDownloadBtn.classList.add('download-button--success');
+        
+        setTimeout(() => {
+            fullscreenDownloadBtn.textContent = originalText;
+            fullscreenDownloadBtn.classList.remove('download-button--success');
+        }, 2000);
+    }
+    
+    // Handle generate PDF
+    function handleGeneratePdf(e) {
+        e.preventDefault();
+        
+        if (!generatePdfBtn || generatePdfBtn.disabled) return;
+        
+        // Disable button during generation
+        generatePdfBtn.disabled = true;
+        generatePdfBtn.textContent = 'Generating PDF...';
+        
+        // Show loading state
+        showPdfLoading();
+        
+        // Simulate PDF generation
+        setTimeout(() => {
+            // Load the generated PDF
+            loadPdfPreview();
+            
+            // Update button
+            generatePdfBtn.disabled = false;
+            generatePdfBtn.textContent = '✓ PDF Generated';
+            
+            // Reset button after delay
+            setTimeout(() => {
+                generatePdfBtn.textContent = 'Generate PDF Report';
+            }, 3000);
+        }, 2000);
+    }
+    
+    // Handle window resize
+    function handleResize() {
+        if (pdfPreview && pdfPreview.src) {
+            // Adjust PDF preview based on container size
+            const container = pdfPreview.parentElement;
+            if (container) {
+                const containerWidth = container.offsetWidth;
+                const containerHeight = container.offsetHeight;
+                
+                // Adjust iframe size if needed
+                if (containerWidth < 600) {
+                    pdfPreview.classList.add('report__pdf-viewer--small');
+                    pdfPreview.classList.remove('report__pdf-viewer--normal');
+                } else {
+                    pdfPreview.classList.add('report__pdf-viewer--normal');
+                    pdfPreview.classList.remove('report__pdf-viewer--small');
+                }
+            }
+        }
+    }
+    
+    // Check if device is mobile
+    function isMobile() {
+        return window.innerWidth <= 768;
+    }
+    
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPdfPreview);
+    } else {
+        initPdfPreview();
+    }
+    
+})();
+</script>
+
+</body>
 </html>

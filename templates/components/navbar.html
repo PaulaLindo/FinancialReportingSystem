@@ -1,5 +1,5 @@
 <nav class="navbar">
-    <div class="container">
+    <div class="container-content">
         <div class="nav-brand">
             <h2>SADPMR Financial Reporting System</h2>
             <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
@@ -13,10 +13,11 @@
         </button>
         
         <div class="nav-wrapper" id="navMenu">
+            
             <ul class="nav-menu">
                 <li><a href="/" {% if request.endpoint == 'index' %}class="active"{% endif %}>Dashboard</a></li>
                 {% if current_user and current_user.can_upload() %}
-                <li><a href="/upload" {% if request.endpoint == 'upload_page' %}class="active"{% endif %}>Upload Trail Balance</a></li>
+                <li><a href="/upload" {% if request.endpoint == 'upload_page' %}class="active"{% endif %}>Upload Trial Balance</a></li>
                 {% endif %}
                 {% if current_user and current_user.role == 'CFO' %}
                 <li><a href="/reports" {% if request.endpoint == 'reports_page' %}class="active"{% endif %}>Reports</a></li>
@@ -29,7 +30,7 @@
             <div class="user-menu">
                 <div class="user-info">
                     <span class="user-name">{{ current_user.full_name }}</span>
-                    <span class="user-role" style="background: {{ get_role_color(current_user.role or 'USER') }}">
+                    <span class="user-role user-role--{{ current_user.role.lower() if current_user.role else 'default' }}">
                         {{ current_user.role or 'USER' }}
                     </span>
                 </div>

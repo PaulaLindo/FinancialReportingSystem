@@ -42,7 +42,7 @@
     </script></head>
 <body>
     <nav class="navbar">
-    <div class="container">
+    <div class="container-content">
         <div class="nav-brand">
             <h2>SADPMR Financial Reporting System</h2>
             <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
@@ -56,23 +56,26 @@
         </button>
         
         <div class="nav-wrapper" id="navMenu">
+            
             <ul class="nav-menu">
-                <li><a href="index.html">Dashboard</a></li>
+                <li><a href="index.html" class="active">Dashboard</a></li>
                 
-                <li><a href="upload.html">Upload Trail Balance</a></li>
+                <li><a href="upload.html" class="active">Upload Trial Balance</a></li>
                                 
-                <li><a href="reports.html">Reports</a></li>
-                <li><a href="export.html">Export</a></li>
+                <li><a href="reports.html" class="active">Reports</a></li>
+                <li><a href="export.html" class="active">Export</a></li>
                 <li><a href="admin.html" class="active">Admin</a></li>
-                                <li><a href="about.html">About</a></li>
+                                <li><a href="about.html" class="active">About</a></li>
             </ul>
             
             <div class="user-menu">
                 <div class="user-info">
                     <span class="user-name">Sarah Nkosi</span>
-                    <span class="user-role" style="background: #d4a574">CFO</span>
+                    <span class="user-role user-role--">
+                        
+                    </span>
                 </div>
-                <a href="dashboard-logged-out.html" class="logout-btn" onclick="handleLogout(event)">Logout</a>
+                <a href="logout.html" class="logout-btn">Logout</a>
             </div>
             
             <div class="auth-menu">
@@ -85,38 +88,38 @@
     <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
 </nav>
 
-    <div class="container admin-container">
-        <h1>Administration</h1>
+    <div class="container-content admin-container">
+        <h1 class="text-center">Administration</h1>
         <p class="page-subtitle">System administration and user management</p>
 
         <div class="admin-section">
             <div class="admin-card">
-                <h3>👥 User Management</h3>
+                <h3 class="text-left">👥 User Management</h3>
                 <p>Manage user accounts and permissions</p>
                 <button class="btn btn-primary">Manage Users</button>
             </div>
             
             <div class="admin-card">
-                <h3>🔧 System Settings</h3>
+                <h3 class="text-left">🔧 System Settings</h3>
                 <p>Configure system parameters and GRAP mappings</p>
                 <button class="btn btn-primary">Settings</button>
             </div>
             
             <div class="admin-card">
-                <h3>📊 System Logs</h3>
+                <h3 class="text-left">📊 System Logs</h3>
                 <p>View system activity and audit logs</p>
                 <button class="btn btn-primary">View Logs</button>
             </div>
             
             <div class="admin-card">
-                <h3>💾 Data Backup</h3>
+                <h3 class="text-left">💾 Data Backup</h3>
                 <p>Backup and restore system data</p>
                 <button class="btn btn-primary">Backup Data</button>
             </div>
         </div>
 
         <div class="system-status">
-            <h2>System Status</h2>
+            <h2 class="text-center">System Status</h2>
             <div class="status-grid">
                 <div class="status-item">
                     <h4>Database</h4>
@@ -163,7 +166,7 @@
     </div>
 
     <footer>
-        <div class="container">
+        <div class="container-content">
             <p>&copy; 2025 SADPMR Financial Reporting System | Developed for Schedule 3A PFMA Compliance</p>
             <p class="footer-note">Demo Version - February 3, 2026 Presentation</p>
         </div>
@@ -171,24 +174,6 @@
 
     <script src="js/utils.js"></script>
     <script src="js/main.js"></script>
-    <script src="js/mobile-menu.js"></script>
-    
-<script>
-    function handleLogout(event) {
-        if (event) {
-            event.preventDefault();
-        }
-        console.log('Logout clicked');
-        try {
-            sessionStorage.removeItem('demoUser');
-            console.log('Session cleared, redirecting...');
-            window.location.href = 'dashboard-logged-out.html';
-        } catch (error) {
-            console.error('Logout error:', error);
-            // Fallback redirect
-            window.location.href = 'dashboard-logged-out.html';
-        }
-    }
-</script>
+    <script src="js/navigation-fluid.js"></script>
     </body>
 </html>

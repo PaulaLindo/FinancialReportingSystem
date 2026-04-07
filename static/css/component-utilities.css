@@ -1,0 +1,1033 @@
+/* Component Utilities - SADPMR Financial Reporting System */
+/* BEM methodology for extracted inline styles and text alignment utilities */
+/* Organized by component with clear template identification */
+
+/* ======================================== */
+/* TEXT ALIGNMENT UTILITIES */
+/* ======================================== */
+/* Consistent alignment system for all UI elements */
+
+/* Centered Elements - Page titles, section headers, empty states, PDF preview controls */
+.text-center {
+    text-align: center;
+}
+
+/* Left-Aligned Elements - Body text, form labels, table data, navigation */
+.text-left {
+    text-align: left;
+}
+
+/* Right-Aligned Elements - Amount columns, numeric data, timestamps */
+.text-right {
+    text-align: right;
+}
+
+/* Start Alignment - Logical start (left for LTR, right for RTL) */
+.text-start {
+    text-align: start;
+}
+
+/* End Alignment - Logical end (right for LTR, left for RTL) */
+.text-end {
+    text-align: end;
+}
+
+/* Justified Elements - Specific use cases for text justification */
+.text-justify {
+    text-align: justify;
+}
+
+/* Responsive Alignment - Mobile centered, desktop left */
+.text-center-mobile {
+    text-align: center;
+}
+
+@media (min-width: 768px) {
+    .text-center-mobile {
+        text-align: left;
+    }
+}
+
+/* ======================================== */
+/* ELEMENT-SPECIFIC ALIGNMENT RULES */
+/* ======================================== */
+
+/* Page Titles (H1) - Always centered */
+h1.text-center {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Section Headings (H2) - Centered for major sections */
+h2.text-center {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Sub-section Headings (H3) - Context-dependent */
+h3.text-center {
+    text-align: center;
+}
+
+h3.text-center {
+    text-align: center;
+}
+
+/* Card Titles (H4) - Always left-aligned for readability */
+h4.text-center {
+    text-align: center;
+}
+
+/* ======================================== */
+/* CONTAINER ALIGNMENT UTILITIES */
+/* ======================================== */
+
+/* Centered containers for consistent layout */
+.container-centered {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+/* Left-aligned containers for form content */
+.container-left {
+    text-align: left;
+}
+
+/* ======================================== */
+/* POSITIONING CONSISTENCY FIXES */
+/* ======================================== */
+
+/* Ensure consistent positioning across all screen sizes */
+@media (min-width: 320px) and (max-width: 1920px) {
+    /* Navigation brand - consistent positioning */
+    .nav-brand {
+        position: relative;
+        left: 0;
+        top: auto;
+        transform: none;
+    }
+    
+    /* Page containers - consistent margins */
+    .container, .grid-container {
+        margin-left: auto;
+        margin-right: auto;
+        max-width: var(--container-2xl);
+    }
+}
+
+/* ======================================== */
+/* TABLE-SPECIFIC ALIGNMENT UTILITIES */
+/* ======================================== */
+
+.table-header-left {
+    text-align: left;
+}
+
+.table-header-center {
+    text-align: center;
+}
+
+.table-header-right {
+    text-align: right;
+}
+
+.table-data-left {
+    text-align: left;
+}
+
+.table-data-center {
+    text-align: center;
+}
+
+.table-data-right {
+    text-align: right;
+}
+
+.table-amount {
+    text-align: right;
+    font-family: var(--font-mono);
+}
+
+/* ======================================== */
+/* NAVIGATION COMPONENT */
+/* Template: templates/components/navbar.html */
+/* Template: docs/*.html - Documentation templates */
+/* ======================================== */
+
+/* ======================================== */
+/* NAVIGATION BAR CONSISTENCY FIXES */
+/* ======================================== */
+
+/* Ensure navbar container maintains consistent positioning */
+.navbar {
+    position: relative;
+    background: white;
+    padding: var(--fluid-space-sm) 0;
+    z-index: 1000;
+    box-shadow: var(--shadow-sm);
+    width: 100%;
+}
+
+/* Navigation Grid Container - Consistent Layout */
+.navbar .grid-container {
+    display: grid;
+    grid-template-columns: clamp(200px, 30vw, 400px) 1fr clamp(40px, 6vw, 60px);
+    gap: var(--fluid-space-md);
+    align-items: center;
+    position: relative;
+    width: 100%;
+    max-width: var(--container-2xl);
+    margin: 0 auto;
+}
+
+/* ======================================== */
+/* NAVIGATION BRAND - CONSISTENT PINNING */
+/* ======================================== */
+
+.nav-brand {
+    display: grid;
+    gap: var(--fluid-space-xs);
+    align-items: start;
+    justify-content: start;
+    min-width: clamp(200px, 30vw, 400px);
+}
+
+.nav-brand h2 {
+    font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+    font-weight: var(--font-bold);
+    color: var(--primary-900);
+    margin: 0;
+    line-height: 1.2;
+    text-align: left;
+}
+
+.nav-brand .tagline {
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+    text-align: left;
+}
+
+/* ======================================== */
+/* NAVIGATION MENU - CONSISTENT ALIGNMENT */
+/* ======================================== */
+
+
+/* Navigation menu styles handled by navigation-consolidated.css */
+
+/* ======================================== */
+/* ACTIVE STATE - CONSISTENT POSITIONING */
+/* ======================================== */
+
+/* Navigation menu styles handled by navigation-consolidated.css */
+
+/* ======================================== */
+/* USER MENU - CONSISTENT ALIGNMENT */
+/* ======================================== */
+
+/* User menu styles handled by navigation-consolidated.css */
+
+/* User info styles handled by navigation-fluid.css */
+
+.logout-btn,
+.login-btn {
+    display: grid;
+    place-items: center;
+    padding: var(--fluid-space-sm) var(--fluid-space-lg);
+    background: var(--primary-600);
+    color: var(--white);
+    text-decoration: none;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    font-size: clamp(0.875rem, 1.5vw, 1rem);
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+    min-height: clamp(44px, 6vw, 48px);
+}
+
+.logout-btn:hover,
+.login-btn:hover {
+    background: var(--primary-700);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ======================================== */
+/* RESPONSIVE BEHAVIOR */
+/* ======================================== */
+
+/* Hide on desktop */
+@media (min-width: 1024px) {
+    .nav-wrapper {
+        position: static;
+    }
+}
+
+/* Show on mobile/tablet */
+@media (max-width: 1023px) {
+    .nav-wrapper {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: clamp(280px, 80vw, 400px);
+        height: 100vh;
+        background: white;
+        box-shadow: var(--shadow-xl);
+        transition: right 400ms cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 999;
+        overflow-y: auto;
+        padding: var(--fluid-space-lg) 0;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .nav-wrapper.active {
+        right: 0;
+    }
+}
+
+/* Mobile Menu Overlay */
+.mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 998;
+}
+
+.mobile-menu-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* User Role Badge Block */
+/* User role colors with proper HTML structure matching */
+
+.navbar .user-info .user-role--admin {
+    background: linear-gradient(135deg, var(--error) 0%, var(--error-dark) 100%);
+    color: var(--white);
+}
+
+.navbar .user-info .user-role--accountant {
+    background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 100%);
+    color: var(--white);
+}
+
+.navbar .user-info .user-role--cfo {
+    background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 100%);
+    color: var(--white);
+}
+
+.navbar .user-info .user-role--manager {
+    background: linear-gradient(135deg, var(--warning) 0%, var(--warning-dark) 100%);
+    color: var(--white);
+}
+
+.navbar .user-info .user-role--user {
+    background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+    color: var(--white);
+}
+
+.navbar .user-info .user-role--default {
+    background: linear-gradient(135deg, var(--gray-500) 0%, var(--gray-600) 100%);
+    color: var(--white);
+}
+
+.navbar .user-info .user-role--auditor {
+    background: linear-gradient(135deg, var(--warning) 0%, var(--warning-dark) 100%);
+    color: var(--white);
+}
+
+/* Navigation Elements */
+.user-menu--hidden {
+    display: none;
+}
+
+.auth-menu--hidden {
+    display: none;
+}
+
+/* Body Elements */
+.body-overflow-hidden {
+    overflow: hidden;
+}
+
+/* Alert Elements */
+.alert--dismissing {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+    transform: translateY(clamp(-8px, -1vw, -10px));
+}
+
+/* Button Elements */
+.btn-upload--hidden {
+    display: none;
+}
+
+/* ======================================== */
+/* UPLOAD COMPONENT */
+/* Template: templates/upload.html */
+/* ======================================== */
+
+/* Upload Elements */
+.upload-section .upload__input {
+    display: none;
+}
+
+.upload-section .upload__file-info {
+    display: none;
+}
+
+.upload-section .upload__loader {
+    display: none;
+}
+
+.upload-section .upload__error-message {
+    display: none;
+}
+
+.upload-section .upload__results-section {
+    display: none;
+}
+
+.upload-section .upload__pdf-loader {
+    display: none;
+}
+
+.upload-section .upload__success-message {
+    display: none;
+}
+
+/* Upload Zone Block */
+.upload-zone--idle {
+    border-color: #e0e0e0;
+    background: transparent;
+    transition: all 200ms ease;
+}
+
+.upload-zone--hover {
+    border-color: #3f51b5;
+    background: #f0f4ff;
+    transition: all 200ms ease;
+}
+
+.upload-zone--active {
+    border-color: #3f51b5;
+    background: #f0f4ff;
+    transition: all 200ms ease;
+}
+
+/* Upload Visibility Modifiers */
+.upload-box--hidden {
+    display: none;
+}
+
+.upload-box--visible {
+    display: block;
+}
+
+.file-info--hidden {
+    display: none;
+}
+
+.file-info--visible {
+    display: block;
+}
+
+.processing-loader--hidden {
+    display: none;
+}
+
+.processing-loader--visible {
+    display: block;
+}
+
+.results-section--hidden {
+    display: none;
+}
+
+.results-section--visible {
+    display: block;
+}
+
+.pdf-loader--hidden {
+    display: none;
+}
+
+.pdf-loader--visible {
+    display: block;
+}
+
+.pdf-success--hidden {
+    display: none;
+}
+
+.pdf-success--visible {
+    display: block;
+}
+
+/* ======================================== */
+/* ERROR HANDLING COMPONENT */
+/* Template: templates/upload.html */
+/* Template: templates/login.html */
+/* ======================================== */
+
+/* Error Elements */
+.error-message--hidden {
+    display: none;
+}
+
+.error-message--visible {
+    display: block;
+}
+
+/* ======================================== */
+/* NAVIGATION COMPONENT */
+/* Template: templates/components/navbar.html */
+/* ======================================== */
+
+/* Navigation Toggle Elements - Handled by navigation-fluid.css */
+/* Body Scroll Control */
+.body-scroll-locked {
+    overflow: hidden;
+}
+
+.body-scroll-unlocked {
+    overflow: auto;
+}
+
+/* ======================================== */
+/* ANIMATION COMPONENT */
+/* Template: All templates with fade-in animations */
+/* ======================================== */
+
+/* Animation Elements */
+.fade-in-element--initial {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 600ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-in-element--animated {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.fade-in-element--delay-1 {
+    transition-delay: 0.1s;
+}
+
+.fade-in-element--delay-2 {
+    transition-delay: 0.2s;
+}
+
+.fade-in-element--delay-3 {
+    transition-delay: 0.3s;
+}
+
+.fade-in-element--delay-4 {
+    transition-delay: 0.4s;
+}
+
+.fade-in-element--delay-5 {
+    transition-delay: 0.5s;
+}
+
+/* ======================================== */
+/* UTILITY COMPONENT */
+/* Template: All templates */
+/* ======================================== */
+
+/* Display Utilities */
+.element--hidden {
+    display: none;
+}
+
+.element--visible {
+    display: block;
+}
+
+.element--visible-grid {
+    display: grid;
+}
+
+.element--visible-flex {
+    display: flex;
+}
+
+/* Visibility Utilities */
+.visibility--hidden {
+    visibility: hidden;
+}
+
+.visibility--visible {
+    visibility: visible;
+}
+
+/* Focus Utilities */
+.focus--dynamic {
+    outline: 2px solid var(--primary-600);
+    outline-offset: 2px;
+}
+
+/* Accessibility Utilities */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Performance Utilities */
+.gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* ======================================== */
+/* RESPONSIVE UTILITIES */
+/* Template: All templates */
+/* ======================================== */
+
+@media (max-width: 767px) {
+    .mobile-only--visible {
+        display: block;
+    }
+    
+    .mobile-only--hidden {
+        display: none;
+    }
+}
+
+@media (min-width: 768px) {
+    .desktop-only--visible {
+        display: block;
+    }
+    
+    .desktop-only--hidden {
+        display: none;
+    }
+}
+
+/* ======================================== */
+/* ACCESSIBILITY UTILITIES */
+/* Template: All templates */
+/* ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .fade-in-element--initial,
+    .fade-in-element--animated,
+    .upload-zone--idle,
+    .upload-zone--hover,
+    .upload-zone--active {
+        transition: none;
+        animation: none;
+    }
+}
+
+/* ======================================== */
+/* DYNAMIC EFFECTS COMPONENT */
+/* Template: All templates with dynamic effects */
+/* ======================================== */
+
+/* Navbar Effects */
+.navbar--scrolled {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.navbar--default {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Hero Parallax Effect */
+.hero--parallax {
+    /* Background position will be dynamically set via JavaScript for parallax scrolling */
+    background-position: center var(--parallax-y, center);
+    will-change: background-position;
+}
+
+/* Screenshot Hover Effects */
+.screenshot-placeholder--hover {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+}
+
+.screenshot-placeholder--default {
+    transform: scale(1);
+    transition: transform 0.3s ease;
+}
+
+/* Pricing Card Hover Effects */
+.pricing-card--hover {
+    transform: translateY(-8px) scale(1.02);
+    transition: transform 0.3s ease;
+}
+
+.pricing-card--default {
+    transform: translateY(0) scale(1);
+    transition: transform 0.3s ease;
+}
+
+/* Feature Card Block */
+.feature-card--animated {
+    transition: 800ms cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    transform: translateY(0px);
+}
+
+/* Feature Card Modifiers */
+.feature-card--delay-1 {
+    transition-delay: 0.1s;
+}
+
+.feature-card--delay-2 {
+    transition-delay: 0.2s;
+}
+
+.feature-card--delay-3 {
+    transition-delay: 0.3s;
+}
+
+.feature-card--delay-4 {
+    transition-delay: 0.4s;
+}
+
+.feature-card--delay-5 {
+    transition-delay: 0.5s;
+}
+
+/* ======================================== */
+/* FORMS COMPONENT */
+/* Template: templates/login.html */
+/* Template: templates/upload.html */
+/* ======================================== */
+
+/* Form Elements */
+.login-container .form__alert {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Form Modifiers */
+.login-container .form__alert--dismissing {
+    opacity: 0;
+    transform: translateY(clamp(-8px, -1vw, -10px));
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-container .form__alert--animated {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ======================================== */
+/* TABLES COMPONENT */
+/* Template: templates/statement-financial-position.html */
+/* Template: templates/statement-financial-performance.html */
+/* Template: templates/statement-cash-flows.html */
+/* ======================================== */
+
+/* Table Elements */
+.statement__header--highlighted {
+    background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 100%);
+    font-weight: 700;
+    color: var(--primary-900);
+}
+
+.statement__row--active {
+    background: linear-gradient(135deg, var(--accent-taupe) 0%, var(--accent-taupe-light) 100%);
+}
+
+/* ======================================== */
+/* REPORT OUTPUT COMPONENT */
+/* Template: templates/results.html */
+/* ======================================== */
+
+/* Report Elements */
+.results-section .report__pdf-preview {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 141.4%; /* A4 aspect ratio */
+    background: var(--gray-100);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 clamp(4px, 0.8vw, 12px) clamp(24px, 3vw, 40px) rgba(0, 0, 0, 0.1);
+    transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.results-section .report__pdf-viewer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: var(--radius-lg);
+    background: var(--white);
+    transition: transform 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.results-section .report__download-link {
+    position: absolute;
+    left: -9999px;
+    top: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+/* Report Modifiers */
+.results-section .report__pdf-viewer--small {
+    transform: scale(0.8);
+    transform-origin: center center;
+}
+
+.results-section .report__pdf-viewer--normal {
+    transform: scale(1);
+    transform-origin: center center;
+}
+
+/* Download Button Block */
+.btn.btn-download.download-button--success {
+    background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+    transform: scale(1.05);
+    box-shadow: 0 clamp(4px, 0.6vw, 8px) clamp(16px, 2vw, 25px) rgba(16, 185, 129, 0.4);
+}
+
+.btn.btn-download.download-button--success::after {
+    content: '✓ ';
+    display: inline-block;
+    animation: checkmarkPulse 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes checkmarkPulse {
+    0% {
+        transform: scale(0) rotate(-45deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2) rotate(10deg);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+/* ======================================== */
+/* AUTHENTICATION COMPONENT */
+/* Template: templates/login.html */
+/* ======================================== */
+
+/* Auth Elements */
+.login-container .auth__alert {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Auth Modifiers */
+.login-container .auth__alert--dismissing {
+    opacity: 0;
+    transform: translateY(clamp(-8px, -1vw, -10px));
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-container .auth__alert--animated {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ======================================== */
+/* UPLOAD COMPONENT */
+/* Template: templates/upload.html */
+/* Template: docs/upload.html */
+/* ======================================== */
+
+/* Upload Elements */
+.upload-section .upload__input {
+    display: none;
+}
+
+.upload-section .upload__file-info {
+    display: none;
+}
+
+.upload-section .upload__loader {
+    display: none;
+}
+
+.upload-section .upload__error-message {
+    display: none;
+}
+
+.upload-section .upload__results-section {
+    display: none;
+}
+
+.upload-section .upload__pdf-loader {
+    display: none;
+}
+
+.upload-section .upload__success-message {
+    display: none;
+}
+
+/* Upload Zone Block */
+.upload-zone--idle {
+    border: 2px dashed var(--gray-300);
+    background: linear-gradient(135deg, var(--gray-50) 0%, rgba(255, 255, 255, 0.8) 100%);
+}
+
+.upload-zone--hover {
+    border: 2px dashed var(--accent-taupe);
+    background: linear-gradient(135deg, rgba(212, 165, 116, 0.05) 0%, rgba(212, 165, 116, 0.02) 100%);
+    transform: translateY(clamp(-2px, -0.3vw, -4px));
+    box-shadow: 0 clamp(4px, 0.8vw, 12px) clamp(24px, 3vw, 40px) rgba(212, 165, 116, 0.15);
+}
+
+.upload-zone--active {
+    border: 2px solid var(--accent-taupe);
+    background: linear-gradient(135deg, rgba(212, 165, 116, 0.1) 0%, rgba(212, 165, 116, 0.05) 100%);
+    transform: translateY(clamp(-1px, -0.2vw, -2px));
+    box-shadow: 0 clamp(6px, 1vw, 16px) clamp(32px, 4vw, 48px) rgba(212, 165, 116, 0.2);
+}
+
+/* Upload Elements - Docs Version */
+.upload-section .upload-input-hidden {
+    display: none;
+}
+
+.upload-section .file-info-hidden {
+    display: none;
+}
+
+.upload-section .loader-hidden {
+    display: none;
+}
+
+.upload-section .error-box-hidden {
+    display: none;
+}
+
+.upload-section .results-section-hidden {
+    display: none;
+}
+
+.upload-section .pdf-loader-hidden {
+    display: none;
+}
+
+.upload-section .pdf-success-hidden {
+    display: none;
+}
+
+/* ======================================== */
+/* PROCESSING COMPONENT */
+/* Template: templates/upload.html, templates/results.html */
+/* ======================================== */
+
+/* Processing Modifiers */
+.processing--active {
+    opacity: 0.7;
+    pointer-events: none;
+    filter: blur(clamp(0.5px, 0.1vw, 1px));
+}
+
+.processing--complete {
+    opacity: 1;
+    pointer-events: auto;
+    filter: none;
+}
+
+/* ======================================== */
+/* UNIVERSAL UTILITIES */
+/* Cross-component utilities */
+/* ======================================== */
+
+/* Visibility Utilities */
+.visibility--hidden {
+    display: none;
+}
+
+/* Focus Utilities */
+.focus--dynamic {
+    outline: 2px solid var(--accent-taupe);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+/* Screen Reader Utilities */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Performance Utilities */
+.gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* ======================================== */
+/* RESPONSIVE UTILITIES */
+/* Cross-component responsive styles */
+/* ======================================== */
+
+/* Report Preview Responsive */
+@media (max-width: 767px) {
+    .report__pdf-preview {
+        padding-bottom: 120%; /* Adjusted aspect ratio for mobile */
+    }
+}
+
+@media (min-width: 768px) {
+    .report__pdf-preview {
+        padding-bottom: 141.4%; /* Standard A4 aspect ratio */
+    }
+}
+
+/* ======================================== */
+/* BODY SCROLL LOCK UTILITIES */
+/* Cross-component scroll management */
+/* ======================================== */
+
+/* Body scroll lock for fullscreen modals */
+.body-scroll-locked {
+    overflow: hidden;
+}
+
+/* Ensure fullscreen container can scroll when body is locked */
+.pdf-fullscreen-container.active {
+    overflow: auto;
+}
+
+/* ======================================== */
+/* ACCESSIBILITY UTILITIES */
+/* Cross-component accessibility styles */
+/* ======================================== */
+
+/* Reduced Motion Support handled by navigation-consolidated.css */

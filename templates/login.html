@@ -11,7 +11,7 @@
         <div class="login-box">
             <div class="login-header">
                 <div class="login-logo">🔐</div>
-                <h1>Welcome Back</h1>
+                <h1 class="text-center">Welcome Back</h1>
                 <p>SADPMR Financial Reporting System</p>
             </div>
 
@@ -25,7 +25,7 @@
                 {% endif %}
             {% endwith %}
 
-            <form method="POST" action="{{ url_for('login') }}">
+            <form method="POST" action="{{ url_for('login') }}" id="loginForm" novalidate>
                 <div class="form-group">
                     <label for="username" class="form-label">Email Address</label>
                     <input 
@@ -34,7 +34,6 @@
                         name="username" 
                         class="form-input" 
                         placeholder="your.email@sadpmr.gov.za"
-                        required
                         autofocus
                     >
                 </div>
@@ -47,7 +46,6 @@
                         name="password" 
                         class="form-input" 
                         placeholder="Enter your password"
-                        required
                     >
                 </div>
 
@@ -101,6 +99,12 @@
                     <button type="button" class="quick-login-btn" onclick="quickLogin('accountant@sadpmr.gov.za', 'demo123')">
                         Quick Login: Accountant
                     </button>
+                    <button type="button" class="quick-login-btn" onclick="quickLogin('clerk@sadpmr.gov.za', 'demo123')">
+                        Quick Login: Clerk
+                    </button>
+                    <button type="button" class="quick-login-btn" onclick="quickLogin('auditor@agsa.gov.za', 'demo123')">
+                        Quick Login: Auditor
+                    </button>
                 </div>
             </div>
         </div>
@@ -113,13 +117,49 @@
             document.querySelector('form').submit();
         }
 
+        // Form validation
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const username = document.getElementById('username');
+            const password = document.getElementById('password');
+            
+            // Reset any previous error states
+            username.style.borderColor = 'var(--gray-300)';
+            password.style.borderColor = 'var(--gray-300)';
+            
+            let isValid = true;
+            
+            // Validate email
+            if (!username.value || !username.value.includes('@')) {
+                username.style.borderColor = 'var(--error)';
+                isValid = false;
+            }
+            
+            // Validate password
+            if (!password.value || password.value.length < 1) {
+                password.style.borderColor = 'var(--error)';
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+
+        // Clear error states on input
+        document.getElementById('username').addEventListener('input', function() {
+            this.style.borderColor = 'var(--gray-300)';
+        });
+        
+        document.getElementById('password').addEventListener('input', function() {
+            this.style.borderColor = 'var(--gray-300)';
+        });
+
         // Auto-hide alerts after 5 seconds
         setTimeout(function() {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {
-                alert.style.transition = 'all 0.5s ease';
-                alert.style.opacity = '0';
-                alert.style.transform = 'translateY(-10px)';
+                alert.classList.add('auth__alert--animated');
+                alert.classList.add('auth__alert--dismissing');
                 setTimeout(() => alert.remove(), 500);
             });
         }, 5000);

@@ -130,7 +130,8 @@ class SADPMRUtils {
         const errorEl = errorElement || document.getElementById('errorMessage');
         if (errorEl) {
             errorEl.textContent = '❌ ' + message;
-            errorEl.style.display = 'block';
+            errorEl.classList.add('error-message--visible');
+            errorEl.classList.remove('error-message--hidden');
             this.scrollToElement(errorEl, { block: 'center' });
         }
     }
@@ -141,7 +142,8 @@ class SADPMRUtils {
     static hideError(errorElement = null) {
         const errorEl = errorElement || document.getElementById('errorMessage');
         if (errorEl) {
-            errorEl.style.display = 'none';
+            errorEl.classList.add('error-message--hidden');
+            errorEl.classList.remove('error-message--visible');
         }
     }
 
@@ -202,14 +204,17 @@ class SADPMRUtils {
      */
     static addFadeInAnimation(elements, delay = 0) {
         elements.forEach((element, index) => {
-            element.style.opacity = '0';
-            element.style.transform = 'translateY(30px)';
-            element.style.transition = `all ${this.CONFIG.ANIMATION.DURATION}ms ${this.CONFIG.ANIMATION.EASING}`;
-            element.style.transitionDelay = `${delay + index * 0.1}s`;
+            element.classList.add('fade-in-element--initial');
+            element.classList.remove('fade-in-element--animated');
+            
+            // Add delay class if needed
+            if (index === 0 && delay > 0) {
+                element.classList.add('fade-in-element--delay-1');
+            }
             
             setTimeout(() => {
-                element.style.opacity = '1';
-                element.style.transform = 'translateY(0)';
+                element.classList.add('fade-in-element--animated');
+                element.classList.remove('fade-in-element--initial');
             }, 100);
         });
     }

@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Statement of Financial Performance - SADPMR Financial Reporting System{% endblock %}
+
+{% block content %}
+
+    <div class="container-content financial-statement-container">
+        <h1 class="text-center">Statement of Financial Performance</h1>
+        <p class="page-subtitle">For the year ended {{ current_date or 'December 31, 2025' }}</p>
+
+        <div class="table-fluid-wrapper">
+            <table class="table-fluid income-statement-table">
+                <caption>Statement of Financial Performance - {{ entity_name or 'Sample Entity' }}</caption>
+                <thead>
+                    <tr>
+                        <th data-critical="true" data-label="Particulars">Particulars</th>
+                        <th data-center="true" data-label="Note">Note</th>
+                        <th data-amount="true" data-label="Current Year">Current Year (R)</th>
+                        <th data-amount="true" data-label="Previous Year">Previous Year (R)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- OPERATING REVENUE -->
+                    <tr data-section-header="true">
+                        <td colspan="4">OPERATING REVENUE</td>
+                    </tr>
+                    
+                    <tr data-revenue="true">
+                        <td data-critical="true" data-label="Particulars">Service fees and charges</td>
+                        <td data-center="true" data-label="Note">1</td>
+                        <td data-amount="true" data-label="Current Year">2,450,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">2,180,000.00</td>
+                    </tr>
+                    
+                    <tr data-revenue="true">
+                        <td data-critical="true" data-label="Particulars">Grants and donations</td>
+                        <td data-center="true" data-label="Note">2</td>
+                        <td data-amount="true" data-label="Current Year">185,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">165,000.00</td>
+                    </tr>
+                    
+                    <tr data-revenue="true">
+                        <td data-critical="true" data-label="Particulars">Investment income</td>
+                        <td data-center="true" data-label="Note">3</td>
+                        <td data-amount="true" data-label="Current Year">45,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">38,000.00</td>
+                    </tr>
+                    
+                    <tr data-revenue="true">
+                        <td data-critical="true" data-label="Particulars">Other operating income</td>
+                        <td data-center="true" data-label="Note">4</td>
+                        <td data-amount="true" data-label="Current Year">25,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">18,000.00</td>
+                    </tr>
+                    
+                    <tr data-total="true">
+                        <td data-critical="true" data-label="Particulars">TOTAL OPERATING REVENUE</td>
+                        <td data-center="true" data-label="Note"></td>
+                        <td data-amount="true" data-highlight="true" data-label="Current Year">2,705,000.00</td>
+                        <td data-amount="true" data-highlight="true" data-label="Previous Year">2,401,000.00</td>
+                    </tr>
+                    
+                    <!-- OPERATING EXPENSES -->
+                    <tr data-section-header="true">
+                        <td colspan="4">OPERATING EXPENSES</td>
+                    </tr>
+                    
+                    <tr data-expense="true">
+                        <td data-critical="true" data-label="Particulars">Employee benefits expense</td>
+                        <td data-center="true" data-label="Note">5</td>
+                        <td data-amount="true" data-label="Current Year">1,250,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">1,180,000.00</td>
+                    </tr>
+                    
+                    <tr data-expense="true">
+                        <td data-critical="true" data-label="Particulars">Depreciation and amortisation</td>
+                        <td data-center="true" data-label="Note">6</td>
+                        <td data-amount="true" data-label="Current Year">185,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">175,000.00</td>
+                    </tr>
+                    
+                    <tr data-expense="true">
+                        <td data-critical="true" data-label="Particulars">Finance costs</td>
+                        <td data-center="true" data-label="Note">7</td>
+                        <td data-amount="true" data-label="Current Year">35,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">42,000.00</td>
+                    </tr>
+                    
+                    <tr data-expense="true">
+                        <td data-critical="true" data-label="Particulars">Operating leases expense</td>
+                        <td data-center="true" data-label="Note">8</td>
+                        <td data-amount="true" data-label="Current Year">125,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">118,000.00</td>
+                    </tr>
+                    
+                    <tr data-expense="true">
+                        <td data-critical="true" data-label="Particulars">Impairment losses</td>
+                        <td data-center="true" data-label="Note">9</td>
+                        <td data-amount="true" data-label="Current Year">15,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">8,000.00</td>
+                    </tr>
+                    
+                    <tr data-expense="true">
+                        <td data-critical="true" data-label="Particulars">Other operating expenses</td>
+                        <td data-center="true" data-label="Note">10</td>
+                        <td data-amount="true" data-label="Current Year">85,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">78,000.00</td>
+                    </tr>
+                    
+                    <tr data-total="true">
+                        <td data-critical="true" data-label="Particulars">TOTAL OPERATING EXPENSES</td>
+                        <td data-center="true" data-label="Note"></td>
+                        <td data-amount="true" data-highlight="true" data-label="Current Year">1,695,000.00</td>
+                        <td data-amount="true" data-highlight="true" data-label="Previous Year">1,601,000.00</td>
+                    </tr>
+                    
+                    <!-- OPERATING SURPLUS -->
+                    <tr data-total="true">
+                        <td data-critical="true" data-label="Particulars">OPERATING SURPLUS</td>
+                        <td data-center="true" data-label="Note"></td>
+                        <td data-amount="true" data-highlight="true" data-label="Current Year">1,010,000.00</td>
+                        <td data-amount="true" data-highlight="true" data-label="Previous Year">800,000.00</td>
+                    </tr>
+                    
+                    <!-- NON-OPERATING ITEMS -->
+                    <tr data-section-header="true">
+                        <td colspan="4">NON-OPERATING INCOME AND EXPENSES</td>
+                    </tr>
+                    
+                    <tr>
+                        <td data-critical="true">Finance income</td>
+                        <td data-center="true">11</td>
+                        <td data-amount="true">12,000.00</td>
+                        <td data-amount="true">8,000.00</td>
+                    </tr>
+                    
+                    <tr>
+                        <td data-critical="true">Gain on disposal of assets</td>
+                        <td data-center="true">12</td>
+                        <td data-amount="true">25,000.00</td>
+                        <td data-amount="true">5,000.00</td>
+                    </tr>
+                    
+                    <tr>
+                        <td data-critical="true">Write-down of assets</td>
+                        <td data-center="true">13</td>
+                        <td data-amount="true">-8,000.00</td>
+                        <td data-amount="true">-3,000.00</td>
+                    </tr>
+                    
+                    <tr data-total="true">
+                        <td data-critical="true">NET NON-OPERATING ITEMS</td>
+                        <td data-center="true"></td>
+                        <td data-amount="true" data-highlight="true">29,000.00</td>
+                        <td data-amount="true" data-highlight="true">10,000.00</td>
+                    </tr>
+                    
+                    <!-- SURPLUS BEFORE TAX -->
+                    <tr data-total="true">
+                        <td data-critical="true">SURPLUS BEFORE TAX</td>
+                        <td data-center="true"></td>
+                        <td data-amount="true" data-highlight="true">1,039,000.00</td>
+                        <td data-amount="true" data-highlight="true">810,000.00</td>
+                    </tr>
+                    
+                    <!-- TAX EXPENSE -->
+                    <tr data-section-header="true">
+                        <td colspan="4">TAX EXPENSE</td>
+                    </tr>
+                    
+                    <tr>
+                        <td data-critical="true">Current tax expense</td>
+                        <td data-center="true">14</td>
+                        <td data-amount="true">310,000.00</td>
+                        <td data-amount="true">243,000.00</td>
+                    </tr>
+                    
+                    <tr data-total="true">
+                        <td data-critical="true">TOTAL TAX EXPENSE</td>
+                        <td data-center="true"></td>
+                        <td data-amount="true" data-highlight="true">310,000.00</td>
+                        <td data-amount="true" data-highlight="true">243,000.00</td>
+                    </tr>
+                    
+                    <!-- SURPLUS FOR THE YEAR -->
+                    <tr data-total="true">
+                        <td data-critical="true">SURPLUS FOR THE YEAR</td>
+                        <td data-center="true"></td>
+                        <td data-amount="true" data-highlight="true">729,000.00</td>
+                        <td data-amount="true" data-highlight="true">567,000.00</td>
+                    </tr>
+                    
+                    <!-- OTHER COMPREHENSIVE INCOME -->
+                    <tr data-section-header="true">
+                        <td colspan="4">OTHER COMPREHENSIVE INCOME</td>
+                    </tr>
+                    
+                    <tr>
+                        <td data-critical="true">Remeasurement gain on PPE</td>
+                        <td data-center="true">15</td>
+                        <td data-amount="true">45,000.00</td>
+                        <td data-amount="true">0.00</td>
+                    </tr>
+                    
+                    <tr>
+                        <td data-critical="true">Actuarial gains on employee benefits</td>
+                        <td data-center="true">16</td>
+                        <td data-amount="true">28,000.00</td>
+                        <td data-amount="true">15,000.00</td>
+                    </tr>
+                    
+                    <tr data-total="true">
+                        <td data-critical="true">TOTAL OTHER COMPREHENSIVE INCOME</td>
+                        <td data-center="true"></td>
+                        <td data-amount="true" data-highlight="true">73,000.00</td>
+                        <td data-amount="true" data-highlight="true">15,000.00</td>
+                    </tr>
+                    
+                    <!-- TOTAL COMPREHENSIVE INCOME -->
+                    <tr data-total="true">
+                        <td data-critical="true">TOTAL COMPREHENSIVE INCOME</td>
+                        <td data-center="true"></td>
+                        <td data-amount="true" data-highlight="true">802,000.00</td>
+                        <td data-amount="true" data-highlight="true">582,000.00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="statement-footer grid-container">
+            <div class="footer-actions">
+                <button class="btn btn-primary">Download PDF</button>
+                <button class="btn btn-secondary">Export to Excel</button>
+                <button class="btn btn-secondary">Print Statement</button>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add data-label attributes for mobile card view
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.querySelector('.financial-table');
+    if (table) {
+        const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent.trim());
+        const rows = table.querySelectorAll('tbody tr');
+        
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            cells.forEach((cell, index) => {
+                if (headers[index]) {
+                    cell.setAttribute('data-label', headers[index]);
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -116,7 +116,7 @@ class MainApplication {
         // Observe elements
         [...this.elements.featureCards, ...this.elements.screenshotCards, ...this.elements.workflowSteps]
             .forEach((element, index) => {
-                element.style.transitionDelay = `${index * 0.1}s`;
+                element.classList.add(`fade-in-element--delay-${Math.min(index + 1, 5)}`);
                 this.observers.fadeIn.observe(element);
             });
     }
@@ -178,8 +178,8 @@ class MainApplication {
                     const cards = entry.target.querySelectorAll('.pricing-card');
                     cards.forEach((card, index) => {
                         setTimeout(() => {
-                            card.style.opacity = '1';
-                            card.style.transform = 'translateY(0)';
+                            card.classList.add('fade-in-element--animated');
+                            card.classList.remove('fade-in-element--initial');
                         }, index * 200);
                     });
                     this.observers.pricing.unobserve(entry.target);
@@ -200,9 +200,8 @@ class MainApplication {
         const cards = this.elements.pricingSection.querySelectorAll('.pricing-card');
         cards.forEach(card => {
             if (!card.classList.contains('featured')) {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(30px)';
-                card.style.transition = `all 600ms ${SADPMRUtils.CONFIG.ANIMATION.EASING}`;
+                card.classList.add('fade-in-element--initial');
+                card.classList.remove('fade-in-element--animated');
             }
         });
     }
@@ -229,9 +228,11 @@ class MainApplication {
         const currentScroll = window.pageYOffset;
         
         if (currentScroll > 100) {
-            this.elements.navbar.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+            this.elements.navbar.classList.add('navbar--scrolled');
+            this.elements.navbar.classList.remove('navbar--default');
         } else {
-            this.elements.navbar.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)';
+            this.elements.navbar.classList.add('navbar--default');
+            this.elements.navbar.classList.remove('navbar--scrolled');
         }
     }
 
@@ -243,7 +244,8 @@ class MainApplication {
         
         const scrolled = window.pageYOffset;
         const parallax = scrolled * 0.5;
-        this.elements.hero.style.backgroundPositionY = `${parallax}px`;
+        this.elements.hero.classList.add('hero--parallax');
+        this.elements.hero.style.setProperty('--parallax-y', parallax + 'px');
     }
 
     /**
@@ -283,12 +285,13 @@ class MainApplication {
         // Screenshot placeholders
         this.elements.screenshotPlaceholders.forEach(placeholder => {
             placeholder.addEventListener('mouseenter', () => {
-                placeholder.style.transform = 'scale(1.05)';
-                placeholder.style.transition = 'transform 0.3s ease';
+                placeholder.classList.add('screenshot-placeholder--hover');
+                placeholder.classList.remove('screenshot-placeholder--default');
             });
             
             placeholder.addEventListener('mouseleave', () => {
-                placeholder.style.transform = 'scale(1)';
+                placeholder.classList.add('screenshot-placeholder--default');
+                placeholder.classList.remove('screenshot-placeholder--hover');
             });
         });
     }
@@ -300,13 +303,15 @@ class MainApplication {
         this.elements.pricingCards.forEach(card => {
             card.addEventListener('mouseenter', () => {
                 if (!card.classList.contains('featured')) {
-                    card.style.transform = 'translateY(-8px) scale(1.02)';
+                    card.classList.add('pricing-card--hover');
+                    card.classList.remove('pricing-card--default');
                 }
             });
             
             card.addEventListener('mouseleave', () => {
                 if (!card.classList.contains('featured')) {
-                    card.style.transform = 'translateY(0) scale(1)';
+                    card.classList.add('pricing-card--default');
+                    card.classList.remove('pricing-card--hover');
                 }
             });
         });

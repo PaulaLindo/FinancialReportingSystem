@@ -42,7 +42,7 @@
     </script></head>
 <body>
     <nav class="navbar">
-    <div class="container">
+    <div class="container-content">
         <div class="nav-brand">
             <h2>SADPMR Financial Reporting System</h2>
             <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
@@ -56,23 +56,26 @@
         </button>
         
         <div class="nav-wrapper" id="navMenu">
+            
             <ul class="nav-menu">
-                <li><a href="index.html">Dashboard</a></li>
+                <li><a href="index.html" class="active">Dashboard</a></li>
                 
-                <li><a href="upload.html">Upload Trail Balance</a></li>
+                <li><a href="upload.html" class="active">Upload Trial Balance</a></li>
                                 
-                <li><a href="reports.html">Reports</a></li>
+                <li><a href="reports.html" class="active">Reports</a></li>
                 <li><a href="export.html" class="active">Export</a></li>
-                <li><a href="admin.html">Admin</a></li>
-                                <li><a href="about.html">About</a></li>
+                <li><a href="admin.html" class="active">Admin</a></li>
+                                <li><a href="about.html" class="active">About</a></li>
             </ul>
             
             <div class="user-menu">
                 <div class="user-info">
                     <span class="user-name">Sarah Nkosi</span>
-                    <span class="user-role" style="background: #d4a574">CFO</span>
+                    <span class="user-role user-role--">
+                        
+                    </span>
                 </div>
-                <a href="dashboard-logged-out.html" class="logout-btn" onclick="handleLogout(event)">Logout</a>
+                <a href="logout.html" class="logout-btn">Logout</a>
             </div>
             
             <div class="auth-menu">
@@ -132,7 +135,7 @@
     </div>
 
     <footer>
-        <div class="container">
+        <div class="container-content">
             <p>&copy; 2025 SADPMR Financial Reporting System | Developed for Schedule 3A PFMA Compliance</p>
             <p class="footer-note">Demo Version - February 3, 2026 Presentation</p>
         </div>
@@ -140,24 +143,6 @@
 
     <script src="js/utils.js"></script>
     <script src="js/main.js"></script>
-    <script src="js/mobile-menu.js"></script>
-    
-<script>
-    function handleLogout(event) {
-        if (event) {
-            event.preventDefault();
-        }
-        console.log('Logout clicked');
-        try {
-            sessionStorage.removeItem('demoUser');
-            console.log('Session cleared, redirecting...');
-            window.location.href = 'dashboard-logged-out.html';
-        } catch (error) {
-            console.error('Logout error:', error);
-            // Fallback redirect
-            window.location.href = 'dashboard-logged-out.html';
-        }
-    }
-</script>
+    <script src="js/navigation-fluid.js"></script>
     </body>
 </html>

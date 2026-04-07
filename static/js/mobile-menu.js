@@ -40,9 +40,12 @@ class MobileMenu {
     }
 
     setupEventListeners() {
-        const { toggle, overlay, menu } = this.elements;
+        const { toggle, closeBtn, overlay, menu } = this.elements;
         
         toggle.addEventListener('click', this.boundMethods.toggle);
+        if (closeBtn) {
+            closeBtn.addEventListener('click', this.boundMethods.close);
+        }
         overlay.addEventListener('click', this.boundMethods.close);
         
         // Add document click handler to close menu when clicking outside
@@ -100,7 +103,8 @@ class MobileMenu {
         menu.classList.add('active');
         overlay.classList.add('active');
         toggle.classList.add('active');
-        document.body.style.overflow = 'hidden';
+        document.body.classList.add('body-scroll-locked');
+        document.body.classList.remove('body-scroll-unlocked');
         
         this.isOpen = true;
     }
@@ -113,7 +117,8 @@ class MobileMenu {
         menu.classList.remove('active');
         overlay.classList.remove('active');
         toggle.classList.remove('active');
-        document.body.style.overflow = '';
+        document.body.classList.add('body-scroll-unlocked');
+        document.body.classList.remove('body-scroll-locked');
         
         this.isOpen = false;
     }

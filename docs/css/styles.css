@@ -1,108 +1,72 @@
 /* Main Stylesheet - SADPMR Financial Reporting System */
-/* Proper CSS cascade order: Variables → Base → Components → Layouts → Responsive */
+/* Clean CSS Architecture: Base → Layout → Components → Pages → Reports → Navigation */
 
-/* 1. Import CSS Variables First (Foundation) */
-@import url('variables.css');
+/* ======================================== */
+/* 1. BASE STYLES (Foundation) */
+/* ======================================== */
+@import url('base.css');
 
-/* 2. Import Component Styles (Base UI components) */
+/* ======================================== */
+/* 2. LAYOUT STYLES (Structure & Grid) */
+/* ======================================== */
+@import url('layout.css');
+
+/* ======================================== */
+/* 3. COMPONENT STYLES (Reusable UI) */
+/* ======================================== */
 @import url('components.css');
 
-/* 3. Import Layout Styles (Page structure and sections) */
-@import url('layouts.css');
-
-/* 4. Import Responsive Styles (Mobile-first, then desktop overrides) */
-@import url('mobile.css');
-@import url('desktop.css');
+/* ======================================== */
+/* 4. PAGE-SPECIFIC STYLES */
+/* ======================================== */
+@import url('pages.css');
 
 /* ======================================== */
-/* GLOBAL STYLES & OVERRIDES */
+/* 5. REPORTS & PDF STYLES */
 /* ======================================== */
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    margin: 0;
-    padding: 0;
-}
-
-.container {
-    max-width: var(--container-xl);
-    margin: 0 auto;
-    padding: 0 var(--space-md);
-}
+@import url('reports.css');
 
 /* ======================================== */
-/* RESPONSIVE TYPOGRAPHY */
+/* 6. RESPONSIVE FINANCIAL TABLES */
 /* ======================================== */
-html {
-    font-size: var(--text-base);
-}
-
-@media (max-width: 767px) {
-    html {
-        font-size: var(--text-sm);
-    }
-}
-
-@media (max-width: 480px) {
-    html {
-        font-size: 0.8125rem;
-    }
-}
+@import url('responsive-financial-tables.css');
 
 /* ======================================== */
-/* GLOBAL INTERACTIONS */
+/* 7. NAVIGATION SYSTEM */
 /* ======================================== */
-html {
-    scroll-behavior: smooth;
-}
-
-/* Focus Styles for Accessibility */
-*:focus {
-    outline: 2px solid var(--accent-taupe);
-    outline-offset: var(--space-xs);
-}
-
-/* Remove outline from mobile menu toggle specifically */
-.mobile-menu-toggle:focus {
-    outline: none;
-}
-
-/* Selection Color */
-::selection {
-    background-color: var(--accent-taupe) !important;
-    color: var(--white);
-}
+@import url('navigation-fluid.css');
 
 /* ======================================== */
-/* GLOBAL SCROLLBAR STYLING */
+/* 8. COMPONENT UTILITIES (BEM Extracted Styles) */
 /* ======================================== */
-::-webkit-scrollbar {
-    width: px;
-    height: 6px;
-}
+@import url('component-utilities.css');
 
-::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
-    border-radius: 3px;
-}
+/* ======================================== */
+/* 9. SPECIALIZED STYLES */
+/* ======================================== */
+@import url('login.css');
 
-::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, var(--accent-taupe) 0%, var(--primary-600) 100%);
-    border-radius: 3px;
-    transition: all 0.3s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, var(--accent-taupe-light) 0%, var(--primary-500) 100%);
-}
-
-::-webkit-scrollbar-corner {
-    background: rgba(0, 0, 0, 0.05);
-}
-
-/* Firefox scrollbar */
-* {
-    scrollbar-width: thin;
-    scrollbar-color: var(--accent-taupe) rgba(0, 0, 0, 0.05);
-}
+/* ======================================== */
+/* CLEAN ARCHITECTURE IMPLEMENTED */
+/* ======================================== */
+/*
+ * This file has been restructured to follow modern CSS architecture:
+ * 
+ * 1. base.css - CSS resets, variables, and global styles
+ * 2. layout.css - Grid systems and structural rules
+ * 3. components.css - Reusable UI components
+ * 4. pages.css - Page-specific overrides
+ * 5. reports.css - Financial statements and PDF preview
+ * 6. component-utilities.css - BEM extracted styles and final overrides
+ * 
+ * All legacy imports have been removed and consolidated into the new structure.
+ * All extracted inline styles now follow BEM methodology with proper
+ * component scoping and specificity hierarchy.
+ * 
+ * Benefits:
+ * - Clear separation of concerns
+ * - Proper cascade order
+ * - No duplicate or redundant rules
+ * - Maintainable and scalable architecture
+ * - Industry best practices compliance
+ */

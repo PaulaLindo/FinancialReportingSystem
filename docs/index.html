@@ -21,10 +21,10 @@
             
             // Demo credentials
             const demoUsers = {
-                'cfo@sadpmr.gov.za': { role: 'CFO', name: 'Sarah Nkosi', redirect: 'index.html', canUpload: true },
-                'accountant@sadpmr.gov.za': { role: 'Accountant', name: 'John Smith', redirect: 'index.html', canUpload: true },
-                'clerk@sadpmr.gov.za': { role: 'Clerk', name: 'Mike Davis', redirect: 'index.html', canUpload: true },
-                'auditor@agsa.gov.za': { role: 'Auditor', name: 'Patience Moyo', redirect: 'index.html', canUpload: false }
+                'cfo@sadpmr.gov.za': { role: 'CFO', name: 'Sarah Nkosi', redirect: 'index.html' },
+                'accountant@sadpmr.gov.za': { role: 'Accountant', name: 'John Smith', redirect: 'index.html' },
+                'clerk@sadpmr.gov.za': { role: 'Clerk', name: 'Mike Davis', redirect: 'index.html' },
+                'auditor@agsa.gov.za': { role: 'Auditor', name: 'Patience Moyo', redirect: 'index.html' }
             };
             
             if (demoUsers[username] && password === 'demo123') {
@@ -39,95 +39,10 @@
                 alert('Invalid credentials. Use demo credentials shown below.');
             }
         }
-        
-        // Update UI based on login state
-        function updateUIForUser() {
-            const user = JSON.parse(sessionStorage.getItem('demoUser') || 'null');
-            const heroContainer = document.querySelector('.hero .container');
-            
-            if (user && heroContainer) {
-                // Show logged-in content
-                heroContainer.innerHTML = `
-                    <h1>Welcome back, ${user.name}!</h1>
-                    <p class="hero-subtitle">${getRoleDescription(user.role)}</p>
-                    ${user.canUpload ? `
-                    <div class="hero-buttons">
-                        <a href="upload.html" class="btn btn-primary">Upload Trial Balance</a>
-                        <a href="about.html" class="btn btn-secondary">Learn More</a>
-                    </div>
-                    ` : `
-                    <div class="hero-buttons">
-                        <a href="about.html" class="btn btn-secondary">Learn More</a>
-                    </div>
-                    `}
-                `;
-                
-                // Update navbar user info
-                const userName = document.querySelector('.user-name');
-                const userRole = document.querySelector('.user-role');
-                if (userName) userName.textContent = user.name;
-                if (userRole) {
-                    userRole.textContent = user.role;
-                    userRole.style.background = getRoleColor(user.role);
-                }
-                
-                // Show user menu, hide auth menu
-                const userMenu = document.querySelector('.user-menu');
-                const authMenu = document.querySelector('.auth-menu');
-                if (userMenu) userMenu.style.display = 'block';
-                if (authMenu) authMenu.style.display = 'none';
-            } else {
-                // Show logged-out content
-                heroContainer.innerHTML = `
-                    <h1>Automated Financial Reporting for Schedule 3A Entities</h1>
-                    <p class="hero-subtitle">Transform your Trial Balance into GRAP-compliant Financial Statements in under 30 seconds</p>
-                    <div class="hero-buttons">
-                        <a href="login.html" class="btn btn-primary">Login to Get Started</a>
-                        <a href="about.html" class="btn btn-secondary">Learn More</a>
-                    </div>
-                `;
-                
-                // Hide user menu, show auth menu
-                const userMenu = document.querySelector('.user-menu');
-                const authMenu = document.querySelector('.auth-menu');
-                if (userMenu) userMenu.style.display = 'none';
-                if (authMenu) authMenu.style.display = 'block';
-            }
-        }
-        
-        function getRoleDescription(role) {
-            const descriptions = {
-                'CFO': 'Chief Financial Officer - Full system access',
-                'Accountant': 'Accountant - Process & Reports access',
-                'Clerk': 'Clerk - Upload only access',
-                'Auditor': 'Auditor - View only access'
-            };
-            return descriptions[role] || 'User';
-        }
-        
-        function getRoleColor(role) {
-            const colors = {
-                'CFO': '#d4a574',
-                'Accountant': '#4a90e2',
-                'Clerk': '#7fba00',
-                'Auditor': '#ff6b35'
-            };
-            return colors[role] || '#666';
-        }
-        
-        // Run on page load - redirect to appropriate dashboard
-        document.addEventListener('DOMContentLoaded', function() {
-            const user = JSON.parse(sessionStorage.getItem('demoUser') || 'null');
-            if (user) {
-                window.location.href = 'dashboard-logged-in.html';
-            } else {
-                window.location.href = 'dashboard-logged-out.html';
-            }
-        });
     </script></head>
 <body>
     <nav class="navbar">
-    <div class="container">
+    <div class="container-content">
         <div class="nav-brand">
             <h2>SADPMR Financial Reporting System</h2>
             <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
@@ -141,21 +56,24 @@
         </button>
         
         <div class="nav-wrapper" id="navMenu">
+            
             <ul class="nav-menu">
                 <li><a href="index.html" class="active">Dashboard</a></li>
                 
-                <li><a href="upload.html">Upload Trail Balance</a></li>
+                <li><a href="upload.html" class="active">Upload Trial Balance</a></li>
                                 
-                <li><a href="reports.html">Reports</a></li>
-                <li><a href="export.html">Export</a></li>
-                <li><a href="admin.html">Admin</a></li>
-                                <li><a href="about.html">About</a></li>
+                <li><a href="reports.html" class="active">Reports</a></li>
+                <li><a href="export.html" class="active">Export</a></li>
+                <li><a href="admin.html" class="active">Admin</a></li>
+                                <li><a href="about.html" class="active">About</a></li>
             </ul>
             
             <div class="user-menu">
                 <div class="user-info">
                     <span class="user-name">Sarah Nkosi</span>
-                    <span class="user-role" style="background: #d4a574">CFO</span>
+                    <span class="user-role user-role--">
+                        
+                    </span>
                 </div>
                 <a href="logout.html" class="logout-btn">Logout</a>
             </div>
@@ -171,10 +89,10 @@
 </nav>
 
     <div class="hero">
-        <div class="container">
+        <div class="container-content">
             
-            <h1>Welcome back, Sarah Nkosi!</h1>
-            <p class="hero-subtitle">Chief Financial Officer - Full system access</p>
+            <h1 class="text-center">Welcome back, Sarah Nkosi!</h1>
+            <p class="hero-subtitle text-center">Chief Financial Officer - Full system access</p>
             
             <div class="hero-buttons">
                 <a href="upload.html" class="btn btn-primary">Upload Trial Balance</a>
@@ -185,8 +103,8 @@
                 <a href="about.html" class="btn btn-secondary">Learn More</a>
             </div>
                         
-            <h1>Automated Financial Reporting for Schedule 3A Entities</h1>
-            <p class="hero-subtitle">Transform your Trial Balance into GRAP-compliant Financial Statements in under 30 seconds</p>
+            <h1 class="text-center">Automated Financial Reporting for Schedule 3A Entities</h1>
+            <p class="hero-subtitle text-center">Transform your Trial Balance into GRAP-compliant Financial Statements in under 30 seconds</p>
             <div class="hero-buttons">
                 
                 <a href="about.html" class="btn btn-primary">View Dashboard</a>
@@ -197,8 +115,8 @@
                     </div>
     </div>
 
-    <div class="container features-section">
-        <h2 class="section-title">Key Features</h2>
+    <div class="features-section container-content">
+        <h2 class="section-title text-center">Key Features</h2>
         <div class="features-grid">
             <div class="feature-card">
                 <div class="feature-icon">📊</div>
@@ -238,10 +156,9 @@
         </div>
     </div>
 
-    <div class="demo-section">
-        <div class="container">
-            <h2 class="section-title">How It Works</h2>
-            <div class="steps">
+    <div class="demo-section container-content">
+        <h2 class="section-title text-center">How It Works</h2>
+        <div class="steps-grid">
                 <div class="step">
                     <div class="step-number">1</div>
                     <h3>Upload Trial Balance</h3>
@@ -266,24 +183,23 @@
                     <p>Receive GRAP-compliant PDF ready for AGSA submission</p>
                 </div>
             </div>
-        </div>
     </div>
 
             <div class="cta-section">
-        <div class="container">
+        <div class="container-content text-center">
             <h2>Ready to Streamline Your Financial Reporting?</h2>
             <p>Upload your Trial Balance now and see the magic happen</p>
 
-                <a href="upload.html" class="btn btn-large">Get Started</a>
+                <a href="upload.html" class="btn btn-lg">Get Started</a>
                 
-                <a href="about.html" class="btn btn-large">View Features</a>
+                <a href="about.html" class="btn btn-lg">View Features</a>
                             
-            <a href="login.html" class="btn btn-large">Get Started</a>
+            <a href="login.html" class="btn btn-lg">Get Started</a>
                     </div>
     </div>
 
     <footer>
-        <div class="container">
+        <div class="container-content">
             <p>&copy; 2025 SADPMR Financial Reporting System | Developed for Schedule 3A PFMA Compliance</p>
             <p class="footer-note">Demo Version - February 3, 2026 Presentation</p>
         </div>
@@ -291,6 +207,6 @@
 
     <script src="js/utils.js"></script>
     <script src="js/main.js"></script>
-    <script src="js/mobile-menu.js"></script>
+    <script src="js/navigation-fluid.js"></script>
     </body>
 </html>

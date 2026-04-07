@@ -27,7 +27,7 @@
                 // Show/hide upload button based on role
                 const uploadButton = document.querySelector('.btn-upload');
                 if (uploadButton) {
-                    uploadButton.style.display = user.canUpload ? 'inline-block' : 'none';
+                    uploadButton.classList.toggle('btn-upload--hidden', !user.canUpload);
                 }
                 
                 // Update navbar
@@ -36,14 +36,14 @@
                 if (userName) userName.textContent = user.name;
                 if (userRole) {
                     userRole.textContent = user.role;
-                    userRole.style.background = getRoleColor(user.role);
+                    userRole.className = 'user-role user-role--' + user.role.toLowerCase();
                 }
                 
                 // Show user menu, hide auth menu
                 const userMenu = document.querySelector('.user-menu');
                 const authMenu = document.querySelector('.auth-menu');
-                if (userMenu) userMenu.style.display = 'block';
-                if (authMenu) authMenu.style.display = 'none';
+                if (userMenu) userMenu.classList.remove('user-menu--hidden');
+                if (authMenu) authMenu.classList.add('auth-menu--hidden');
             }
         }
         
@@ -116,7 +116,7 @@
             <div class="user-menu">
                 <div class="user-info">
                     <span class="user-name">Sarah Nkosi</span>
-                    <span class="user-role" style="background: #d4a574">CFO</span>
+                    <span class="user-role user-role--cfo">CFO</span>
                 </div>
                 <a href="dashboard-logged-out.html" class="logout-btn" onclick="handleLogout(event)">Logout</a>
             </div>
@@ -146,37 +146,37 @@
     <div class="container features-section">
         <h2 class="section-title">Key Features</h2>
         <div class="features-grid">
-            <div class="feature-card" style="transition: 800ms cubic-bezier(0.4, 0, 0.2, 1); opacity: 1; transform: translateY(0px);">
+            <div class="feature-card feature-card--animated">
                 <div class="feature-icon">📊</div>
                 <h3>Automated Mapping</h3>
                 <p>Intelligent mapping of Trial Balance accounts to GRAP line items with zero manual intervention</p>
             </div>
             
-            <div class="feature-card" style="transition-delay: 0.1s;">
+            <div class="feature-card feature-card--delay-1">
                 <div class="feature-icon">✅</div>
                 <h3>GRAP Compliance</h3>
                 <p>100% compliant with Generally Recognised Accounting Practice standards approved by ASB</p>
             </div>
             
-            <div class="feature-card" style="transition-delay: 0.2s;">
+            <div class="feature-card feature-card--delay-2">
                 <div class="feature-icon">🔍</div>
                 <h3>Audit Trail</h3>
                 <p>Complete audit trail for AGSA compliance - every change logged with timestamps and user IDs</p>
             </div>
             
-            <div class="feature-card" style="transition-delay: 0.3s;">
+            <div class="feature-card feature-card--delay-3">
                 <div class="feature-icon">📄</div>
                 <h3>Instant PDF Export</h3>
                 <p>Generate pixel-perfect PDFs matching SADPMR official formats with one click</p>
             </div>
             
-            <div class="feature-card" style="transition-delay: 0.4s;">
+            <div class="feature-card feature-card--delay-4">
                 <div class="feature-icon">💹</div>
                 <h3>Cash Flow Automation</h3>
                 <p>Automated Cash Flow Statement generation using Indirect Method - no manual calculations</p>
             </div>
             
-            <div class="feature-card" style="transition-delay: 0.5s;">
+            <div class="feature-card feature-card--delay-5">
                 <div class="feature-icon">📈</div>
                 <h3>Ratio Analysis</h3>
                 <p>Automatic calculation of key financial ratios: liquidity, solvency, efficiency, profitability</p>

@@ -13,44 +13,14 @@
     
 <link rel="stylesheet" href="css/login.css">
 
-    <script>
-        function handleLoginForm(event) {
-            event.preventDefault();
-            
-            // Simple demo login validation
-            const username = document.getElementById('username')?.value || '';
-            const password = document.getElementById('password')?.value || '';
-            
-            // Demo credentials
-            const demoUsers = {
-                'cfo@sadpmr.gov.za': { role: 'CFO', name: 'Sarah Nkosi', redirect: 'dashboard-logged-in.html', canUpload: true },
-                'accountant@sadpmr.gov.za': { role: 'Accountant', name: 'John Smith', redirect: 'dashboard-logged-in.html', canUpload: true },
-                'clerk@sadpmr.gov.za': { role: 'Clerk', name: 'Mike Davis', redirect: 'dashboard-logged-in.html', canUpload: true },
-                'auditor@agsa.gov.za': { role: 'Auditor', name: 'Patience Moyo', redirect: 'dashboard-logged-in.html', canUpload: false }
-            };
-            
-            if (demoUsers[username] && password === 'demo123') {
-                // Store user info in sessionStorage for demo
-                const user = demoUsers[username];
-                sessionStorage.setItem('demoUser', JSON.stringify(user));
-                
-                // Redirect to logged-in dashboard
-                window.location.href = 'dashboard-logged-in.html';
-            } else {
-                // Show error message
-                alert('Invalid credentials. Use demo credentials shown below.');
-            }
-        }
-    </script>
-
 </head>
-<body class="logged-out">
+<body>
     
     <div class="login-container">
         <div class="login-box">
             <div class="login-header">
                 <div class="login-logo">🔐</div>
-                <h1>Welcome Back</h1>
+                <h1 class="text-center">Welcome Back</h1>
                 <p>SADPMR Financial Reporting System</p>
             </div>
 
@@ -58,7 +28,7 @@
                             
                         </div>
 
-            <form onsubmit="handleLoginForm(event)" method="GET">
+            <form onsubmit="handleLoginForm(event, 'login.html')" method="GET">
                 <div class="form-group">
                     <label for="username" class="form-label">Email Address</label>
                     <input 
@@ -67,7 +37,6 @@
                         name="username" 
                         class="form-input" 
                         placeholder="your.email@sadpmr.gov.za"
-                        required
                         autofocus
                     >
                 </div>
@@ -80,7 +49,6 @@
                         name="password" 
                         class="form-input" 
                         placeholder="Enter your password"
-                        required
                     >
                 </div>
 
@@ -134,6 +102,12 @@
                     <button type="button" class="quick-login-btn" onclick="quickLogin('accountant@sadpmr.gov.za', 'demo123')">
                         Quick Login: Accountant
                     </button>
+                    <button type="button" class="quick-login-btn" onclick="quickLogin('clerk@sadpmr.gov.za', 'demo123')">
+                        Quick Login: Clerk
+                    </button>
+                    <button type="button" class="quick-login-btn" onclick="quickLogin('auditor@agsa.gov.za', 'demo123')">
+                        Quick Login: Auditor
+                    </button>
                 </div>
             </div>
         </div>
@@ -141,31 +115,54 @@
 
     <script>
         function quickLogin(username, password) {
-            // Store user info in sessionStorage for demo
-            const demoUsers = {
-                'cfo@sadpmr.gov.za': { role: 'CFO', name: 'Sarah Nkosi', redirect: 'dashboard-logged-in.html', canUpload: true },
-                'accountant@sadpmr.gov.za': { role: 'Accountant', name: 'John Smith', redirect: 'dashboard-logged-in.html', canUpload: true },
-                'clerk@sadpmr.gov.za': { role: 'Clerk', name: 'Mike Davis', redirect: 'dashboard-logged-in.html', canUpload: true },
-                'auditor@agsa.gov.za': { role: 'Auditor', name: 'Patience Moyo', redirect: 'dashboard-logged-in.html', canUpload: false }
-            };
-            
-            const user = demoUsers[username];
-            if (user && password === 'demo123') {
-                sessionStorage.setItem('demoUser', JSON.stringify(user));
-                // Redirect directly to dashboard, bypassing form submission
-                window.location.href = user.redirect;
-            } else {
-                alert('Invalid credentials. Use the demo accounts shown below.');
-            }
+            document.getElementById('username').value = username;
+            document.getElementById('password').value = password;
+            document.querySelector('form').submit();
         }
+
+        // Form validation
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const username = document.getElementById('username');
+            const password = document.getElementById('password');
+            
+            // Reset any previous error states
+            username.style.borderColor = 'var(--gray-300)';
+            password.style.borderColor = 'var(--gray-300)';
+            
+            let isValid = true;
+            
+            // Validate email
+            if (!username.value || !username.value.includes('@')) {
+                username.style.borderColor = 'var(--error)';
+                isValid = false;
+            }
+            
+            // Validate password
+            if (!password.value || password.value.length < 1) {
+                password.style.borderColor = 'var(--error)';
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+
+        // Clear error states on input
+        document.getElementById('username').addEventListener('input', function() {
+            this.style.borderColor = 'var(--gray-300)';
+        });
+        
+        document.getElementById('password').addEventListener('input', function() {
+            this.style.borderColor = 'var(--gray-300)';
+        });
 
         // Auto-hide alerts after 5 seconds
         setTimeout(function() {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {
-                alert.style.transition = 'all 0.5s ease';
-                alert.style.opacity = '0';
-                alert.style.transform = 'translateY(-10px)';
+                alert.classList.add('auth__alert--animated');
+                alert.classList.add('auth__alert--dismissing');
                 setTimeout(() => alert.remove(), 500);
             });
         }, 5000);

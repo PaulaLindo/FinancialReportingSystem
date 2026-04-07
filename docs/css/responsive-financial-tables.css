@@ -1,0 +1,561 @@
+/* Responsive Financial Tables - CSS-Only Card-Flip Pattern */
+/* SADPMR Financial Reporting System - GRAP Compliant */
+
+/* ======================================== */
+/* FINANCIAL TABLE WRAPPER */
+/* ======================================== */
+
+.financial-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    background: var(--bg-primary);
+    margin: var(--fluid-space-lg) 0;
+}
+
+/* ======================================== */
+/* FINANCIAL TABLE BASE STYLES */
+/* ======================================== */
+
+.financial-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+    background: var(--bg-primary);
+}
+
+.financial-table caption {
+    caption-side: top;
+    padding: var(--fluid-space-lg);
+    font-size: var(--heading-lg);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    text-align: left;
+    border-bottom: 2px solid var(--border-primary);
+}
+
+/* ======================================== */
+/* FINANCIAL TABLE HEADERS */
+/* ======================================== */
+
+.financial-table thead {
+    background: var(--bg-secondary);
+}
+
+.financial-table th {
+    padding: var(--fluid-space-md);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-primary);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Apply table-header-left utility to default table headers */
+.financial-table th:not([data-center="true"]):not([data-amount="true"]) {
+    text-align: left;
+}
+
+/* Apply table-header-center utility to center-aligned columns */
+.financial-table th[data-center="true"] {
+    text-align: center;
+}
+
+/* Apply table-header-right utility to amount columns */
+.financial-table th[data-amount="true"] {
+    text-align: right;
+}
+
+/* Apply table-data-left utility to default table data cells */
+.financial-table td:not([data-center="true"]):not([data-amount="true"]) {
+    text-align: left;
+}
+
+/* Critical Column Headers - Minimum Widths */
+.financial-table th[data-critical="true"] {
+    width: clamp(120px, 20vw, 200px);
+    min-width: clamp(120px, 20vw, 200px);
+}
+
+.financial-table th[data-center="true"] {
+    width: clamp(60px, 8vw, 80px);
+    min-width: clamp(60px, 8vw, 80px);
+}
+
+/* Apply text-center utility to center-aligned columns */
+.financial-table th[data-center="true"] {
+    text-align: center;
+}
+
+.financial-table th[data-amount="true"] {
+    width: clamp(120px, 18vw, 180px);
+    min-width: clamp(120px, 18vw, 180px);
+    font-family: var(--font-mono);
+}
+
+/* Apply text-right utility to amount columns */
+.financial-table th[data-amount="true"] {
+    text-align: right;
+}
+
+/* ======================================== */
+/* FINANCIAL TABLE BODY */
+/* ======================================== */
+
+.financial-table tbody tr {
+    border-bottom: 1px solid var(--border-primary);
+    transition: background-color var(--transition-fast);
+}
+
+.financial-table tbody tr:hover {
+    background: var(--bg-secondary);
+}
+
+.financial-table td {
+    padding: var(--fluid-space-md);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-primary);
+    transition: background-color var(--transition-fast);
+}
+
+/* Apply table-data-left utility to default table data cells */
+.financial-table td:not([data-center="true"]):not([data-amount="true"]) {
+    text-align: left;
+}
+
+.financial-table td[data-critical="true"] {
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    min-width: clamp(120px, 20vw, 200px);
+}
+
+.financial-table td[data-center="true"] {
+    width: clamp(60px, 8vw, 80px);
+    min-width: clamp(60px, 8vw, 80px);
+}
+
+/* Apply table-data-center utility to center-aligned columns */
+.financial-table td[data-center="true"] {
+    text-align: center;
+}
+
+.financial-table td[data-amount="true"] {
+    font-family: var(--font-mono);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    width: clamp(120px, 18vw, 180px);
+}
+
+/* Apply table-data-right utility to amount columns */
+.financial-table td[data-amount="true"] {
+    text-align: right;
+}
+
+/* ======================================== */
+/* SECTION HEADERS */
+/* ======================================== */
+
+.financial-table tr[data-section-header="true"] {
+    background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 100%);
+    font-weight: var(--font-bold);
+    color: var(--primary-900);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.financial-table tr[data-section-header="true"] td {
+    padding: var(--fluid-space-lg) var(--fluid-space-md);
+    font-size: var(--text-sm);
+    border-bottom: 2px solid var(--primary-200);
+}
+
+/* ======================================== */
+/* TOTAL ROWS */
+/* ======================================== */
+
+.financial-table tr[data-total="true"] {
+    background: var(--bg-tertiary);
+    font-weight: var(--font-bold);
+}
+
+.financial-table tr[data-total="true"] td {
+    border-top: 2px solid var(--border-primary);
+    border-bottom: 2px solid var(--border-primary);
+    padding: var(--fluid-space-lg) var(--fluid-space-md);
+}
+
+.financial-table tr[data-total="true"] td[data-amount="true"] {
+    font-size: var(--text-base);
+    color: var(--text-primary);
+}
+
+.financial-table tr[data-total="true"] td[data-highlight="true"] {
+    color: var(--primary-600);
+    font-weight: var(--font-bold);
+}
+
+/* ======================================== */
+/* MOBILE CARD-FLIP PATTERN */
+/* ======================================== */
+
+@media (max-width: 768px) {
+    /* Hide table headers on mobile */
+    .financial-table thead {
+        display: none;
+    }
+    
+    /* Convert table rows to cards */
+    .financial-table tbody tr {
+        display: block;
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-lg);
+        margin-bottom: var(--fluid-space-md);
+        background: var(--bg-primary);
+        box-shadow: var(--shadow-sm);
+        transition: all var(--transition-base);
+        padding: 0;
+        overflow: hidden;
+    }
+    
+    /* Remove default borders */
+    .financial-table tbody tr td {
+        display: block;
+        border: none;
+        padding: 0;
+        text-align: left;
+        width: 100%;
+    }
+    
+    /* Add data labels from headers */
+    .financial-table tbody tr td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 45%;
+        padding: var(--fluid-space-sm) var(--fluid-space-md);
+        font-weight: var(--font-semibold);
+        color: var(--text-secondary);
+        background: var(--bg-secondary);
+        border-right: 1px solid var(--border-primary);
+        font-size: var(--text-xs);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        z-index: 1;
+    }
+    
+    /* Position cell content */
+    .financial-table tbody tr td {
+        position: relative;
+        padding-left: 50%;
+        min-height: clamp(44px, 6vw, 52px);
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Section headers in mobile cards */
+    .financial-table tr[data-section-header="true"] {
+        background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 100%);
+        border-radius: var(--radius-lg);
+        margin-bottom: var(--fluid-space-lg);
+    }
+    
+    .financial-table tr[data-section-header="true"] td {
+        padding: var(--fluid-space-lg) var(--fluid-space-md);
+        font-size: var(--text-sm);
+        text-align: left;
+        background: transparent;
+        border: none;
+    }
+    
+    .financial-table tr[data-section-header="true"] td::before {
+        display: none;
+    }
+    
+    /* Total rows in mobile cards */
+    .financial-table tr[data-total="true"] {
+        background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+        border: 2px solid var(--primary-200);
+        margin-bottom: var(--fluid-space-lg);
+    }
+    
+    .financial-table tr[data-total="true"] td {
+        background: transparent;
+        border: none;
+        padding: var(--fluid-space-lg) var(--fluid-space-md);
+        text-align: left;
+    }
+    
+    .financial-table tr[data-total="true"] td::before {
+        display: none;
+    }
+    
+    /* Hover effects for mobile cards */
+    .financial-table tbody tr:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    /* Caption styling for mobile */
+    .financial-table caption {
+        border-bottom: none;
+        margin-bottom: var(--fluid-space-lg);
+    }
+}
+
+/* ======================================== */
+/* TABLE WRAPPER RESPONSIVENESS */
+/* ======================================== */
+
+@media (min-width: 769px) {
+    .financial-table-wrapper {
+        overflow-x: auto;
+        max-width: 100%;
+    }
+    
+    /* Show table headers on desktop */
+    .financial-table thead {
+        display: table-header-group;
+    }
+    
+    /* Restore table row display */
+    .financial-table tbody tr {
+        display: table-row;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        margin: 0;
+        padding: 0;
+    }
+    
+    /* Restore cell display */
+    .financial-table tbody tr td {
+        display: table-cell;
+        border-bottom: 1px solid var(--border-primary);
+        padding: var(--fluid-space-md);
+        text-align: left;
+        width: auto;
+        position: static;
+        min-height: auto;
+    }
+    
+    /* Remove mobile data labels */
+    .financial-table tbody tr td::before {
+        display: none;
+    }
+    
+    /* Restore section headers */
+    .financial-table tr[data-section-header="true"] {
+        background: var(--bg-secondary);
+        border-bottom: 2px solid var(--border-primary);
+    }
+    
+    .financial-table tr[data-section-header="true"] td {
+        padding: var(--fluid-space-lg) var(--fluid-space-md);
+        text-align: left;
+        background: var(--bg-secondary);
+    }
+    
+    /* Restore total rows */
+    .financial-table tr[data-total="true"] {
+        background: var(--bg-tertiary);
+        border-top: 2px solid var(--border-primary);
+        border-bottom: 2px solid var(--border-primary);
+    }
+    
+    .financial-table tr[data-total="true"] td {
+        padding: var(--fluid-space-lg) var(--fluid-space-md);
+        text-align: left;
+        background: var(--bg-tertiary);
+    }
+    
+    /* Restore hover effects */
+    .financial-table tbody tr:hover {
+        background: var(--bg-secondary);
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+/* ======================================== */
+/* VERY SMALL SCREENS (320px) */
+/* ======================================== */
+
+@media (max-width: 480px) {
+    .financial-table-wrapper {
+        margin: var(--fluid-space-md) 0;
+    }
+    
+    .financial-table {
+        font-size: var(--text-xs);
+    }
+    
+    .financial-table tbody tr {
+        margin-bottom: var(--fluid-space-sm);
+    }
+    
+    .financial-table tbody tr td {
+        padding-left: 45%;
+        min-height: clamp(40px, 8vw, 48px);
+    }
+    
+    .financial-table tbody tr td::before {
+        width: 40%;
+        padding: var(--fluid-space-xs) var(--fluid-space-sm);
+        font-size: 0.75rem;
+    }
+    
+    .financial-table tr[data-section-header="true"] td {
+        padding: var(--fluid-space-md) var(--fluid-space-sm);
+        font-size: var(--text-xs);
+    }
+    
+    .financial-table tr[data-total="true"] td {
+        padding: var(--fluid-space-md) var(--fluid-space-sm);
+    }
+}
+
+/* ======================================== */
+/* TOUCH DEVICE OPTIMIZATIONS */
+/* ======================================== */
+
+@media (hover: none) and (pointer: coarse) {
+    .financial-table tbody tr {
+        transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .financial-table tbody tr:active {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    /* Enhanced touch targets on mobile */
+    @media (max-width: 768px) {
+        .financial-table tbody tr {
+            margin-bottom: var(--fluid-space-md);
+        }
+        
+        .financial-table tbody tr td {
+            min-height: clamp(48px, 8vw, 56px);
+        }
+    }
+}
+
+/* ======================================== */
+/* ACCESSIBILITY */
+/* ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .financial-table tbody tr {
+        transition: none;
+    }
+    
+    .financial-table tbody tr:hover {
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+@media (prefers-contrast: high) {
+    .financial-table {
+        border: 2px solid var(--text-primary);
+    }
+    
+    .financial-table th,
+    .financial-table td {
+        border-color: var(--text-primary);
+    }
+    
+    .financial-table tr[data-section-header="true"] {
+        background: var(--bg-primary);
+        border: 2px solid var(--text-primary);
+        color: var(--text-primary);
+    }
+    
+    .financial-table tr[data-total="true"] {
+        background: var(--bg-primary);
+        border: 2px solid var(--text-primary);
+    }
+    
+    @media (max-width: 768px) {
+        .financial-table tbody tr {
+            border: 2px solid var(--text-primary);
+        }
+        
+        .financial-table tbody tr td::before {
+            background: var(--bg-primary);
+            border-right: 2px solid var(--text-primary);
+            color: var(--text-primary);
+        }
+    }
+}
+
+/* ======================================== */
+/* PRINT STYLES */
+/* ======================================== */
+
+@media print {
+    .financial-table-wrapper {
+        overflow: visible;
+        box-shadow: none;
+        border: 1px solid var(--border-primary);
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    
+    .financial-table {
+        border: none;
+        font-size: 10pt;
+        background: var(--white);
+    }
+    
+    .financial-table caption {
+        border-bottom: 2px solid var(--text-primary);
+        background: none;
+        padding: 8pt 0;
+    }
+    
+    .financial-table thead {
+        display: table-header-group;
+        background: var(--bg-primary);
+    }
+    
+    .financial-table th {
+        background: var(--bg-primary);
+        border-bottom: 1px solid var(--border-primary);
+        font-size: 9pt;
+        padding: 6pt;
+    }
+    
+    .financial-table tbody tr {
+        display: table-row;
+        page-break-inside: avoid;
+    }
+    
+    .financial-table tbody tr td {
+        display: table-cell;
+        border-bottom: 1px solid var(--border-primary);
+        padding: 6pt;
+        font-size: 9pt;
+    }
+    
+    .financial-table tr[data-section-header="true"] {
+        background: var(--bg-primary);
+        border-bottom: 2px solid var(--border-primary);
+        color: var(--text-primary);
+    }
+    
+    .financial-table tr[data-total="true"] {
+        background: var(--bg-tertiary);
+        border-top: 2px solid var(--border-primary);
+        border-bottom: 2px solid var(--border-primary);
+    }
+    
+    .financial-table tbody tr:hover {
+        background: transparent;
+    }
+}

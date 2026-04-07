@@ -129,8 +129,8 @@ class UploadService {
      */
     handleDragOver(event) {
         event.preventDefault();
-        this.elements.uploadBox.style.borderColor = '#3f51b5';
-        this.elements.uploadBox.style.background = '#f0f4ff';
+        this.elements.uploadBox.classList.add('upload-zone--hover');
+        this.elements.uploadBox.classList.remove('upload-zone--idle', 'upload-zone--active');
     }
 
     /**
@@ -138,8 +138,8 @@ class UploadService {
      */
     handleDragLeave(event) {
         event.preventDefault();
-        this.elements.uploadBox.style.borderColor = '#e0e0e0';
-        this.elements.uploadBox.style.background = '';
+        this.elements.uploadBox.classList.add('upload-zone--idle');
+        this.elements.uploadBox.classList.remove('upload-zone--hover', 'upload-zone--active');
     }
 
     /**
@@ -147,8 +147,8 @@ class UploadService {
      */
     handleDrop(event) {
         event.preventDefault();
-        this.elements.uploadBox.style.borderColor = '#e0e0e0';
-        this.elements.uploadBox.style.background = '';
+        this.elements.uploadBox.classList.add('upload-zone--idle');
+        this.elements.uploadBox.classList.remove('upload-zone--hover', 'upload-zone--active');
         
         const file = event.dataTransfer.files[0];
         if (file) {
@@ -191,29 +191,31 @@ class UploadService {
     }
 
     /**
-     * Upload file to server (DEMO VERSION for GitHub Pages)
+     * Upload file to server
      */
     async uploadFile(file) {
         this.setProcessingState(true, 'Uploading file...');
         
+        const formData = new FormData();
+        formData.append('file', file);
+        
         try {
-            // Simulate file processing for demo
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            const data = await SADPMRUtils.safeFetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
             
-            // Mock successful upload with demo data
-            const mockResponse = {
-                success: true,
-                filename: file.name,
-                size: file.size,
-                rows: Math.floor(Math.random() * 100) + 50, // Random 50-150 rows
-                message: 'File uploaded successfully'
-            };
-            
-            this.displayFileInfo(mockResponse);
-            this.setProcessingState(false);
+            if (data.success) {
+                this.showFileInfo(file, data);
+                this.state.uploadedFilePath = data.filepath;
+            } else {
+                throw new Error(data.error || 'Upload failed');
+            }
             
         } catch (error) {
-            this.showError('File upload failed: ' + error.message);
+            this.showError('Upload failed: ' + error.message);
+            throw error;
+        } finally {
             this.setProcessingState(false);
         }
     }
@@ -228,8 +230,10 @@ class UploadService {
         fileSize.textContent = `Size: ${SADPMRUtils.formatFileSize(file.size)}`;
         fileRows.textContent = `Accounts: ${data.row_count}`;
         
-        uploadBox.style.display = 'none';
-        fileInfo.style.display = 'block';
+        uploadBox.classList.add('upload-box--hidden');
+        uploadBox.classList.remove('upload-box--visible');
+        fileInfo.classList.add('file-info--visible');
+        fileInfo.classList.remove('file-info--hidden');
     }
 
     /**
@@ -242,31 +246,39 @@ class UploadService {
         }
         
         try {
-            this.elements.fileInfo.style.display = 'none';
+            this.elements.fileInfo.classList.add('file-info--hidden');
+            this.elements.fileInfo.classList.remove('file-info--visible');
             this.setProcessingState(true, 'Processing your Trial Balance...', 'Mapping accounts to GRAP line items');
             this.hideError();
             
-            // Simulate processing for demo
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            const data = await SADPMRUtils.safeFetch('/api/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    filepath: this.state.uploadedFilePath
+                })
+            });
             
-            // Mock successful processing with demo data
-            const mockResults = {
-                success: true,
-                results_file: 'demo_results_' + Date.now() + '.json',
-                summary: {
-                    total_accounts: Math.floor(Math.random() * 50) + 100,
-                    mapped_accounts: Math.floor(Math.random() * 40) + 80,
-                    unmapped_accounts: Math.floor(Math.random() * 5),
-                    processing_time: '2.3 seconds'
+            if (data.success) {
+                this.state.resultsFile = data.results_file;
+                this.displayResults(data.summary);
+            } else {
+                if (data.unmapped_accounts) {
+                    this.showError('Unmapped accounts detected. Please review the mapping configuration.');
+                    console.error('Unmapped accounts:', data.unmapped_accounts);
+                } else {
+                    this.showError(data.error || 'Processing failed');
                 }
-            };
-            
-            this.state.resultsFile = mockResults.results_file;
-            this.displayResults(mockResults.summary);
+                this.elements.fileInfo.classList.add('file-info--visible');
+                this.elements.fileInfo.classList.remove('file-info--hidden');
+            }
             
         } catch (error) {
             this.showError('Processing failed: ' + error.message);
-            this.elements.fileInfo.style.display = 'block';
+            this.elements.fileInfo.classList.add('file-info--visible');
+            this.elements.fileInfo.classList.remove('file-info--hidden');
             console.error('Processing error:', error);
         } finally {
             this.setProcessingState(false);
@@ -292,7 +304,8 @@ class UploadService {
         }
         
         // Show results section
-        this.elements.resultsSection.style.display = 'block';
+        this.elements.resultsSection.classList.add('results-section--visible');
+        this.elements.resultsSection.classList.remove('results-section--hidden');
         SADPMRUtils.scrollToElement(this.elements.resultsSection);
     }
 
@@ -307,34 +320,42 @@ class UploadService {
         
         const { pdfLoader, pdfSuccess } = this.elements;
         
+        pdfLoader.classList.add('pdf-loader--visible');
+        pdfLoader.classList.remove('pdf-loader--hidden');
+        pdfSuccess.classList.add('pdf-success--hidden');
+        pdfSuccess.classList.remove('pdf-success--visible');
+        
         try {
-            pdfLoader.style.display = 'block';
-            pdfSuccess.style.display = 'none';
+            const data = await SADPMRUtils.safeFetch('/api/generate-pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    results_file: this.state.resultsFile
+                })
+            });
             
-            // Simulate PDF generation for demo
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Mock successful PDF generation
-            const mockPdfData = {
-                success: true,
-                download_url: 'data:application/pdf;base64,JVBERi0xLjQK...mockpdfdata...',
-                pdf_filename: 'SADPMR_Financial_Statements_' + new Date().toISOString().split('T')[0] + '.pdf'
-            };
-            
-            // Update download link
-            const downloadLink = this.elements.downloadLink;
-            if (downloadLink) {
-                downloadLink.href = mockPdfData.download_url;
-                downloadLink.download = mockPdfData.pdf_filename;
+            if (data.success) {
+                // Update download link
+                const downloadLink = this.elements.downloadLink;
+                if (downloadLink) {
+                    downloadLink.href = data.download_url;
+                    downloadLink.download = data.pdf_filename;
+                }
+                
+                pdfSuccess.classList.add('pdf-success--visible');
+                pdfSuccess.classList.remove('pdf-success--hidden');
+            } else {
+                this.showError('PDF generation failed: ' + (data.error || 'Unknown error'));
             }
-            
-            pdfSuccess.style.display = 'block';
             
         } catch (error) {
             this.showError('PDF generation failed: ' + error.message);
             console.error('PDF generation error:', error);
         } finally {
-            pdfLoader.style.display = 'none';
+            pdfLoader.classList.add('pdf-loader--hidden');
+            pdfLoader.classList.remove('pdf-loader--visible');
         }
     }
 
@@ -347,18 +368,22 @@ class UploadService {
         this.state.resultsFile = null;
         
         // Reset UI
-        this.elements.uploadBox.style.display = 'block';
-        this.elements.fileInfo.style.display = 'none';
+        this.elements.uploadBox.classList.add('upload-box--visible');
+        this.elements.uploadBox.classList.remove('upload-box--hidden');
+        this.elements.fileInfo.classList.add('file-info--hidden');
+        this.elements.fileInfo.classList.remove('file-info--visible');
         this.hideResults();
         this.hideError();
         this.elements.fileInput.value = '';
         
         // Hide PDF related elements
         if (this.elements.pdfLoader) {
-            this.elements.pdfLoader.style.display = 'none';
+            this.elements.pdfLoader.classList.add('pdf-loader--hidden');
+            this.elements.pdfLoader.classList.remove('pdf-loader--visible');
         }
         if (this.elements.pdfSuccess) {
-            this.elements.pdfSuccess.style.display = 'none';
+            this.elements.pdfSuccess.classList.add('pdf-success--hidden');
+            this.elements.pdfSuccess.classList.remove('pdf-success--visible');
         }
         
         // Scroll to upload area
@@ -386,8 +411,10 @@ class UploadService {
         const { processingLoader, uploadBox } = this.elements;
         
         if (isProcessing) {
-            uploadBox.style.display = 'none';
-            processingLoader.style.display = 'block';
+            uploadBox.classList.add('upload-box--hidden');
+            uploadBox.classList.remove('upload-box--visible');
+            processingLoader.classList.add('processing-loader--visible');
+            processingLoader.classList.remove('processing-loader--hidden');
             
             if (message) {
                 processingLoader.querySelector('p').textContent = message;
@@ -399,11 +426,14 @@ class UploadService {
                 }
             }
         } else {
-            processingLoader.style.display = 'none';
+            processingLoader.classList.add('processing-loader--hidden');
+            processingLoader.classList.remove('processing-loader--visible');
             if (this.state.uploadedFilePath) {
-                this.elements.fileInfo.style.display = 'block';
+                this.elements.fileInfo.classList.add('file-info--visible');
+                this.elements.fileInfo.classList.remove('file-info--hidden');
             } else {
-                uploadBox.style.display = 'block';
+                uploadBox.classList.add('upload-box--visible');
+                uploadBox.classList.remove('upload-box--hidden');
             }
         }
     }
@@ -437,7 +467,8 @@ class UploadService {
      */
     hideResults() {
         if (this.elements.resultsSection) {
-            this.elements.resultsSection.style.display = 'none';
+            this.elements.resultsSection.classList.add('results-section--hidden');
+            this.elements.resultsSection.classList.remove('results-section--visible');
         }
     }
 

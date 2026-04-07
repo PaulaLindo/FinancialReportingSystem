@@ -1,0 +1,396 @@
+/* Base CSS - SADPMR Financial Reporting System */
+/* CSS resets, root variables, and global styles */
+
+/* ======================================== */
+/* CSS NORMALIZATION & RESETS */
+/* ======================================== */
+
+/* Box Sizing Rules */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* Remove default margins */
+* {
+    margin: 0;
+    padding: 0;
+}
+
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, main, menu, nav, section {
+    display: block;
+}
+
+/* ======================================== */
+/* ROOT VARIABLES */
+/* ======================================== */
+
+:root {
+    /* ======================================== */
+    /* FLUID BASE SCALE */
+    /* ======================================== */
+    --fluid-base-scale: clamp(14px, 2.5vw, 18px);
+    
+    /* ======================================== */
+    /* FLUID SPACING SCALE */
+    /* ======================================== */
+    --fluid-space-3xs: clamp(2px, 0.4vw, 4px);
+    --fluid-space-2xs: clamp(4px, 0.8vw, 8px);
+    --fluid-space-xs: clamp(6px, 1.2vw, 12px);
+    --fluid-space-sm: clamp(8px, 1.5vw, 16px);
+    --fluid-space-md: clamp(12px, 2vw, 24px);
+    --fluid-space-lg: clamp(16px, 2.5vw, 32px);
+    --fluid-space-xl: clamp(20px, 3.5vw, 48px);
+    --fluid-space-2xl: clamp(24px, 4vw, 64px);
+    --fluid-space-3xl: clamp(32px, 5vw, 96px);
+    --fluid-space-4xl: clamp(40px, 6vw, 128px);
+    --fluid-space-5xl: clamp(48px, 7vw, 160px);
+    --fluid-space-6xl: clamp(64px, 9vw, 256px);
+
+    /* ======================================== */
+    /* FLUID TYPOGRAPHY SCALE */
+    /* ======================================== */
+    --fluid-text-3xs: clamp(0.625rem, 1.5vw, 0.75rem);
+    --fluid-text-2xs: clamp(0.75rem, 1.8vw, 0.875rem);
+    --fluid-text-xs: clamp(0.875rem, 2vw, 1rem);
+    --fluid-text-sm: clamp(1rem, 2.25vw, 1.25rem);
+    --fluid-text-base: clamp(1.125rem, 2.5vw, 1.4rem);
+    --fluid-text-lg: clamp(1.25rem, 2.75vw, 1.562rem);
+    --fluid-text-xl: clamp(1.375rem, 3.5vw, 1.75rem);
+    --fluid-text-2xl: clamp(1.562rem, 4.5vw, 1.95rem);
+    --fluid-text-3xl: clamp(1.75rem, 5.5vw, 2.44rem);
+    --fluid-text-4xl: clamp(1.95rem, 6.5vw, 3rem);
+    --fluid-text-5xl: clamp(2.44rem, 7.5vw, 3.75rem);
+    --fluid-text-6xl: clamp(3rem, 8.5vw, 4.8rem);
+
+    /* ======================================== */
+    /* HEADING TYPOGRAPHY SCALE */
+    /* ======================================== */
+    --heading-3xs: clamp(0.875rem, 2.25vw, 1rem);
+    --heading-xs: clamp(1rem, 2.5vw, 1.25rem);
+    --heading-sm: clamp(1.25rem, 2.75vw, 1.562rem);
+    --heading-base: clamp(1.562rem, 3.5vw, 1.95rem);
+    --heading-lg: clamp(1.95rem, 4.5vw, 2.44rem);
+    --heading-xl: clamp(2.44rem, 5.5vw, 3rem);
+    --heading-2xl: clamp(3rem, 6.5vw, 3.75rem);
+    --heading-3xl: clamp(3.75rem, 7.5vw, 4.8rem);
+    --heading-4xl: clamp(4.8rem, 8.5vw, 6rem);
+    --heading-5xl: clamp(6rem, 9.5vw, 7.5rem);
+
+    /* ======================================== */
+    /* CONTAINER SIZES */
+    /* ======================================== */
+    --container-sm: clamp(320px, 90vw, 480px);
+    --container-md: clamp(480px, 80vw, 640px);
+    --container-lg: clamp(640px, 70vw, 896px);
+    --container-xl: clamp(896px, 60vw, 1152px);
+    --container-2xl: clamp(1152px, 50vw, 1344px);
+    --container-3xl: clamp(1344px, 40vw, 1536px);
+    --container-4xl: clamp(1536px, 30vw, 1728px);
+    --container-5xl: clamp(1728px, 20vw, 1920px);
+
+    /* ======================================== */
+    /* BORDER RADIUS */
+    /* ======================================== */
+    --radius-xs: clamp(2px, 0.4vw, 4px);
+    --radius-sm: clamp(4px, 0.8vw, 8px);
+    --radius-md: clamp(8px, 1.5vw, 16px);
+    --radius-lg: clamp(12px, 2vw, 24px);
+    --radius-xl: clamp(16px, 2.5vw, 32px);
+    --radius-2xl: clamp(24px, 3vw, 40px);
+    --radius-3xl: clamp(32px, 4vw, 48px);
+    --radius-4xl: clamp(40px, 5vw, 56px);
+    --radius-5xl: clamp(48px, 6vw, 64px);
+    --radius-full: clamp(9999px, 50vw, 9999px);
+
+    /* ======================================== */
+    /* Z-INDEX LAYERING */
+    /* ======================================== */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+    --z-toast: 1080;
+    --z-overlay: 1099;
+    --z-max: 2147483647;
+
+    /* ======================================== */
+    /* COLOR SYSTEM */
+    /* ======================================== */
+    
+    /* Primary Colors */
+    --primary-50: #eff6ff;
+    --primary-100: #dbeafe;
+    --primary-200: #bfdbfe;
+    --primary-300: #93c5fd;
+    --primary-400: #60a5fa;
+    --primary-500: #3b82f6;
+    --primary-600: #2563eb;
+    --primary-700: #1d4ed8;
+    --primary-800: #1e40af;
+    --primary-900: #1e3a8a;
+    --primary-950: #172554;
+
+    /* Accent Colors */
+    --accent-taupe: #d4a574;
+    --accent-taupe-light: #e8d4c0;
+    --accent-taupe-dark: #b8905a;
+    --accent-gold: #f59e0b;
+    --accent-gold-light: #fbbf24;
+    --accent-gold-dark: #d97706;
+
+    /* Semantic Colors */
+    --success: #10b981;
+    --success-light: #34d399;
+    --success-dark: #059669;
+    --warning: #f59e0b;
+    --warning-light: #fbbf24;
+    --warning-dark: #d97706;
+    --error: #ef4444;
+    --error-light: #f87171;
+    --error-dark: #dc2626;
+    --info: #3b82f6;
+    --info-light: #60a5fa;
+    --info-dark: #2563eb;
+    --white: #ffffff;
+
+    /* Neutral Colors */
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --gray-950: #030712;
+
+    /* Typography Colors */
+    --text-primary: var(--gray-900);
+    --text-secondary: var(--gray-600);
+    --text-tertiary: var(--gray-500);
+    --text-inverse: var(--white);
+    --text-muted: var(--gray-400);
+
+    /* Background Colors */
+    --bg-primary: var(--white);
+    --bg-secondary: var(--gray-50);
+    --bg-tertiary: var(--gray-100);
+    --bg-inverse: var(--gray-900);
+    --bg-muted: var(--gray-200);
+
+    /* Border Colors */
+    --border-primary: var(--gray-200);
+    --border-secondary: var(--gray-300);
+    --border-tertiary: var(--gray-400);
+    --border-inverse: var(--gray-700);
+    --border-muted: var(--gray-100);
+
+    /* Shadow Colors */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+
+    /* ======================================== */
+    /* TYPOGRAPHY */
+    /* ======================================== */
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-serif: 'Georgia', 'Times New Roman', serif;
+    --font-mono: 'SF Mono', Monaco, Inconsolata, 'Roboto Mono', 'Source Code Pro', monospace;
+
+    /* Font Sizes */
+    --text-xs: var(--fluid-text-xs);
+    --text-sm: var(--fluid-text-sm);
+    --text-base: var(--fluid-text-base);
+    --text-lg: var(--fluid-text-lg);
+    --text-xl: var(--fluid-text-xl);
+    --text-2xl: var(--fluid-text-2xl);
+    --text-3xl: var(--fluid-text-3xl);
+    --text-4xl: var(--fluid-text-4xl);
+    --text-5xl: var(--fluid-text-5xl);
+
+    /* Heading Sizes */
+    --heading-xs: var(--heading-xs);
+    --heading-sm: var(--heading-sm);
+    --heading-base: var(--heading-base);
+    --heading-lg: var(--heading-lg);
+    --heading-xl: var(--heading-xl);
+    --heading-2xl: var(--heading-2xl);
+    --heading-3xl: var(--heading-3xl);
+    --heading-4xl: var(--heading-4xl);
+    --heading-5xl: var(--heading-5xl);
+
+    /* Line Heights */
+    --leading-none: 1;
+    --leading-tight: 1.25;
+    --leading-snug: 1.375;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.625;
+    --leading-loose: 2;
+
+    /* Font Weights */
+    --font-thin: 100;
+    --font-light: 300;
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+    --font-extrabold: 800;
+    --font-black: 900;
+
+    /* ======================================== */
+    /* TRANSITIONS & ANIMATIONS */
+    /* ======================================== */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ======================================== */
+    /* BREAKPOINTS */
+    /* ======================================== */
+    --breakpoint-sm: 640px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 1024px;
+    --breakpoint-xl: 1280px;
+    --breakpoint-2xl: 1536px;
+
+    /* ======================================== */
+    /* DEVICE SPECIFIC */
+    /* ======================================== */
+    --touch-target-min: 44px;
+    --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.5);
+    --focus-ring-error: 0 0 0 3px rgba(239, 68, 68, 0.5);
+    --focus-ring-success: 0 0 0 3px rgba(16, 185, 129, 0.5);
+}
+
+/* ======================================== */
+/* GLOBAL STYLES */
+/* ======================================== */
+
+html {
+    font-size: var(--fluid-base-scale);
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Focus Styles */
+:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+}
+
+:focus-visible {
+    outline: 2px solid var(--info);
+    outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+    background-color: var(--primary-200);
+    color: var(--primary-900);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-secondary);
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--border-tertiary);
+}
+
+/* Reduced Motion Support handled by navigation-consolidated.css */
+
+/* ======================================== */
+/* PRINT STYLES */
+/* ======================================== */
+
+@media print {
+    *,
+    *::before,
+    *::after {
+        background: transparent;
+        color: black;
+        box-shadow: none;
+        text-shadow: none;
+    }
+    
+    a,
+    a:visited {
+        text-decoration: underline;
+    }
+    
+    a[href]:after {
+        content: " (" attr(href) ")";
+    }
+    
+    abbr[title]:after {
+        content: " (" attr(title) ")";
+    }
+    
+    pre,
+    blockquote {
+        border: 1px solid #999;
+        page-break-inside: avoid;
+    }
+    
+    thead {
+        display: table-header-group;
+    }
+    
+    tr,
+    img {
+        page-break-inside: avoid;
+    }
+    
+    img {
+        max-width: 100%;
+    }
+    
+    p,
+    h2,
+    h3 {
+        orphans: 3;
+        widows: 3;
+    }
+    
+    h2,
+    h3 {
+        page-break-after: avoid;
+    }
+}
