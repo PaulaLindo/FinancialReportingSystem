@@ -9,9 +9,18 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
     <title>Reports - SADPMR Financial Reporting System</title>
-    <link rel="stylesheet" href="css/styles.css">
-    
-    <script>
+    <link rel="stylesheet" href="css/styles.css">    <script>
+        // Check authentication on page load
+        function checkAuthentication() {
+            const currentUser = sessionStorage.getItem('demoUser');
+            if (!currentUser) {
+                // Not logged in, redirect to login
+                window.location.href = 'login.html';
+                return false;
+            }
+            return JSON.parse(currentUser);
+        }
+
         function handleLoginForm(event, redirectUrl) {
             event.preventDefault();
             
@@ -39,6 +48,32 @@
                 alert('Invalid credentials. Use demo credentials shown below.');
             }
         }
+
+        function logout() {
+            sessionStorage.removeItem('demoUser');
+            window.location.href = 'login.html';
+        }
+
+        // Check authentication immediately
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = checkAuthentication();
+            if (user) {
+                // Update user info in navbar
+                const userNameElements = document.querySelectorAll('.user-name');
+                const userRoleElements = document.querySelectorAll('.user-role');
+                
+                userNameElements.forEach(el => {
+                    if (el) el.textContent = user.name;
+                });
+                
+                userRoleElements.forEach(el => {
+                    if (el) {
+                        el.textContent = user.role;
+                        el.className = `user-role user-role--${user.role.toLowerCase()}`;
+                    }
+                });
+            }
+        });
     </script></head>
 <body>
     <nav class="navbar">
@@ -75,7 +110,7 @@
                         
                     </span>
                 </div>
-                <a href="logout.html" class="logout-btn">Logout</a>
+                <a href="#" onclick="logout(); return false;" class="logout-btn">Logout</a>
             </div>
             
             <div class="auth-menu">

@@ -9,9 +9,18 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
     <title>Statement of Financial Performance - SADPMR Financial Reporting System</title>
-    <link rel="stylesheet" href="css/styles.css">
-    
-    <script>
+    <link rel="stylesheet" href="css/styles.css">    <script>
+        // Check authentication on page load
+        function checkAuthentication() {
+            const currentUser = sessionStorage.getItem('demoUser');
+            if (!currentUser) {
+                // Not logged in, redirect to login
+                window.location.href = 'login.html';
+                return false;
+            }
+            return JSON.parse(currentUser);
+        }
+
         function handleLoginForm(event, redirectUrl) {
             event.preventDefault();
             
@@ -39,6 +48,32 @@
                 alert('Invalid credentials. Use demo credentials shown below.');
             }
         }
+
+        function logout() {
+            sessionStorage.removeItem('demoUser');
+            window.location.href = 'login.html';
+        }
+
+        // Check authentication immediately
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = checkAuthentication();
+            if (user) {
+                // Update user info in navbar
+                const userNameElements = document.querySelectorAll('.user-name');
+                const userRoleElements = document.querySelectorAll('.user-role');
+                
+                userNameElements.forEach(el => {
+                    if (el) el.textContent = user.name;
+                });
+                
+                userRoleElements.forEach(el => {
+                    if (el) {
+                        el.textContent = user.role;
+                        el.className = `user-role user-role--${user.role.toLowerCase()}`;
+                    }
+                });
+            }
+        });
     </script></head>
 <body>
     <nav class="navbar">
@@ -75,7 +110,7 @@
                         
                     </span>
                 </div>
-                <a href="logout.html" class="logout-btn">Logout</a>
+                <a href="#" onclick="logout(); return false;" class="logout-btn">Logout</a>
             </div>
             
             <div class="auth-menu">
@@ -329,27 +364,72 @@
 
     <script src="js/utils.js"></script>
     <script src="js/main.js"></script>
-    <script src="js/navigation-fluid.js"></script>
-    
-<script>
-// Add data-label attributes for mobile card view
-document.addEventListener('DOMContentLoaded', function() {
-    const table = document.querySelector('.financial-table');
-    if (table) {
-        const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent.trim());
-        const rows = table.querySelectorAll('tbody tr');
-        
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            cells.forEach((cell, index) => {
-                if (headers[index]) {
-                    cell.setAttribute('data-label', headers[index]);
-                }
-            });
+    <script src="js/navigation-fluid.js"></script>    <script>
+        // Check authentication on page load
+        function checkAuthentication() {
+            const currentUser = sessionStorage.getItem('demoUser');
+            if (!currentUser) {
+                // Not logged in, redirect to login
+                window.location.href = 'login.html';
+                return false;
+            }
+            return JSON.parse(currentUser);
+        }
+
+        function handleLoginForm(event, redirectUrl) {
+            event.preventDefault();
+            
+            // Simple demo login validation
+            const username = document.getElementById('username')?.value || '';
+            const password = document.getElementById('password')?.value || '';
+            
+            // Demo credentials
+            const demoUsers = {
+                'cfo@sadpmr.gov.za': { role: 'CFO', name: 'Sarah Nkosi', redirect: 'index.html' },
+                'accountant@sadpmr.gov.za': { role: 'Accountant', name: 'John Smith', redirect: 'index.html' },
+                'clerk@sadpmr.gov.za': { role: 'Clerk', name: 'Mike Davis', redirect: 'index.html' },
+                'auditor@agsa.gov.za': { role: 'Auditor', name: 'Patience Moyo', redirect: 'index.html' }
+            };
+            
+            if (demoUsers[username] && password === 'demo123') {
+                // Store user info in sessionStorage for demo
+                const user = demoUsers[username];
+                sessionStorage.setItem('demoUser', JSON.stringify(user));
+                
+                // Redirect to dashboard
+                window.location.href = user.redirect || redirectUrl || 'index.html';
+            } else {
+                // Show error message
+                alert('Invalid credentials. Use demo credentials shown below.');
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('demoUser');
+            window.location.href = 'login.html';
+        }
+
+        // Check authentication immediately
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = checkAuthentication();
+            if (user) {
+                // Update user info in navbar
+                const userNameElements = document.querySelectorAll('.user-name');
+                const userRoleElements = document.querySelectorAll('.user-role');
+                
+                userNameElements.forEach(el => {
+                    if (el) el.textContent = user.name;
+                });
+                
+                userRoleElements.forEach(el => {
+                    if (el) {
+                        el.textContent = user.role;
+                        el.className = `user-role user-role--${user.role.toLowerCase()}`;
+                    }
+                });
+            }
         });
-    }
-});
-</script>
+    </script>
 
 </body>
 </html>
