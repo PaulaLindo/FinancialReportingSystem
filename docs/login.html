@@ -15,7 +15,29 @@
 
 </head>
 <body>
-    
+    <nav class="navbar">
+    <div class="container-content">
+        <div class="nav-brand">
+            <h2>SADPMR Financial Reporting System</h2>
+            <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
+        </div>
+        
+        <div class="nav-wrapper" id="navMenu">
+            <ul class="nav-menu">
+                <li><a href="index.html">Dashboard</a></li>
+                <li><a href="upload.html">Upload</a></li>
+                <li><a href="reports.html">Reports</a></li>
+                <li><a href="about.html" class="active">About</a></li>
+            </ul>
+
+            <div class="auth-menu">
+                <a href="login.html" class="login-btn">Login</a>
+            </div>
+        </div>
+    </div>
+    <div class="mobile-menu-overlay"></div>
+</nav>
+
     <div class="login-container">
         <div class="login-box">
             <div class="login-header">
@@ -28,7 +50,7 @@
                             
                         </div>
 
-            <form onsubmit="handleLoginForm(event, 'login.html')" method="GET">
+            <form id="loginForm" onsubmit="handleLoginForm(event, 'login.html')" method="GET">
                 <div class="form-group">
                     <label for="username" class="form-label">Email Address</label>
                     <input 
@@ -114,10 +136,38 @@
     </div>
 
     <script>
+        function handleLoginForm(event, redirectUrl) {
+            event.preventDefault();
+            
+            // Simple demo login validation
+            const username = document.getElementById('username')?.value || '';
+            const password = document.getElementById('password')?.value || '';
+            
+            // Demo credentials
+            const demoUsers = {
+                'cfo@sadpmr.gov.za': { role: 'CFO', name: 'Sarah Nkosi', redirect: 'index.html' },
+                'accountant@sadpmr.gov.za': { role: 'Accountant', name: 'John Smith', redirect: 'index.html' },
+                'clerk@sadpmr.gov.za': { role: 'Clerk', name: 'Mike Davis', redirect: 'index.html' },
+                'auditor@agsa.gov.za': { role: 'Auditor', name: 'Patience Moyo', redirect: 'index.html' }
+            };
+            
+            if (demoUsers[username] && password === 'demo123') {
+                // Store user info in sessionStorage for demo
+                const user = demoUsers[username];
+                sessionStorage.setItem('demoUser', JSON.stringify(user));
+                
+                // Redirect to dashboard
+                window.location.href = user.redirect || redirectUrl || 'index.html';
+            } else {
+                // Show error message
+                alert('Invalid credentials. Use demo credentials shown below.');
+            }
+        }
+
         function quickLogin(username, password) {
             document.getElementById('username').value = username;
             document.getElementById('password').value = password;
-            document.querySelector('form').submit();
+            handleLoginForm(new Event('submit'), 'index.html');
         }
 
         // Form validation
@@ -169,5 +219,39 @@
     </script>
 
     <script src="js/utils.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/mobile-menu.js"></script>
+    
+    <footer class="footer">
+        <div class="container-content">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>SADPMR Financial Reporting System</h3>
+                    <p>GRAP-Compliant Financial Statement Automation for South African public entities.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="index.html">Dashboard</a></li>
+                        <li><a href="upload.html">Upload Trial Balance</a></li>
+                        <li><a href="reports.html">View Reports</a></li>
+                        <li><a href="about.html">About</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#">GRAP Standards</a></li>
+                        <li><a href="#">User Guide</a></li>
+                        <li><a href="#">Support</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 South African Department of Public Management and Relations. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
     </body>
 </html>
