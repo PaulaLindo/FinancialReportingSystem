@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a1128">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
+    <title>Statement of Cash Flows - SADPMR Financial Reporting System</title>
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <script>
+        function handleLoginForm(event, redirectUrl) {
+            event.preventDefault();
+            
+            // Simple demo login validation
+            const username = document.getElementById('username')?.value || '';
+            const password = document.getElementById('password')?.value || '';
+            
+            // Demo credentials
+            const demoUsers = {
+                'cfo@sadpmr.gov.za': { role: 'CFO', name: 'Sarah Nkosi', redirect: 'index.html' },
+                'accountant@sadpmr.gov.za': { role: 'Accountant', name: 'John Smith', redirect: 'index.html' },
+                'clerk@sadpmr.gov.za': { role: 'Clerk', name: 'Mike Davis', redirect: 'index.html' },
+                'auditor@agsa.gov.za': { role: 'Auditor', name: 'Patience Moyo', redirect: 'index.html' }
+            };
+            
+            if (demoUsers[username] && password === 'demo123') {
+                // Store user info in sessionStorage for demo
+                const user = demoUsers[username];
+                sessionStorage.setItem('demoUser', JSON.stringify(user));
+                
+                // Redirect to dashboard
+                window.location.href = user.redirect || redirectUrl || 'index.html';
+            } else {
+                // Show error message
+                alert('Invalid credentials. Use demo credentials shown below.');
+            }
+        }
+    </script></head>
+<body>
+    <nav class="navbar">
+    <div class="container-content">
+        <div class="nav-brand">
+            <h2>SADPMR Financial Reporting System</h2>
+            <p class="tagline">GRAP-Compliant Financial Statement Automation</p>
+        </div>
+        
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        
+        <div class="nav-wrapper" id="navMenu">
+            
+            <ul class="nav-menu">
+                <li><a href="index.html" class="active">Dashboard</a></li>
+                
+                <li><a href="upload.html" class="active">Upload Trial Balance</a></li>
+                                
+                <li><a href="reports.html" class="active">Reports</a></li>
+                <li><a href="export.html" class="active">Export</a></li>
+                <li><a href="admin.html" class="active">Admin</a></li>
+                                <li><a href="about.html" class="active">About</a></li>
+            </ul>
+            
+            <div class="user-menu">
+                <div class="user-info">
+                    <span class="user-name">Sarah Nkosi</span>
+                    <span class="user-role user-role--">
+                        
+                    </span>
+                </div>
+                <a href="logout.html" class="logout-btn">Logout</a>
+            </div>
+            
+            <div class="auth-menu">
+                <a href="login.html" class="login-btn">Login</a>
+            </div>
+                    </div>
+    </div>
+    
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+</nav>
+
+    <div class="container-content financial-statement-container">
+        <h1 class="text-center">Statement of Cash Flows</h1>
+        <p class="page-subtitle">For the year ended </p>
+
+        <div class="table-fluid-wrapper">
+            <table class="table-fluid cash-flow-table">
+                <caption>Statement of Cash Flows - </caption>
+                <thead>
+                    <tr>
+                        <th data-critical="true" data-label="Particulars">Particulars</th>
+                        <th data-center="true" data-label="Note">Note</th>
+                        <th data-amount="true" data-label="Current Year">Current Year (R)</th>
+                        <th data-amount="true" data-label="Previous Year">Previous Year (R)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- CASH FLOWS FROM OPERATING ACTIVITIES -->
+                    <tr data-section-header="true">
+                        <td colspan="4">CASH FLOWS FROM OPERATING ACTIVITIES</td>
+                    </tr>
+                    
+                    <tr data-operating="true">
+                        <td data-critical="true" data-label="Particulars">Cash received from service fees</td>
+                        <td data-center="true" data-label="Note">1</td>
+                        <td data-amount="true" data-label="Current Year">2,350,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">2,100,000.00</td>
+                    </tr>
+                    
+                    <tr data-operating="true">
+                        <td data-critical="true" data-label="Particulars">Cash received from grants</td>
+                        <td data-center="true" data-label="Note">2</td>
+                        <td data-amount="true" data-label="Current Year">180,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">165,000.00</td>
+                    </tr>
+                    
+                    <tr data-operating="true">
+                        <td data-critical="true" data-label="Particulars">Cash received from investment income</td>
+                        <td data-center="true" data-label="Note">3</td>
+                        <td data-amount="true" data-label="Current Year">42,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">35,000.00</td>
+                    </tr>
+                    
+                    <tr data-operating="true">
+                        <td data-critical="true" data-label="Particulars">Cash paid to employees</td>
+                        <td data-center="true" data-label="Note">4</td>
+                        <td data-amount="true" data-label="Current Year">-1,180,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">-1,120,000.00</td>
+                    </tr>
+                    
+                    <tr data-operating="true">
+                        <td data-critical="true" data-label="Particulars">Cash paid to suppliers</td>
+                        <td data-center="true" data-label="Note">5</td>
+                        <td data-amount="true" data-label="Current Year">-450,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">-425,000.00</td>
+                    </tr>
+                    
+                    <tr data-operating="true">
+                        <td data-critical="true" data-label="Particulars">Cash paid for operating expenses</td>
+                        <td data-center="true" data-label="Note">6</td>
+                        <td data-amount="true" data-label="Current Year">-125,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">-118,000.00</td>
+                    </tr>
+                    
+                    <tr data-operating="true">
+                        <td data-critical="true" data-label="Particulars">Cash paid for finance costs</td>
+                        <td data-center="true" data-label="Note">7</td>
+                        <td data-amount="true" data-label="Current Year">-32,000.00</td>
+                        <td data-amount="true" data-label="Previous Year">-38,000.00</td>
+                    </tr>
+                    
+                    <tr data-operating="true">
+                        <td data-critical="true">Cash paid for taxes</td>
+                        <td data-center="true">8</td>
+                        <td data-amount="true">-295,000.00</td>
+                        <td data-amount="true">-245,000.00</td>
+                    </tr>
+                    
+                    <tr data-total="true">
+                        <td data-critical="true">NET CASH FROM OPERATING ACTIVITIES</td>
+                        <td data-center="true"></td>
+                        <td data-amount="true" data-highlight="true">640,000.00</td>
+                        <td data-amount="true" data-highlight="true">609,000.00</td>
+                    </tr>
+                    
+                    <!-- CASH FLOWS FROM INVESTING ACTIVITIES -->
+                    <tr data-section-header="true">
+                        <td colspan="4">CASH FLOWS FROM INVESTING ACTIVITIES</td>
+                    </tr>
+                    
+                    <tr data-investing="true">
+                        <td data-critical="true">Proceeds from sale of equipment</td>
+                        <td data-center="true">9</td>
+                        <td data-amount="true">85,000.00</td>
+                        <td data-amount="true">0.00</td>
+                    </tr>
+                    
+                    <tr data-investing="true">
+                        <td data-critical="true">Purchase of property, plant and equipment</td>
+                        <td data-center="true">10</td>
+                        <td data-amount="true">-180,000.00</td>
+                        <td data-amount="true">-125,000.00</td>
+                    </tr>
+                    
+                    <tr data-investing="true">
+                        <td data-critical="true">Purchase of intangible assets</td>
+                        <td data-center="true">11</td>
+                        <td data-amount="true">-25,000.00</td>
+                        <td data-amount="true">-15,000.00</td>
+                    </tr>
+                    
+                    <tr data-investing="true">
+                        <td data-critical="true">Interest received on investments</td>
+                        <td data-center="true">12</td>
+                        <td data-amount="true">12,000.00</td>
+                        <td data-amount="true">8,000.00</td>
+                    </tr>
+                    
+                    <tr data-total="true">
+                        <td data-critical="true">NET CASH FROM INVESTING ACTIVITIES</td>
+                        <td data-center="true"></td>
+                        <td data-amount="true" data-highlight="true">-108,000.00</td>
+                        <td data-amount="true" data-highlight="true">-132,000.00</td>
+                    </tr>
+                    
+                    <!-- CASH FLOWS FROM FINANCING ACTIVITIES -->
+                    <tr data-section-header="true">
+                        <td colspan="4">CASH FLOWS FROM FINANCING ACTIVITIES</td>
+                    </tr>
+                    
+                    <tr data-financing="true">
+                        <td data-critical="true">Proceeds from long-term borrowings</td>
+                        <td data-center="true">13</td>
+                        <td data-amount="true">100,000.00</td>
+                        <td data-amount="true">0.00</td>
+                    </tr>
+                    
+                    <tr data-financing="true">
+                        <td data-critical="true">Repayment of long-term borrowings</td>
+                        <td data-center="true">14</td>
+                        <td data-amount="true">-50,000.00</td>
+                        <td data-amount="true">-75,000.00</td>
+                    </tr>
+                    
+                    <tr data-financing="true">
+                        <td data-critical="true">Dividends paid</td>
+                        <td data-center="true">15</td>
+                        <td data-amount="true">-85,000.00</td>
+                        <td data-amount="true">-80,000.00</td>
+                    </tr>
+                    
+                    <tr data-financing="true">
+                        <td data-critical="true">Interest paid on borrowings</td>
+                        <td data-center="true">16</td>
+                        <td data-amount="true">-32,000.00</td>
+                        <td data-amount="true">-35,000.00</td>
+                    </tr>
+                    
+                    <tr data-total="true">
+                        <td data-critical="true">NET CASH FROM FINANCING ACTIVITIES</td>
+                        <td data-center="true"></td>
+                        <td data-amount="true" data-highlight="true">-67,000.00</td>
+                        <td data-amount="true" data-highlight="true">-190,000.00</td>
+                    </tr>
+                    
+                    <!-- NET INCREASE/DECREASE IN CASH AND CASH EQUIVALENTS -->
+                    <tr data-total="true">
+                        <td data-critical="true">NET INCREASE/DECREASE IN CASH AND CASH EQUIVALENTS</td>
+                        <td data-center="true"></td>
+                        <td data-amount="true" data-highlight="true">465,000.00</td>
+                    </tr>
+                    
+                    <tr>
+                        <td data-critical="true">Cash and cash equivalents at beginning of year</td>
+                        <td data-center="true"></td>
+                        <td data-amount="true">180,000.00</td>
+                        <td data-amount="true">150,000.00</td>
+                    </tr>
+                    
+                    <tr data-total="true">
+                        <td data-critical="true">Cash and cash equivalents at end of year</td>
+                        <td data-center="true"></td>
+                        <td data-amount="true" data-highlight="true">645,000.00</td>
+                        <td data-amount="true" data-highlight="true">615,000.00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="statement-footer grid-container">
+            <div class="footer-actions">
+                <button class="btn btn-primary">Download PDF</button>
+                <button class="btn btn-secondary">Export to Excel</button>
+                <button class="btn btn-secondary">Print Statement</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container-content">
+            <p>&copy; 2025 SADPMR Financial Reporting System | Developed for Schedule 3A PFMA Compliance</p>
+            <p class="footer-note">Demo Version - February 3, 2026 Presentation</p>
+        </div>
+    </footer>
+
+    <script src="js/utils.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/navigation-fluid.js"></script>
+    
+<script>
+// Add data-label attributes for mobile card view
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.querySelector('.financial-table');
+    if (table) {
+        const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent.trim());
+        const rows = table.querySelectorAll('tbody tr');
+        
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            cells.forEach((cell, index) => {
+                if (headers[index]) {
+                    cell.setAttribute('data-label', headers[index]);
+                }
+            });
+        });
+    }
+});
+</script>
+
+</body>
+</html>

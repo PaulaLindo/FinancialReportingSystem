@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a1128">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
+    <title>Login - SADPMR Financial Reporting System</title>
+    <link rel="stylesheet" href="css/styles.css">
+    
+<link rel="stylesheet" href="css/login.css">
+
+</head>
+<body>
+    
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <div class="login-logo">🔐</div>
+                <h1 class="text-center">Welcome Back</h1>
+                <p>SADPMR Financial Reporting System</p>
+            </div>
+
+                        <div class="alert alert-">
+                            
+                        </div>
+
+            <form onsubmit="handleLoginForm(event, 'login.html')" method="GET">
+                <div class="form-group">
+                    <label for="username" class="form-label">Email Address</label>
+                    <input 
+                        type="email" 
+                        id="username" 
+                        name="username" 
+                        class="form-input" 
+                        placeholder="your.email@sadpmr.gov.za"
+                        autofocus
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input" 
+                        placeholder="Enter your password"
+                    >
+                </div>
+
+                <button type="submit" class="login-button">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="demo-credentials">
+                <div class="demo-account">
+                    <div>
+                        <div class="demo-role">
+                            <span class="role-badge role-cfo">CFO</span>
+                            Full Access
+                        </div>
+                        <div class="demo-email">cfo@sadpmr.gov.za / demo123</div>
+                    </div>
+                </div>
+                <div class="demo-account">
+                    <div>
+                        <div class="demo-role">
+                            <span class="role-badge role-accountant">Accountant</span>
+                            Process & Reports
+                        </div>
+                        <div class="demo-email">accountant@sadpmr.gov.za / demo123</div>
+                    </div>
+                </div>
+                <div class="demo-account">
+                    <div>
+                        <div class="demo-role">
+                            <span class="role-badge role-clerk">Clerk</span>
+                            Upload Only
+                        </div>
+                        <div class="demo-email">clerk@sadpmr.gov.za / demo123</div>
+                    </div>
+                </div>
+                <div class="demo-account">
+                    <div>
+                        <div class="demo-role">
+                            <span class="role-badge role-auditor">Auditor</span>
+                            View Only
+                        </div>
+                        <div class="demo-email">auditor@agsa.gov.za / demo123</div>
+                    </div>
+                </div>
+
+                <div class="quick-login">
+                    <button type="button" class="quick-login-btn" onclick="quickLogin('cfo@sadpmr.gov.za', 'demo123')">
+                        Quick Login: CFO
+                    </button>
+                    <button type="button" class="quick-login-btn" onclick="quickLogin('accountant@sadpmr.gov.za', 'demo123')">
+                        Quick Login: Accountant
+                    </button>
+                    <button type="button" class="quick-login-btn" onclick="quickLogin('clerk@sadpmr.gov.za', 'demo123')">
+                        Quick Login: Clerk
+                    </button>
+                    <button type="button" class="quick-login-btn" onclick="quickLogin('auditor@agsa.gov.za', 'demo123')">
+                        Quick Login: Auditor
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function quickLogin(username, password) {
+            document.getElementById('username').value = username;
+            document.getElementById('password').value = password;
+            document.querySelector('form').submit();
+        }
+
+        // Form validation
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const username = document.getElementById('username');
+            const password = document.getElementById('password');
+            
+            // Reset any previous error states
+            username.style.borderColor = 'var(--gray-300)';
+            password.style.borderColor = 'var(--gray-300)';
+            
+            let isValid = true;
+            
+            // Validate email
+            if (!username.value || !username.value.includes('@')) {
+                username.style.borderColor = 'var(--error)';
+                isValid = false;
+            }
+            
+            // Validate password
+            if (!password.value || password.value.length < 1) {
+                password.style.borderColor = 'var(--error)';
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+
+        // Clear error states on input
+        document.getElementById('username').addEventListener('input', function() {
+            this.style.borderColor = 'var(--gray-300)';
+        });
+        
+        document.getElementById('password').addEventListener('input', function() {
+            this.style.borderColor = 'var(--gray-300)';
+        });
+
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                alert.classList.add('auth__alert--animated');
+                alert.classList.add('auth__alert--dismissing');
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 5000);
+    </script>
+
+    <script src="js/utils.js"></script>
+    </body>
+</html>
