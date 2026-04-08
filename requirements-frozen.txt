@@ -10,7 +10,6 @@ Flask-Session==0.5.0
 
 # Frozen-Flask for static site generation
 Frozen-Flask==0.18
-Flask-Frozen==0.15
 
 # Additional utilities for static generation
 click>=8.0.0
