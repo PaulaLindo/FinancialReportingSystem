@@ -190,7 +190,7 @@ def generate_static_site():
     try:
         # Generate URLs that will be created
         print("🔍 Discovering routes...")
-        urls = freezer.build_urls()
+        urls = freezer.all_urls()
         print(f"   Found {len(urls)} routes to generate")
         
         # Display discovered routes
