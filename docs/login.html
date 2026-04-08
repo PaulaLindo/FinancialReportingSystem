@@ -10,9 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
     <title>Login - SADPMR Financial Reporting System</title>
     <link rel="stylesheet" href="css/styles.css">
-    
-<link rel="stylesheet" href="css/login.css">
-
+    <link rel="stylesheet" href="css/login.css">
 </head>
 <body>
     <div class="login-container">
@@ -23,11 +21,11 @@
                 <p>SADPMR Financial Reporting System</p>
             </div>
 
-                        <div class="alert alert-">
-                            
-                        </div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                
+            {% endwith %}
 
-            <form id="loginForm" onsubmit="handleLoginForm(event, 'login.html')" method="GET">
+            <form method="POST" action="login.html" id="loginForm" novalidate>
                 <div class="form-group">
                     <label for="username" class="form-label">Email Address</label>
                     <input 
@@ -113,38 +111,10 @@
     </div>
 
     <script>
-        function handleLoginForm(event, redirectUrl) {
-            event.preventDefault();
-            
-            // Simple demo login validation
-            const username = document.getElementById('username')?.value || '';
-            const password = document.getElementById('password')?.value || '';
-            
-            // Demo credentials
-            const demoUsers = {
-                'cfo@sadpmr.gov.za': { role: 'CFO', name: 'Sarah Nkosi', redirect: 'index.html' },
-                'accountant@sadpmr.gov.za': { role: 'Accountant', name: 'John Smith', redirect: 'index.html' },
-                'clerk@sadpmr.gov.za': { role: 'Clerk', name: 'Mike Davis', redirect: 'index.html' },
-                'auditor@agsa.gov.za': { role: 'Auditor', name: 'Patience Moyo', redirect: 'index.html' }
-            };
-            
-            if (demoUsers[username] && password === 'demo123') {
-                // Store user info in sessionStorage for demo
-                const user = demoUsers[username];
-                sessionStorage.setItem('demoUser', JSON.stringify(user));
-                
-                // Redirect to dashboard
-                window.location.href = user.redirect || redirectUrl || 'index.html';
-            } else {
-                // Show error message
-                alert('Invalid credentials. Use demo credentials shown below.');
-            }
-        }
-
         function quickLogin(username, password) {
             document.getElementById('username').value = username;
             document.getElementById('password').value = password;
-            handleLoginForm(new Event('submit'), 'index.html');
+            document.querySelector('form').submit();
         }
 
         // Form validation
@@ -194,7 +164,8 @@
             });
         }, 5000);
     </script>
-
+    
     <script src="js/utils.js"></script>
-    </body>
+    
+</body>
 </html>

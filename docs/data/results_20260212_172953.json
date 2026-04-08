@@ -1,0 +1,137 @@
+{
+  "summary": {
+    "total_assets": 6300000.0,
+    "total_liabilities": 3100000.0,
+    "net_assets": 0.0,
+    "total_revenue": 8500000.0,
+    "total_expenses": 5365000.0,
+    "surplus_deficit": 3135000.0,
+    "ratios": {
+      "current_ratio": 2.03,
+      "debt_to_equity": 0.0,
+      "operating_margin": 36.88,
+      "return_on_assets": 49.76
+    },
+    "timestamp": "2026-02-12T17:29:53.697686"
+  },
+  "sofp": {
+    "assets": [
+      {
+        "GRAP Code": "CA-001",
+        "Line Item": "Cash and Cash Equivalents",
+        "Amount": 2500000
+      },
+      {
+        "GRAP Code": "CA-002",
+        "Line Item": "Receivables from Exchange Transactions",
+        "Amount": 2250000
+      },
+      {
+        "GRAP Code": "CA-004",
+        "Line Item": "Inventories",
+        "Amount": 1200000
+      },
+      {
+        "GRAP Code": "CA-005",
+        "Line Item": "Prepayments",
+        "Amount": 350000
+      }
+    ],
+    "liabilities": [
+      {
+        "GRAP Code": "CL-001",
+        "Line Item": "Payables from Exchange Transactions",
+        "Amount": 2100000
+      },
+      {
+        "GRAP Code": "CL-002",
+        "Line Item": "Employee Benefit Obligations (Current)",
+        "Amount": 680000
+      },
+      {
+        "GRAP Code": "CL-003",
+        "Line Item": "Provisions (Current)",
+        "Amount": 320000
+      }
+    ],
+    "net_assets": [
+      {
+        "GRAP Code": "NA-001",
+        "Line Item": "Accumulated Surplus/(Deficit)",
+        "Amount": 0
+      }
+    ]
+  },
+  "sofe": {
+    "revenue": [
+      {
+        "GRAP Code": "REV-002",
+        "Line Item": "Revenue from Non-Exchange Transactions",
+        "Amount": 8500000
+      }
+    ],
+    "expenses": [
+      {
+        "GRAP Code": "EXP-001",
+        "Line Item": "Employee Costs",
+        "Amount": 4050000
+      },
+      {
+        "GRAP Code": "EXP-002",
+        "Line Item": "Depreciation and Amortisation",
+        "Amount": 95000
+      },
+      {
+        "GRAP Code": "EXP-003",
+        "Line Item": "General Expenses",
+        "Amount": 1100000
+      },
+      {
+        "GRAP Code": "EXP-004",
+        "Line Item": "Finance Costs",
+        "Amount": 120000
+      }
+    ]
+  },
+  "scf": {
+    "operating": [
+      {
+        "Line Item": "Net Surplus/(Deficit)",
+        "Amount": 3135000.0
+      },
+      {
+        "Line Item": "Add: Depreciation & Amortisation",
+        "Amount": 95000.0
+      },
+      {
+        "Line Item": "Changes in Working Capital",
+        "Amount": -9400000.0
+      },
+      {
+        "Line Item": "Net Cash from Operating Activities",
+        "Amount": -6170000.0
+      }
+    ],
+    "investing": [
+      {
+        "Line Item": "Capital Expenditure",
+        "Amount": 0.0
+      },
+      {
+        "Line Item": "Net Cash from Investing Activities",
+        "Amount": 0.0
+      }
+    ],
+    "financing": [
+      {
+        "Line Item": "Borrowing Activities",
+        "Amount": 0.0
+      },
+      {
+        "Line Item": "Net Cash from Financing Activities",
+        "Amount": 0.0
+      }
+    ],
+    "net_movement": -6170000.0
+  }
+}
