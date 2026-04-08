@@ -32,12 +32,11 @@
             <ul class="nav-menu">
                 <li><a href="index.html" >Dashboard</a></li>
                 
-                <li><a href="upload.html" 
+                <li><a href="upload.html">Upload</a></li>
                 
-                <li><a href="reports.html" >Export</a></li>
-                <li><a href="admin.html" >Admin</a></li>
-                {% endif %}
-                <li><a href="about.html" >About</a></li>
+                <li><a href="reports.html">Reports</a></li>
+                <li><a href="admin.html">Admin</a></li>
+                <li><a href="about.html">About</a></li>
             </ul>
             
             <div class="user-menu">
@@ -47,11 +46,7 @@
                         CFO
                     </span>
                 </div>
-                <a href="index.html" class="logout-btn">Logout</a>
-            </div>
-            {% else %}
-            <div class="auth-menu">
-                <a href="login.html" class="login-btn">Login</a>
+                <a href="login.html" class="logout-btn">Logout</a>
             </div>
             
         </div>
@@ -269,24 +264,7 @@
     <script src="js/utils.js"></script>
     <script src="js/main.js"></script>
     <script src="js/navigation-fluid.js"></script>
-    <script>
-// Add data-label attributes for mobile card view
-document.addEventListener('DOMContentLoaded', function() {
-    const table = document.querySelector('.financial-table');
-    if (table) {
-        const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent.trim());
-        const rows = table.querySelectorAll('tbody tr');
-        
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            cells.forEach((cell, index) => {
-                if (headers[index]) {
-                    cell.setAttribute('data-label', headers[index]);
-                }
-            });
-        });
-    }
-});
-</script>
+    <script src="js/auth.js"></script>
+    <script src="js/financial-statements.js"></script>
 </body>
 </html>

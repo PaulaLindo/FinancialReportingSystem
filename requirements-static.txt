@@ -1,0 +1,28 @@
+# Flask to Static Site Generation Requirements
+# Additional packages needed for GitHub Pages deployment
+
+# Core Flask application (already in main requirements.txt)
+Flask==3.0.0
+pandas==2.1.4
+openpyxl==3.1.2
+reportlab==4.0.7
+Werkzeug==3.0.1
+numpy==1.24.0
+Flask-Session==0.5.0
+
+# Static site generation (if using Frozen-Flask alternative)
+# Frozen-Flask==0.18
+# Flask-Frozen==0.15
+
+# HTML processing (for advanced template processing)
+# beautifulsoup4==4.12.2
+# lxml==4.9.3
+
+# Git operations (if needed)
+# GitPython==3.1.40
+
+# File watching (for development)
+# watchdog==3.0.0
+
+# Note: The custom static generator (freeze_flask_app.py) doesn't require
+# additional packages beyond the base Flask requirements

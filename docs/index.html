@@ -30,14 +30,13 @@
         <div class="nav-wrapper" id="navMenu">
             
             <ul class="nav-menu">
-                <li><a href=["']/["'] class="active" >Dashboard</a></li>
+                <li><a href="index.html" class="active" >Dashboard</a></li>
                 
-                <li><a href="upload.html" 
+                <li><a href="upload.html">Upload</a></li>
                 
-                <li><a href="reports.html" >Export</a></li>
-                <li><a href="admin.html" >Admin</a></li>
-                {% endif %}
-                <li><a href="about.html" >About</a></li>
+                <li><a href="reports.html">Export</a></li>
+                <li><a href="admin.html">Admin</a></li>
+                <li><a href="about.html">About</a></li>
             </ul>
             
             <div class="user-menu">
@@ -47,11 +46,7 @@
                         CFO
                     </span>
                 </div>
-                <a href="index.html" class="logout-btn">Logout</a>
-            </div>
-            {% else %}
-            <div class="auth-menu">
-                <a href="login.html" class="login-btn">Login</a>
+                <a href="login.html" class="logout-btn">Logout</a>
             </div>
             
         </div>
@@ -167,64 +162,7 @@
     <script src="js/utils.js"></script>
     <script src="js/main.js"></script>
     <script src="js/navigation-fluid.js"></script>
-    
-    <script>
-        // Handle static site authentication
-        window.addEventListener('load', function() {
-            const currentUser = sessionStorage.getItem('currentUser');
-            
-            if (currentUser) {
-                const user = JSON.parse(currentUser);
-                
-                // Update user name in navigation
-                const userNameElements = document.querySelectorAll('.user-name');
-                userNameElements.forEach(el => {
-                    el.textContent = user.fullName;
-                });
-                
-                // Update user role in navigation
-                const userRoleElements = document.querySelectorAll('.user-role');
-                userRoleElements.forEach(el => {
-                    el.textContent = user.role;
-                    el.className = `user-role user-role--${user.role.toLowerCase()}`;
-                });
-                
-                // Update welcome message
-                const welcomeElements = document.querySelectorAll('h1');
-                welcomeElements.forEach(el => {
-                    if (el.textContent.includes('Welcome back')) {
-                        el.textContent = `Welcome back, ${user.fullName}!`;
-                    }
-                });
-                
-                // Update subtitle
-                const subtitleElements = document.querySelectorAll('.hero-subtitle');
-                subtitleElements.forEach(el => {
-                    el.textContent = user.role;
-                });
-                
-                // Setup logout functionality
-                const logoutBtn = document.querySelector('.logout-btn');
-                if (logoutBtn) {
-                    logoutBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        sessionStorage.removeItem('currentUser');
-                        window.location.href = 'login.html';
-                    });
-                }
-                
-                // Show user menu, hide auth menu
-                const userMenu = document.querySelector('.user-menu');
-                const authMenu = document.querySelector('.auth-menu');
-                if (userMenu) userMenu.style.display = 'flex';
-                if (authMenu) authMenu.style.display = 'none';
-                
-            } else {
-                // Not logged in - redirect to login
-                window.location.href = 'login.html';
-            }
-        });
-    </script>
+    <script src="js/auth.js"></script>
     
 </body>
 </html>

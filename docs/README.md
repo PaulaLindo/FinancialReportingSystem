@@ -6,7 +6,7 @@ This directory contains the static version of the SADPMR Financial Reporting Sys
 
 - **HTML Pages**: 11 static pages
 - **CSS Files**: 17 stylesheets
-- **JavaScript Files**: 6 scripts
+- **JavaScript Files**: 9 scripts
 
 ## Deployment
 
@@ -14,7 +14,7 @@ This site is automatically deployed to GitHub Pages from the `main` branch, `/do
 
 ## Last Updated
 
-2026-04-08 11:16:00
+2026-04-08 16:27:32
 
 ## Notes
 
