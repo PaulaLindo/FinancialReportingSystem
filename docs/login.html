@@ -25,7 +25,7 @@
                 
             {% endwith %}
 
-            <form method="POST" action="login.html" id="loginForm" novalidate>
+            <form id="loginForm" novalidate>
                 <div class="form-group">
                     <label for="username" class="form-label">Email Address</label>
                     <input 
@@ -111,14 +111,77 @@
     </div>
 
     <script>
+        // Demo credentials for static site
+        const demoUsers = {
+            'cfo@sadpmr.gov.za': { password: 'demo123', role: 'CFO', redirect: 'index.html' },
+            'accountant@sadpmr.gov.za': { password: 'demo123', role: 'Accountant', redirect: 'index.html' },
+            'clerk@sadpmr.gov.za': { password: 'demo123', role: 'Clerk', redirect: 'index.html' },
+            'auditor@agsa.gov.za': { password: 'demo123', role: 'Auditor', redirect: 'index.html' }
+        };
+
         function quickLogin(username, password) {
             document.getElementById('username').value = username;
             document.getElementById('password').value = password;
-            document.querySelector('form').submit();
+            performLogin(username, password);
         }
 
-        // Form validation
+        function performLogin(username, password) {
+            const user = demoUsers[username];
+            
+            if (user && user.password === password) {
+                // Store login info in sessionStorage for static site
+                sessionStorage.setItem('currentUser', JSON.stringify({
+                    username: username,
+                    role: user.role,
+                    fullName: username.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase())
+                }));
+                
+                // Show success message
+                showLoginMessage('success', `Welcome back! Logging in as ${user.role}...`);
+                
+                // Redirect to dashboard after delay
+                setTimeout(() => {
+                    window.location.href = user.redirect;
+                }, 1500);
+            } else {
+                // Show error message
+                showLoginMessage('error', 'Invalid credentials. Please use the demo credentials below.');
+            }
+        }
+
+        function showLoginMessage(type, message) {
+            // Remove any existing alerts
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+
+            // Create new alert
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <span>${message}</span>
+                <button type="button" class="alert-close" onclick="this.parentElement.remove()">×</button>
+            `;
+            
+            // Insert after form
+            const form = document.getElementById('loginForm');
+            form.parentNode.insertBefore(alertDiv, form.nextSibling);
+            
+            // Auto-hide after 5 seconds for success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertDiv.classList.add('auth__alert--animated');
+                    alertDiv.classList.add('auth__alert--dismissing');
+                    setTimeout(() => alertDiv.remove(), 500);
+                }, 3000);
+            }
+        }
+
+        // Form validation and submission
         document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent actual form submission
+            
             const username = document.getElementById('username');
             const password = document.getElementById('password');
             
@@ -140,8 +203,8 @@
                 isValid = false;
             }
             
-            if (!isValid) {
-                e.preventDefault();
+            if (isValid) {
+                performLogin(username.value, password.value);
             }
         });
 
@@ -154,15 +217,14 @@
             this.style.borderColor = 'var(--gray-300)';
         });
 
-        // Auto-hide alerts after 5 seconds
-        setTimeout(function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                alert.classList.add('auth__alert--animated');
-                alert.classList.add('auth__alert--dismissing');
-                setTimeout(() => alert.remove(), 500);
-            });
-        }, 5000);
+        // Check if user is already "logged in"
+        window.addEventListener('load', function() {
+            const currentUser = sessionStorage.getItem('currentUser');
+            if (currentUser && window.location.pathname.includes('login.html')) {
+                // User is already logged in, redirect to dashboard
+                window.location.href = 'index.html';
+            }
+        });
     </script>
     
     <script src="js/utils.js"></script>

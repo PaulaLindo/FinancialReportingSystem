@@ -168,5 +168,63 @@
     <script src="js/main.js"></script>
     <script src="js/navigation-fluid.js"></script>
     
+    <script>
+        // Handle static site authentication
+        window.addEventListener('load', function() {
+            const currentUser = sessionStorage.getItem('currentUser');
+            
+            if (currentUser) {
+                const user = JSON.parse(currentUser);
+                
+                // Update user name in navigation
+                const userNameElements = document.querySelectorAll('.user-name');
+                userNameElements.forEach(el => {
+                    el.textContent = user.fullName;
+                });
+                
+                // Update user role in navigation
+                const userRoleElements = document.querySelectorAll('.user-role');
+                userRoleElements.forEach(el => {
+                    el.textContent = user.role;
+                    el.className = `user-role user-role--${user.role.toLowerCase()}`;
+                });
+                
+                // Update welcome message
+                const welcomeElements = document.querySelectorAll('h1');
+                welcomeElements.forEach(el => {
+                    if (el.textContent.includes('Welcome back')) {
+                        el.textContent = `Welcome back, ${user.fullName}!`;
+                    }
+                });
+                
+                // Update subtitle
+                const subtitleElements = document.querySelectorAll('.hero-subtitle');
+                subtitleElements.forEach(el => {
+                    el.textContent = user.role;
+                });
+                
+                // Setup logout functionality
+                const logoutBtn = document.querySelector('.logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        sessionStorage.removeItem('currentUser');
+                        window.location.href = 'login.html';
+                    });
+                }
+                
+                // Show user menu, hide auth menu
+                const userMenu = document.querySelector('.user-menu');
+                const authMenu = document.querySelector('.auth-menu');
+                if (userMenu) userMenu.style.display = 'flex';
+                if (authMenu) authMenu.style.display = 'none';
+                
+            } else {
+                // Not logged in - redirect to login
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
+    
 </body>
 </html>
