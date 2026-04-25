@@ -5,21 +5,21 @@
 {% block content %}
 
     <div class="container-content upload-container">
-        <h1 class="text-center">Upload Trial Balance</h1>
-        <p class="page-subtitle text-center">Import your Trial Balance from Pastel or Excel to generate GRAP-compliant financial statements</p>
+        <h1>Upload Trial Balance</h1>
+        <p class="page-subtitle">Import your Trial Balance from Pastel or Excel to generate GRAP-compliant financial statements</p>
 
         <div class="upload-section">
-            <div class="upload-box text-center" id="uploadBox" role="button" tabindex="0" aria-label="Upload file">
+            <div class="upload-box" id="uploadBox" role="button" tabindex="0" aria-label="Upload file">
                 <div class="upload-icon" aria-hidden="true">📤</div>
-                <h3 class="text-center">Drag & Drop Your File Here</h3>
+                <h3>Drag & Drop Your File Here</h3>
                 <p>or click to browse</p>
                 <p class="upload-hint">Supported formats: Excel (.xlsx, .xls), CSV (.csv)</p>
                 <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" class="upload__input" aria-label="Choose file to upload">
             </div>
 
-            <div id="fileInfo" class="file-info upload__file-info text-left">
+            <div id="fileInfo" class="file-info upload__file-info">
                 <div class="file-details">
-                    <h4 class="text-left">Selected File:</h4>
+                    <h4>Selected File:</h4>
                     <p id="fileName"></p>
                     <p id="fileSize"></p>
                     <p id="fileRows"></p>
@@ -27,39 +27,39 @@
                 <button id="processBtn" class="btn btn-primary" type="button">Process Trial Balance</button>
             </div>
 
-            <div id="processingLoader" class="loader upload__loader text-center">
+            <div id="processingLoader" class="loader upload__loader">
                 <div class="spinner"></div>
                 <p>Processing your Trial Balance...</p>
                 <p class="loader-subtext">Mapping accounts to GRAP line items</p>
             </div>
 
-            <div id="errorMessage" class="error-box upload__error-message text-center"></div>
+            <div id="errorMessage" class="error-box upload__error-message"></div>
         </div>
 
         <div id="resultsSection" class="results-section upload__results-section">
-            <h2 class="text-center">Financial Statements Generated Successfully! ✓</h2>
+            <h2>Financial Statements Generated Successfully! ✓</h2>
             
             <div class="summary-cards grid-auto-fit-md">
                 <div class="summary-card">
-                    <h4 class="text-left">Total Assets</h4>
+                    <h4>Total Assets</h4>
                     <p class="amount" id="totalAssets">R 0.00</p>
                 </div>
                 <div class="summary-card">
-                    <h4 class="text-left">Total Liabilities</h4>
+                    <h4>Total Liabilities</h4>
                     <p class="amount" id="totalLiabilities">R 0.00</p>
                 </div>
                 <div class="summary-card">
-                    <h4 class="text-left">Net Assets</h4>
+                    <h4>Net Assets</h4>
                     <p class="amount" id="netAssets">R 0.00</p>
                 </div>
                 <div class="summary-card">
-                    <h4 class="text-left">Surplus/(Deficit)</h4>
+                    <h4>Surplus/(Deficit)</h4>
                     <p class="amount" id="surplus">R 0.00</p>
                 </div>
             </div>
 
             <div class="ratio-analysis">
-                <h3 class="text-center">Key Financial Ratios</h3>
+                <h3>Key Financial Ratios</h3>
                 <div class="ratios-grid">
                     <div class="ratio-card">
                         <p class="ratio-label">Current Ratio</p>
@@ -95,13 +95,13 @@
             </div>
 
             <div id="pdfSuccess" class="success-box upload__success-message">
-                <h3 class="text-center">✓ PDF Generated Successfully!</h3>
+                <h3>✓ PDF Generated Successfully!</h3>
                 <a id="downloadLink" href="#" class="btn btn-download" download>Download Financial Statements PDF</a>
             </div>
         </div>
 
         <div class="requirements-section">
-            <h3 class="text-center">Trial Balance Requirements</h3>
+            <h3>Trial Balance Requirements</h3>
             <ul>
                 <li>Must contain columns: Account Code, Account Description, Debit Balance, Credit Balance</li>
                 <li>File format: Excel (.xlsx, .xls) or CSV (.csv)</li>

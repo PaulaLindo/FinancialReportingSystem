@@ -42,7 +42,14 @@
 @import url('component-utilities.css');
 
 /* ======================================== */
-/* 9. SPECIALIZED STYLES */
+/* 9. RESPONSIVE & TOUCH STYLES */
+/* ======================================== */
+@import url('mobile.css');
+@import url('desktop.css');
+@import url('touch-friendly-interactive.css');
+
+/* ======================================== */
+/* 10. SPECIALIZED STYLES */
 /* ======================================== */
 @import url('login.css');
 
