@@ -83,6 +83,7 @@ class UploadService {
             fileRows: document.getElementById('fileRows'),
 
             processBtn: document.getElementById('processBtn'),
+            closeBtn: document.getElementById('closeBtn'),
 
             processingLoader: document.getElementById('processingLoader'),
 
@@ -186,6 +187,8 @@ class UploadService {
 
             processFile: this.processFile.bind(this),
 
+            closeUpload: this.closeUpload.bind(this),
+
             generatePDF: this.generatePDF.bind(this),
 
             uploadAnother: this.uploadAnother.bind(this)
@@ -249,6 +252,12 @@ class UploadService {
         processBtn.addEventListener('click', (e) => {
             this.boundMethods.processFile(e);
         });
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                this.boundMethods.closeUpload(e);
+            });
+        }
 
         if (generatePdfBtn) {
             
@@ -339,6 +348,8 @@ class UploadService {
         this.hideError();
 
         this.hideResults();
+
+        this.hideFileInfo();
 
         this.setProcessingState(false);
 
@@ -531,10 +542,24 @@ class UploadService {
 
             }
 
+            // Client-side file type validation
+            const allowedExtensions = ['xlsx', 'xls', 'csv', 'xlsm', 'xlsb', 'tsv'];
+            const fileExtension = file.name.split('.').pop().toLowerCase();
             
+            if (!allowedExtensions.includes(fileExtension)) {
+                const errorMessage = '❌ Invalid file type: .' + fileExtension + '\n\n' +
+                                '📋 **Allowed file types**: .xlsx, .xls, .csv, .xlsm, .xlsb, .tsv\n' +
+                                '💡 **Solution**: Please upload a balance sheet file in one of the supported formats\n\n' +
+                                '📊 **Common formats**:\n' +
+                                '• Excel files (.xlsx, .xls) - Recommended\n' +
+                                '• CSV files (.csv) - Universal format\n' +
+                                '• Other Excel formats (.xlsm, .xlsb, .tsv) - Also supported';
+                
+                this.showError(errorMessage);
+                return;
+            }
 
             // Upload file
-
             await this.uploadFile(file);
 
             
@@ -621,26 +646,26 @@ class UploadService {
                     const backendError = errorData.error;
                     
                     // Handle specific backend error messages
-                    if (backendError.includes('financial analysis, not a trial balance')) {
-                        errorMessage = '📊 This appears to be a financial analysis template, not a trial balance.\n\n' +
-                                        '❌ **Required**: Trial balance with Account Code, Account Description, and Balance columns\n' +
+                    if (backendError.includes('financial analysis, not a balance sheet')) {
+                        errorMessage = '📊 This appears to be a financial analysis template, not a balance sheet.\n\n' +
+                                        '❌ **Required**: Balance sheet with Account Code, Account Description, and Balance columns\n' +
                                         '📋 **Current**: Financial analysis with benefits, costs, cash flow data\n\n' +
-                                        '💡 **Solution**: Please export a trial balance from your accounting system (Pastel, SAP, QuickBooks, etc.)';
+                                        '💡 **Solution**: Please export a balance sheet from your accounting system (Pastel, SAP, QuickBooks, etc.)';
                     } else if (backendError.includes('Missing required columns:')) {
                         const missingCols = backendError.match(/Missing required columns: ([^,]+)\./);
                         if (missingCols) {
                             errorMessage = '❌ Missing required columns in your file.\n\n' +
                                         '❌ **Missing**: ' + missingCols[1] + '\n' +
                                         '📋 **Required**: Account Code, Account Description\n' +
-                                        '💡 **Solution**: Ensure your trial balance has these exact column names';
+                                        '💡 **Solution**: Ensure your balance sheet has these exact column names';
                         } else {
                             // Fallback for any missing columns error
                             errorMessage = '❌ Missing required columns in your file.\n\n' +
                                         '📋 **Required**: Account Code, Account Description\n' +
-                                        '💡 **Solution**: Ensure your trial balance has these exact column names (case-sensitive)';
+                                        '💡 **Solution**: Ensure your balance sheet has these exact column names (case-sensitive)';
                         }
                     } else if (backendError.includes('Missing balance columns')) {
-                        errorMessage = '❌ Missing balance columns in your trial balance.\n\n' +
+                        errorMessage = '❌ Missing balance columns in your balance sheet.\n\n' +
                                         '❌ **Required**: Debit Balance and Credit Balance columns (or Net Balance)\n' +
                                         '📋 **Current**: File has no balance data\n' +
                                         '💡 **Solution**: Add balance columns or use Net Balance column instead';
@@ -655,7 +680,19 @@ class UploadService {
                     } else if (backendError.includes('file is empty')) {
                         errorMessage = '❌ The uploaded file is empty.\n\n' +
                                         '📋 **Issue**: No data found in the file\n' +
-                                        '💡 **Solution**: Ensure your trial balance contains account data';
+                                        '💡 **Solution**: Ensure your balance sheet contains account data';
+                    } else if (backendError.includes('Invalid file type:')) {
+                        // Extract the file type from the error message
+                        const fileTypeMatch = backendError.match(/Invalid file type: \.([^\s]+)/);
+                        const invalidType = fileTypeMatch ? fileTypeMatch[1] : 'unknown';
+                        
+                        errorMessage = '❌ Invalid file type: .' + invalidType + '\n\n' +
+                                        '📋 **Allowed file types**: .xlsx, .xls, .csv, .xlsm, .xlsb, .tsv\n' +
+                                        '💡 **Solution**: Please upload a balance sheet file in one of the supported formats\n\n' +
+                                        '📊 **Common formats**:\n' +
+                                        '• Excel files (.xlsx, .xls) - Recommended\n' +
+                                        '• CSV files (.csv) - Universal format\n' +
+                                        '• Other Excel formats (.xlsm, .xlsb, .tsv) - Also supported';
                     } else {
                         errorMessage = '❌ Invalid file format. Please check your file and try again.';
                     }
@@ -664,11 +701,19 @@ class UploadService {
                     if (errorMessage.includes('Missing required columns:')) {
                         errorMessage = '❌ Missing required columns in your file.\n\n' +
                                     '📋 **Required**: Account Code, Account Description\n' +
-                                    '💡 **Solution**: Ensure your trial balance has these exact column names (case-sensitive)';
+                                    '💡 **Solution**: Ensure your balance sheet has these exact column names (case-sensitive)';
                     } else if (errorMessage.includes('Missing balance columns')) {
-                        errorMessage = '❌ Missing balance columns in your trial balance.\n\n' +
+                        errorMessage = '❌ Missing balance columns in your balance sheet.\n\n' +
                                     '📋 **Required**: Debit Balance and Credit Balance columns (or Net Balance)\n' +
                                     '💡 **Solution**: Add balance columns or use Net Balance column instead';
+                    } else if (errorMessage.includes('Invalid file type:')) {
+                        // Handle file type errors when JSON parsing fails
+                        const fileTypeMatch = errorMessage.match(/Invalid file type: \.([^\s]+)/);
+                        const invalidType = fileTypeMatch ? fileTypeMatch[1] : 'unknown';
+                        
+                        errorMessage = '❌ Invalid file type: .' + invalidType + '\n\n' +
+                                    '📋 **Allowed file types**: .xlsx, .xls, .csv, .xlsm, .xlsb, .tsv\n' +
+                                    '💡 **Solution**: Please upload a balance sheet file in one of the supported formats';
                     } else {
                         errorMessage = '❌ Invalid file upload. Please check your file format and try again.';
                     }
@@ -708,6 +753,10 @@ class UploadService {
 
         const { fileName, fileSize, fileRows, fileInfo, uploadBox, processBtn } = this.elements;
 
+        console.log('🔍 showFileInfo called:', { file: file.name, data: data });
+        console.log('🔍 uploadBox before:', uploadBox ? uploadBox.className : 'not found');
+        console.log('🔍 fileInfo before:', fileInfo ? fileInfo.className : 'not found');
+
         
 
         fileName.textContent = file.name;
@@ -718,17 +767,31 @@ class UploadService {
 
         
 
-        if (uploadBox) {
-            uploadBox.classList.add('upload-box--hidden');
-        }
+        // Hide upload box and show file info using centralized visibility management
+        this.manageUploadBoxVisibility(false);
 
-        if (uploadBox) {
-            uploadBox.classList.remove('upload-box--visible');
-        }
-
-        if (fileInfo) {
+        // Only show file info if there's actual data
+        if (fileInfo && file.name && (data.total_rows || data.row_count)) {
+            console.log('🔍 Adding file-info--visible, removing file-info--hidden');
             fileInfo.classList.add('file-info--visible');
             fileInfo.classList.remove('file-info--hidden');
+            console.log('🔍 fileInfo after changes:', fileInfo.className);
+            
+            // Show close button when file info is displayed
+            if (this.elements.closeBtn) {
+                this.elements.closeBtn.style.display = 'inline-block';
+            }
+        } else {
+            console.log('🔍 Condition not met for showing file info:', { 
+                fileInfo: !!fileInfo, 
+                fileName: file.name, 
+                totalRows: data.total_rows || data.row_count 
+            });
+            
+            // Hide close button when file info is not displayed
+            if (this.elements.closeBtn) {
+                this.elements.closeBtn.style.display = 'none';
+            }
         }
 
         
@@ -785,34 +848,16 @@ class UploadService {
                 return;
             }
 
-            
-
-            // Show checking state
-
-            this.showBalanceChecking();
-
-            
-
             const requestBody = {
-
                 session_id: this.state.sessionId
-
             };
 
-            
-
             const data = await SADPMRUtils.safeFetch('/api/validate-balance', {
-
                 method: 'POST',
-
                 headers: {
-
                     'Content-Type': 'application/json'
-
                 },
-
                 body: JSON.stringify(requestBody)
-
             });
 
             
@@ -986,7 +1031,7 @@ class UploadService {
 
             if (statusIcon) statusIcon.textContent = '✅';
 
-            if (statusText) statusText.textContent = 'Trial balance is balanced';
+            if (statusText) statusText.textContent = 'Balance sheet is balanced';
 
         } else {
 
@@ -1026,6 +1071,9 @@ class UploadService {
                 processBtn.classList.remove('balance-disabled');
 
                 processBtn.textContent = 'Submit for Review';
+                
+                // Ensure the process button is visible
+                processBtn.style.display = 'inline-block';
 
                 // Hide warning options
                 this.hideUnbalancedOptions();
@@ -1041,9 +1089,9 @@ class UploadService {
 
                 processBtn.classList.add('balance-disabled');
 
-                processBtn.textContent = 'Trial Balance Not Balanced - Cannot Process';
+                processBtn.textContent = 'Balance Sheet Not Balanced - Cannot Process';
 
-                // Show options for unbalanced trial balance
+                // Show options for unbalanced balance sheet
                 this.showUnbalancedOptions(balanceData);
 
             }
@@ -1066,13 +1114,19 @@ class UploadService {
 
     async processFile() {
 
+        console.log('🔍 processFile() called');
+        console.log('🔍 Session ID:', this.state.sessionId);
+
         if (!this.state.sessionId) {
 
+            console.log('❌ No session ID available');
             this.showError('No file uploaded');
 
             return;
 
         }
+
+        console.log('✅ Session ID validated, proceeding with processing');
 
         
 
@@ -1088,6 +1142,8 @@ class UploadService {
 
             
 
+            console.log('🔍 Validating balance for session:', this.state.sessionId);
+            
             const balanceData = await SADPMRUtils.safeFetch('/api/validate-balance', {
 
                 method: 'POST',
@@ -1103,10 +1159,15 @@ class UploadService {
             });
 
             
+            console.log('🔍 Balance validation result:', balanceData);
 
             if (!balanceData.success || !balanceData.can_submit) {
+                console.log('❌ Balance validation failed:', balanceData);
 
-                this.showError('Cannot process: Trial balance is not balanced. Please correct the balance and try again.');
+                this.showError('Cannot process: Balance sheet is not balanced. Please correct the balance and try again.');
+
+                // Note: Cleanup will happen when user clicks "Correct & Re-upload" button
+                console.log('📝 User can clean up by clicking "Correct & Re-upload" button');
 
                 return;
 
@@ -1133,7 +1194,7 @@ class UploadService {
         }
         }
 
-            this.setProcessingState(true, 'Processing your Trial Balance...', 'Mapping accounts to GRAP line items');
+            this.setProcessingState(true, 'Processing your Balance Sheet...', 'Mapping accounts to GRAP line items');
 
             this.hideError();
 
@@ -1142,6 +1203,8 @@ class UploadService {
             const requestBody = {
                 session_id: this.state.sessionId
             };
+            
+            console.log('🔍 Starting GRAP processing for session:', this.state.sessionId);
             
             const data = await SADPMRUtils.safeFetch('/api/processing', {
 
@@ -1156,6 +1219,8 @@ class UploadService {
                 body: JSON.stringify(requestBody)
 
             });
+            
+            console.log('🔍 Processing result:', data);
 
             
 
@@ -1190,11 +1255,11 @@ class UploadService {
                     
                     // Check for specific error patterns and provide better messages
                     if (errorMessage.includes('Required columns') && errorMessage.includes('Debit Balance') && errorMessage.includes('Credit Balance')) {
-                        errorMessage = 'Invalid file format. Your file must contain "Debit Balance" and "Credit Balance" columns. Please check your trial balance format and try again.';
+                        errorMessage = 'Invalid file format. Your file must contain "Debit Balance" and "Credit Balance" columns. Please check your balance sheet format and try again.';
                     } else if (errorMessage.includes('not found') && errorMessage.includes('Available columns')) {
-                        errorMessage = 'Column mismatch. The required columns for processing were not found. Please ensure your trial balance has the correct column headers: "Account Code", "Account Description", "Debit Balance", "Credit Balance".';
+                        errorMessage = 'Column mismatch. The required columns for processing were not found. Please ensure your balance sheet has the correct column headers: "Account Code", "Account Description", "Debit Balance", "Credit Balance".';
                     } else if (errorMessage.includes('Processing error')) {
-                        errorMessage = 'File processing error. The uploaded file could not be processed correctly. Please verify it\'s a valid trial balance file.';
+                        errorMessage = 'File processing error. The uploaded file could not be processed correctly. Please verify it\'s a valid balance sheet file.';
                     } else if (errorMessage.includes('File not found')) {
                         errorMessage = 'File not found. Please upload the file again.';
                     }
@@ -1203,9 +1268,11 @@ class UploadService {
 
                 }
 
-                this.elements.fileInfo.classList.add('file-info--visible');
-
-                this.elements.fileInfo.classList.remove('file-info--hidden');
+                // Only show file info if there's actual data
+                if (this.hasFileInfoData()) {
+                    this.elements.fileInfo.classList.add('file-info--visible');
+                    this.elements.fileInfo.classList.remove('file-info--hidden');
+                }
 
             }
 
@@ -1241,7 +1308,7 @@ class UploadService {
             if (errorMessage.includes('HTTP error! status: 500')) {
                 errorMessage = 'Server error occurred. The system encountered an error while processing your file. Please try again or contact support if the problem persists.';
             } else if (errorMessage.includes('HTTP error! status: 400')) {
-                errorMessage = 'Bad request. The file format or data may be invalid. Please check your trial balance format and try again.';
+                errorMessage = 'Bad request. The file format or data may be invalid. Please check your balance sheet format and try again.';
             } else if (errorMessage.includes('HTTP error! status: 404')) {
                 errorMessage = 'File not found on server. Please upload your file again.';
             } else if (errorMessage.includes('Failed to fetch')) {
@@ -1252,7 +1319,8 @@ class UploadService {
 
             this.showError(errorMessage);
 
-            if (this.elements.fileInfo) {
+            // Only show file info if there's actual data
+            if (this.hasFileInfoData()) {
                 this.elements.fileInfo.classList.add('file-info--visible');
                 this.elements.fileInfo.classList.remove('file-info--hidden');
             }
@@ -1265,7 +1333,184 @@ class UploadService {
     }
 
     /**
-     * Show options for unbalanced trial balance
+     * Close upload and remove uploaded file (works like reupload)
+     */
+    async closeUpload() {
+        // Check if there's a file to remove
+        if (!this.state.sessionId) {
+            this.showError('No file uploaded to remove');
+            return;
+        }
+
+        // Show loading state on close button
+        const closeBtn = this.elements.closeBtn;
+        if (closeBtn) {
+            closeBtn.disabled = true;
+            closeBtn.textContent = 'Closing...';
+            closeBtn.classList.add('btn-loading');
+        }
+
+        try {
+            console.log('🗑️ Removing uploaded file - Session ID:', this.state.sessionId);
+            
+            const requestBody = {
+                session_id: this.state.sessionId
+            };
+
+            const data = await SADPMRUtils.safeFetch('/api/remove-upload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (data.success) {
+                console.log('✅ File successfully removed');
+                
+                // Reset the interface for new upload (use existing resetUploadState method)
+                this.resetUploadState();
+                
+            } else {
+                console.log('❌ Failed to remove file:', data.error);
+                this.showError('Failed to remove uploaded file: ' + (data.error || 'Unknown error'));
+            }
+
+        } catch (error) {
+            console.error('Error removing uploaded file:', error);
+            this.showError('Failed to remove uploaded file. Please try again.');
+        } finally {
+            // Reset close button state
+            if (closeBtn) {
+                closeBtn.disabled = false;
+                closeBtn.textContent = 'Close & Remove File';
+                closeBtn.classList.remove('btn-loading');
+            }
+        }
+    }
+
+    /**
+     * Show confirmation modal
+     */
+    showConfirmationModal(title, message, confirmText, cancelText) {
+        return new Promise((resolve) => {
+            // Create modal if it doesn't exist
+            let modal = document.getElementById('confirmModal');
+            if (!modal) {
+                modal = this.createConfirmationModal();
+                document.body.appendChild(modal);
+            }
+
+            // Update modal content
+            const modalTitle = modal.querySelector('.modal-header h3');
+            const modalMessage = modal.querySelector('.modal-body p');
+            const confirmBtn = modal.querySelector('#confirmRemove');
+            const cancelBtn = modal.querySelector('#confirmCancel');
+
+            if (modalTitle) modalTitle.textContent = title;
+            if (modalMessage) modalMessage.textContent = message;
+            if (confirmBtn) confirmBtn.textContent = confirmText;
+            if (cancelBtn) cancelBtn.textContent = cancelText;
+
+            // Show modal
+            modal.classList.remove('modal-overlay--hidden');
+
+            // Handle button clicks
+            const handleConfirm = () => {
+                cleanup();
+                resolve(true);
+            };
+
+            const handleCancel = () => {
+                cleanup();
+                resolve(false);
+            };
+
+            const cleanup = () => {
+                modal.classList.add('modal-overlay--hidden');
+                confirmBtn.removeEventListener('click', handleConfirm);
+                cancelBtn.removeEventListener('click', handleCancel);
+            };
+
+            confirmBtn.addEventListener('click', handleConfirm);
+            cancelBtn.addEventListener('click', handleCancel);
+
+            // Also close on escape key
+            const handleEscape = (e) => {
+                if (e.key === 'Escape') {
+                    cleanup();
+                    resolve(false);
+                    document.removeEventListener('keydown', handleEscape);
+                }
+            };
+            document.addEventListener('keydown', handleEscape);
+        });
+    }
+
+    /**
+     * Create confirmation modal
+     */
+    createConfirmationModal() {
+        const modal = document.createElement('div');
+        modal.id = 'confirmModal';
+        modal.className = 'modal-overlay modal-overlay--hidden';
+        modal.innerHTML = `
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h3>Confirm File Removal</h3>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to remove this uploaded file? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button id="confirmCancel" class="btn btn-secondary" type="button">Cancel</button>
+                    <button id="confirmRemove" class="btn btn-danger" type="button">Remove File</button>
+                </div>
+            </div>
+        `;
+        return modal;
+    }
+
+    /**
+     * Reset upload interface to initial state
+     */
+    resetUploadInterface() {
+        // Clear session ID
+        this.state.sessionId = null;
+        
+        // Hide file info and balance check sections
+        this.elements.fileInfo.classList.add('file-info--hidden');
+        this.elements.fileInfo.classList.remove('file-info--visible');
+        
+        const balanceCheckSection = document.getElementById('balanceCheckSection');
+        if (balanceCheckSection) {
+            balanceCheckSection.classList.add('display-none');
+        }
+        
+        // Hide buttons
+        this.elements.processBtn.style.display = 'none';
+        if (this.elements.closeBtn) {
+            this.elements.closeBtn.style.display = 'none';
+        }
+        
+        // Reset file input
+        const fileInput = this.elements.fileInput;
+        if (fileInput) {
+            fileInput.value = '';
+        }
+        
+        // Show upload box again
+        const uploadBox = document.getElementById('uploadBox');
+        if (uploadBox) {
+            uploadBox.style.display = 'block';
+        }
+        
+        // Clear any messages
+        this.clearMessages();
+    }
+
+    /**
+     * Show options for unbalanced balance sheet
      */
     showUnbalancedOptions(balanceData) {
         // Create or update unbalanced options section
@@ -1288,7 +1533,7 @@ class UploadService {
         
         optionsSection.innerHTML = `
             <div class="unbalanced-options-container">
-                <h4>Trial Balance Options</h4>
+                <h4>Balance Sheet Options</h4>
                 <p class="unbalanced-message">
                     <strong>Balance Difference:</strong> R ${difference.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
@@ -1316,7 +1561,7 @@ class UploadService {
                 
                 ${canProceedWithWarning ? `
                     <div class="warning-notice">
-                        <p><strong>Warning:</strong> Proceeding with an unbalanced trial balance may result in inaccurate financial statements. This should only be done if you understand the reason for the discrepancy and can correct it later.</p>
+                        <p><strong>Warning:</strong> Proceeding with an unbalanced balance sheet may result in inaccurate financial statements. This should only be done if you understand the reason for the discrepancy and can correct it later.</p>
                     </div>
                 ` : ''}
             </div>
@@ -1336,7 +1581,7 @@ class UploadService {
     }
 
     /**
-     * Proceed with unbalanced trial balance (with warning)
+     * Proceed with unbalanced balance sheet (with warning)
      */
     async proceedWithWarning() {
         if (!this.state.uploadedFilePath) {
@@ -1371,14 +1616,14 @@ class UploadService {
                 if (processBtn) {
                     processBtn.disabled = false;
                     processBtn.classList.remove('balance-disabled');
-                    processBtn.textContent = 'Process Trial Balance (With Warning)';
+                    processBtn.textContent = 'Process Balance Sheet (With Warning)';
                 }
 
                 // Hide warning options
                 this.hideUnbalancedOptions();
 
                 // Show success message
-                this.showSuccess('Proceeding with unbalanced trial balance. Financial statements may not be accurate.');
+                this.showSuccess('Proceeding with unbalanced balance sheet. Financial statements may not be accurate.');
 
                 // Continue with normal processing
                 await this.processFile();
@@ -1398,6 +1643,13 @@ class UploadService {
      * Re-upload file to correct balance
      */
     reuploadFile() {
+        console.log('🧹 Re-upload clicked - cleaning up session');
+        
+        // Clean up the current session before re-uploading
+        if (this.state.sessionId) {
+            this.cleanupSession(this.state.sessionId);
+        }
+        
         // Reset file input and state
         const fileInput = document.getElementById('fileInput');
         if (fileInput) {
@@ -1408,6 +1660,7 @@ class UploadService {
         this.state.uploadedFilePath = null;
         this.state.uploadedFileRecordId = null;
         this.state.resultsFile = null;
+        this.state.sessionId = null; // Reset session ID
 
         // Hide balance check and options
         const balanceSection = document.querySelector('.balance-check-section');
@@ -1430,14 +1683,13 @@ class UploadService {
         if (processBtn) {
             processBtn.disabled = true;
             processBtn.classList.add('balance-disabled');
-            processBtn.textContent = 'Process Trial Balance';
+            processBtn.textContent = 'Process Balance Sheet';
         }
 
         // Show upload box again (reset to initial state)
+        this.manageUploadBoxVisibility(true);
         const uploadBox = this.elements.uploadBox;
         if (uploadBox) {
-            uploadBox.classList.add('upload-box--visible');
-            uploadBox.classList.remove('upload-box--hidden');
             uploadBox.classList.remove('upload-zone--success', 'upload-zone--error');
             uploadBox.classList.add('upload-zone--idle');
         }
@@ -1462,14 +1714,14 @@ class UploadService {
      */
     viewBalanceDetails() {
         // This could open a modal with detailed balance information
-        alert('Balance details feature coming soon! This will show a detailed breakdown of the trial balance accounts and their balances.');
+        alert('Balance details feature coming soon! This will show a detailed breakdown of the balance sheet accounts and their balances.');
     }
 
     /**
      * Save for later (placeholder for future implementation)
      */
     saveForLater() {
-        this.showInfo('Save for later feature coming soon! This will allow you to save the unbalanced trial balance and continue later.');
+        this.showInfo('Save for later feature coming soon! This will allow you to save the unbalanced balance sheet and continue later.');
     }
 
     /**
@@ -1618,9 +1870,9 @@ class UploadService {
                 
                 // Check for specific error patterns and provide better messages
                 if (pdfErrorMessage.includes('Results file not found')) {
-                    pdfErrorMessage = 'Results file not found. Please process the trial balance again before generating PDF.';
+                    pdfErrorMessage = 'Results file not found. Please process the balance sheet again before generating PDF.';
                 } else if (pdfErrorMessage.includes('No results file specified')) {
-                    pdfErrorMessage = 'No results available. Please process a trial balance first.';
+                    pdfErrorMessage = 'No results available. Please process a balance sheet first.';
                 } else if (pdfErrorMessage.includes('PDF generation error')) {
                     pdfErrorMessage = 'PDF generation failed. There was an error creating your financial statements PDF. Please try again.';
                 }
@@ -1639,7 +1891,7 @@ class UploadService {
             if (errorMessage.includes('HTTP error! status: 500')) {
                 errorMessage = 'Server error during PDF generation. Please try again or contact support if the problem persists.';
             } else if (errorMessage.includes('HTTP error! status: 400')) {
-                errorMessage = 'Invalid request for PDF generation. Please process the trial balance first.';
+                errorMessage = 'Invalid request for PDF generation. Please process the balance sheet first.';
             } else if (errorMessage.includes('Failed to fetch')) {
                 errorMessage = 'Network error during PDF generation. Please check your internet connection and try again.';
             }
@@ -1782,7 +2034,7 @@ class UploadService {
 
             if (this.state.uploadedFileRecordId) {
 
-                const response = await fetch(`/api/delete-trial-balance/${this.state.uploadedFileRecordId}?user_id=demo_user`, {
+                const response = await fetch(`/api/delete-balance-sheet/${this.state.uploadedFileRecordId}?user_id=demo_user`, {
 
                     method: 'DELETE'
 
@@ -1809,10 +2061,6 @@ class UploadService {
                 // Reset the upload state
 
                 this.resetUploadState();
-
-                // Show success message after reset
-
-                this.showSuccess('File removed successfully');
 
             } else {
 
@@ -1856,14 +2104,7 @@ class UploadService {
         
 
         // Reset UI elements
-
-        if (this.elements.uploadBox) {
-            this.elements.uploadBox.classList.add('upload-box--visible');
-        }
-
-        if (this.elements.uploadBox) {
-            this.elements.uploadBox.classList.remove('upload-box--hidden');
-        }
+        this.manageUploadBoxVisibility(true);
 
         if (this.elements.fileInfo) {
             this.elements.fileInfo.classList.add('file-info--hidden');
@@ -1889,8 +2130,10 @@ class UploadService {
 
             this.elements.processBtn.classList.remove('balance-disabled');
 
-            this.elements.processBtn.textContent = 'Process Trial Balance';
-
+            this.elements.processBtn.textContent = 'Process Balance Sheet';
+            
+            // Ensure process button is visible for new uploads
+            this.elements.processBtn.style.display = 'inline-block';
         }
 
         
@@ -2043,14 +2286,7 @@ class UploadService {
         
 
         // Reset UI
-
-        if (this.elements.uploadBox) {
-            this.elements.uploadBox.classList.add('upload-box--visible');
-        }
-
-        if (this.elements.uploadBox) {
-            this.elements.uploadBox.classList.remove('upload-box--hidden');
-        }
+        this.manageUploadBoxVisibility(true);
 
         if (this.elements.fileInfo) {
             this.elements.fileInfo.classList.add('file-info--hidden');
@@ -2137,206 +2373,152 @@ class UploadService {
 
     }
 
+/**
 
 
-    /**
+ * Update element content safely
 
-     * Set processing state
 
-     */
+ */
 
-    setProcessingState(isProcessing, message = '', subtext = '') {
-
-        this.state.isProcessing = isProcessing;
-
-        const { processingLoader, uploadBox } = this.elements;
-
+setProcessingState(isProcessing, message = '', subtext = '') {
+    this.state.isProcessing = isProcessing;
+    
+    const { uploadBox, processingLoader } = this.elements;
+    
+    if (isProcessing) {
+        uploadBox.classList.add('upload-box--hidden');
+        uploadBox.classList.remove('upload-box--visible');
+        processingLoader.classList.add('processing-loader--visible');
+        processingLoader.classList.remove('processing-loader--hidden');
         
+        if (message) {
+            processingLoader.querySelector('p').textContent = message;
+        }
 
-        if (isProcessing) {
-
-            uploadBox.classList.add('upload-box--hidden');
-
-            uploadBox.classList.remove('upload-box--visible');
-
-            processingLoader.classList.add('processing-loader--visible');
-
-            processingLoader.classList.remove('processing-loader--hidden');
-
-            
-
-            if (message) {
-
-                processingLoader.querySelector('p').textContent = message;
-
+        if (subtext) {
+            const subtextEl = processingLoader.querySelector('.loader-subtext');
+            if (subtextEl) {
+                subtextEl.textContent = subtext;
             }
+        }
+    } else {
+        processingLoader.classList.add('processing-loader--hidden');
+        processingLoader.classList.remove('processing-loader--visible');
 
-            if (subtext) {
-
-                const subtextEl = processingLoader.querySelector('.loader-subtext');
-
-                if (subtextEl) {
-
-                    subtextEl.textContent = subtext;
-
-                }
-
-            }
-
-        } else {
-
-            processingLoader.classList.add('processing-loader--hidden');
-
-            processingLoader.classList.remove('processing-loader--visible');
-
-            if (this.state.uploadedFilePath) {
-
+        if (this.state.uploadedFilePath) {
+            // Only show file info if there's actual data
+            if (this.hasFileInfoData()) {
                 this.elements.fileInfo.classList.add('file-info--visible');
-
                 this.elements.fileInfo.classList.remove('file-info--hidden');
-
-            } else {
-
-                uploadBox.classList.add('upload-box--visible');
-
-                uploadBox.classList.remove('upload-box--hidden');
-
             }
-
         }
-
+        // Note: Don't show upload box here - let manageUploadBoxVisibility handle it
+        // This prevents conflicts with showFileInfo which explicitly hides the upload box
     }
+}
+
+updateElement(id, content) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.textContent = content;
+    }
+}
+
+/**
+ * Show error message
+ */
+showError(message) {
+    SADPMRUtils.showError(message, this.elements.errorMessage);
+}
+
+/**
+ * Show an informational message
+ */
+showInfo(message) {
+    if (this.elements.errorMessage) {
+        this.elements.errorMessage.textContent = message;
+        this.elements.errorMessage.className = 'message message--info message--visible';
+        
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            if (this.elements.errorMessage) {
+                this.elements.errorMessage.classList.remove('message--visible');
+            }
+        }, 3000);
+    }
+}
+
+/**
+ * Hide error message
+ */
+hideError() {
+    SADPMRUtils.hideError(this.elements.errorMessage);
+}
 
 
 
     /**
-
-     * Update element content safely
-
-     */
-
-    updateElement(id, content) {
-
-        const element = document.getElementById(id);
-
-        if (element) {
-
-            element.textContent = content;
-
-        }
-
+ * Show success message
+ */
+showSuccess(message) {
+    // Use the same error element but with success styling
+    const errorElement = this.elements.errorMessage;
+    
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.className = 'error-box error-box--success error-box--visible';
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            this.hideError();
+        }, 5000);
     }
+}
 
 
 
     /**
-
-     * Show error message
-
-     */
-
-    showError(message) {
-
-        SADPMRUtils.showError(message, this.elements.errorMessage);
-
+ * Hide results section
+ */
+hideResults() {
+    if (this.elements.resultsSection) {
+        this.elements.resultsSection.classList.add('results-section--hidden');
+        this.elements.resultsSection.classList.remove('results-section--visible');
     }
-
-    showInfo(message) {
-        /**
-         * Show an informational message
-         */
-        if (this.elements.errorMessage) {
-            this.elements.errorMessage.textContent = message;
-            this.elements.errorMessage.className = 'message message--info message--visible';
-            
-            // Auto-hide after 3 seconds
-            setTimeout(() => {
-                if (this.elements.errorMessage) {
-                    this.elements.errorMessage.classList.remove('message--visible');
-                }
-            }, 3000);
-        }
-    }
+}
 
 
 
     /**
-
-     * Hide error message
-
-     */
-
-    hideError() {
-
-        SADPMRUtils.hideError(this.elements.errorMessage);
-
+ * Hide file information
+ */
+hideFileInfo() {
+    if (this.elements.fileInfo) {
+        this.elements.fileInfo.classList.add('file-info--hidden');
+        this.elements.fileInfo.classList.remove('file-info--visible');
     }
+}
 
 
 
     /**
-
-     * Show success message
-
-     */
-
-    showSuccess(message) {
-
-        // Use the same error element but with success styling
-
-        const errorElement = this.elements.errorMessage;
-
-        if (errorElement) {
-
-            errorElement.textContent = message;
-
-            errorElement.className = 'error-box error-box--success error-box--visible';
-
-            // Auto-hide after 5 seconds
-
-            setTimeout(() => {
-
-                this.hideError();
-
-            }, 5000);
-
-        }
-
-    }
+ * Check if file info has actual data
+ */
+hasFileInfoData() {
+    return this.elements.fileName && 
+           this.elements.fileName.textContent && 
+           this.elements.fileName.textContent.trim() !== '';
+}
 
 
 
     /**
-
-     * Hide results section
-
-     */
-
-    hideResults() {
-
-        if (this.elements.resultsSection) {
-
-            this.elements.resultsSection.classList.add('results-section--hidden');
-
-            this.elements.resultsSection.classList.remove('results-section--visible');
-
-        }
-
-    }
-
-
-
-    /**
-
-     * Get current state
-
-     */
-
-    getState() {
-
-        return { ...this.state };
-
-    }
+ * Get current state
+ */
+getState() {
+    return { ...this.state };
+}
 
 
 
@@ -2346,67 +2528,76 @@ class UploadService {
 
      */
 
+    /**
+     * Unified cleanup method for both close and re-upload actions
+     */
+    async cleanupSession(sessionId) {
+        // Use the working remove-upload endpoint for all cleanup operations
+        try {
+            console.log('🧹 Cleaning up session:', sessionId);
+            
+            const response = await SADPMRUtils.safeFetch('/api/remove-upload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    session_id: sessionId
+                })
+            });
+            
+            if (response.success) {
+                console.log('✅ Cleanup successful:', response.message);
+                return { success: true, message: response.message };
+            } else {
+                console.error('❌ Cleanup failed:', response.error);
+                return { success: false, error: response.error };
+            }
+        } catch (error) {
+            console.error('❌ Error during cleanup:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async cleanupUnbalancedBalanceSheet(sessionId) {
+        // Legacy method - use unified cleanup method
+        return await this.cleanupSession(sessionId);
+    }
+
     destroy() {
-
         // Remove event listeners
-
         const { uploadBox, fileInput, processBtn, generatePdfBtn, uploadAnotherBtn } = this.elements;
-
         
-
         uploadBox.removeEventListener('click', () => fileInput.click());
-
         uploadBox.removeEventListener('dragover', this.boundMethods.handleDragOver);
-
         uploadBox.removeEventListener('dragleave', this.boundMethods.handleDragLeave);
-
         uploadBox.removeEventListener('drop', this.boundMethods.handleDrop);
-
         
-
         fileInput.removeEventListener('change', this.boundMethods.handleFileInput);
-
         processBtn.removeEventListener('click', this.boundMethods.processFile);
-
         
-
+        if (this.elements.closeBtn) {
+            this.elements.closeBtn.removeEventListener('click', this.boundMethods.closeUpload);
+        }
+        
         if (generatePdfBtn) {
-
             generatePdfBtn.removeEventListener('click', this.boundMethods.generatePDF);
-
         }
-
+        
         if (uploadAnotherBtn) {
-
             uploadAnotherBtn.removeEventListener('click', this.boundMethods.uploadAnother);
-
         }
-
         
-
         // Reset state
-
         this.state = {
-
             uploadedFilePath: null,
-
             resultsFile: null,
-
             isProcessing: false,
-
             currentStep: null
-
         };
-
-        
-
-
     }
 
     redirectToMappingReview(mappingData) {
-        /**
-         * Redirect to mapping interface for review of auto-mapped and unmapped accounts
-         */
         try {
             // Store mapping data in sessionStorage for the mapping interface
             sessionStorage.setItem('mappingReviewData', JSON.stringify(mappingData));
@@ -2443,6 +2634,32 @@ class UploadService {
             
         } catch (error) {
             this.showError('Unable to redirect to mapping interface. Please try again.');
+        }
+    }
+
+    /**
+     * Manages the visibility of the upload box and file info sections
+     * @param {boolean} showUploadBox - Whether to show the upload box (true) or hide it (false)
+     */
+    manageUploadBoxVisibility(showUploadBox = true) {
+        const { uploadBox, fileInfo } = this.elements;
+        
+        if (showUploadBox) {
+            // Show upload box, hide file info
+            uploadBox.classList.remove('upload-box--hidden');
+            uploadBox.classList.add('upload-box--visible');
+            if (fileInfo) {
+                fileInfo.classList.add('file-info--hidden');
+                fileInfo.classList.remove('file-info--visible');
+            }
+        } else {
+            // Hide upload box, show file info
+            uploadBox.classList.add('upload-box--hidden');
+            uploadBox.classList.remove('upload-box--visible');
+            if (fileInfo) {
+                fileInfo.classList.remove('file-info--hidden');
+                fileInfo.classList.add('file-info--visible');
+            }
         }
     }
 
@@ -2515,7 +2732,7 @@ async function checkSubmissionStatus() {
                                 <div class="locked-message">
                                     <div class="locked-icon">🔒</div>
                                     <h3>File Under Review</h3>
-                                    <p>This trial balance has been submitted for review and cannot be edited.</p>
+                                    <p>This balance sheet has been submitted for review and cannot be edited.</p>
                                     <div class="status-info">
                                         <strong>Status:</strong> ${submission.status}<br>
                                         <strong>Submitted:</strong> ${new Date(submission.submission_timestamp).toLocaleString()}<br>
@@ -2526,7 +2743,7 @@ async function checkSubmissionStatus() {
                                             Back to Dashboard
                                         </button>
                                         <button onclick="clearUploadLock()" class="btn btn-secondary">
-                                            Upload New Trial Balance
+                                            Upload New Balance Sheet
                                         </button>
                                     </div>
                                 </div>

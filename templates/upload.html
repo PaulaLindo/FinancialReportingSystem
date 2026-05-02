@@ -22,7 +22,7 @@
 
             <div class="requirements-section requirements-section--top">
 
-                <h3>Trial Balance Requirements</h3>
+                <h3>Balance Sheet Requirements</h3>
 
                 <ul>
 
@@ -32,7 +32,7 @@
 
                     <li>Maximum file size: 16MB</li>
 
-                    <li>Trial Balance must be balanced (Total Debits = Total Credits)</li>
+                    <li>Balance Sheet must be balanced (Total Debits = Total Credits)</li>
 
                 </ul>
 
@@ -40,9 +40,9 @@
 
 
 
-            <h1 class="page-title">Upload Trial Balance</h1>
+            <h1 class="page-title">Upload Balance Sheet</h1>
 
-            <p class="page-subtitle">Import your Trial Balance from Pastel or Excel to generate GRAP-compliant financial statements</p>
+            <p class="page-subtitle">Import your Balance Sheet from Pastel or Excel to generate GRAP-compliant financial statements</p>
 
            
             <div class="upload-container">
@@ -63,7 +63,7 @@
 
 
 
-                <div id="fileInfo" class="file-info upload__file-info">
+                <div id="fileInfo" class="file-info upload__file-info file-info--hidden">
 
                     <div class="file-details">
 
@@ -107,17 +107,20 @@
                         </div>
                     </div>
 
-                    <button id="processBtn" class="btn btn-primary" type="button" {% if not current_user or not current_user.can_process() %}disabled{% endif %}>Process Trial Balance</button>
+                    <div class="button-group">
+                        <button id="closeBtn" class="btn btn-secondary" type="button">Close & Remove File</button>
+                        <button id="processBtn" class="btn btn-primary" type="button" {% if not current_user or not current_user.can_process() %}disabled{% endif %}>Process Balance Sheet</button>
+                    </div>
 
                 </div>
 
 
 
-                <div id="processingLoader" class="loader upload__loader">
+                <div id="processingLoader" class="loader upload__loader processing-loader--hidden">
 
                     <div class="spinner"></div>
 
-                    <p>Processing your Trial Balance...</p>
+                    <p>Processing your Balance Sheet...</p>
 
                     <p class="loader-subtext">Mapping accounts to GRAP line items</p>
 
@@ -125,30 +128,7 @@
 
 
 
-                <div id="errorMessage" class="error-box upload__error-message"></div>
-
-            </div>
-
-
-
-
-
-
-            <div id="pdfLoader" class="loader upload__pdf-loader">
-
-                <div class="spinner"></div>
-
-                <p>Generating PDF Report...</p>
-
-            </div>
-
-
-
-            <div id="pdfSuccess" class="success-box upload__success-message">
-
-                <h3>✓ PDF Generated Successfully!</h3>
-
-                <a id="downloadLink" href="#" class="btn btn-download" download>Download Financial Statements PDF</a>
+                <div id="errorMessage" class="error-box upload__error-message upload__error-message--hidden"></div>
 
             </div>
 

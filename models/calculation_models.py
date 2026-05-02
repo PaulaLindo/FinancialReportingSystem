@@ -52,7 +52,7 @@ class CalculationTransparencyModel:
                     {
                         'name': 'Actual Amount',
                         'description': 'Actual expenditure or revenue incurred',
-                        'source': 'Trial Balance / Actuals',
+                        'source': 'Balance Sheet / Actuals',
                         'type': 'monetary'
                     },
                     {
@@ -185,7 +185,7 @@ class CalculationTransparencyModel:
     def _initialize_variable_mappings(self) -> Dict[str, Any]:
         """Initialize mapping of calculation variables to data sources"""
         return {
-            'trial_balance': {
+            'balance_sheet': {
                 'actual_amount': 'Net Balance',
                 'account_description': 'Account Description',
                 'account_code': 'Account Code'

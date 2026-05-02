@@ -419,12 +419,12 @@ class FlexibleBalanceSheetService:
     
     def _create_columns(self, session_id: str, columns: pd.Index, structure_info: Dict) -> List[BalanceSheetColumn]:
         """Create column definitions"""
-        balance_columns = []
+        balance_sheet_columns = []
         
         for i, col in enumerate(columns):
             col_mapping = structure_info['column_mapping'].get(i, {})
             
-            balance_column = BalanceSheetColumn(
+            balance_sheet_column = BalanceSheetColumn(
                 session_id=session_id,
                 column_name=str(col).strip(),
                 original_column_name=str(col),
@@ -436,12 +436,12 @@ class FlexibleBalanceSheetService:
                 is_key_column=col_mapping.get('type') == 'account_code'
             )
             
-            balance_columns.append(balance_column)
+            balance_sheet_columns.append(balance_sheet_column)
         
         # Save columns to database
-        self.model.create_columns(balance_columns)
+        self.model.create_columns(balance_sheet_columns)
         
-        return balance_columns
+        return balance_sheet_columns
     
     def _detect_column_data_type(self, column_name: str, structure_info: Dict) -> str:
         """Detect data type for a column"""

@@ -791,10 +791,10 @@ class GRAPMappingInterface {
         
         // Update message
         const messages = {
-            draft: 'Your trial balance mapping is ready for submission.',
-            pending: 'Your trial balance has been submitted for review. You will be notified when it\'s approved or rejected.',
-            approved: 'Your trial balance has been approved! You can now generate financial statements.',
-            rejected: 'Your trial balance was rejected. You can edit the mapping and resubmit.'
+            draft: 'Your balance sheet mapping is ready for submission.',
+            pending: 'Your balance sheet has been submitted for review. You will be notified when it\'s approved or rejected.',
+            approved: 'Your balance sheet has been approved! You can now generate financial statements.',
+            rejected: 'Your balance sheet was rejected. You can edit the mapping and resubmit.'
         };
         
         this.elements.statusMessage.textContent = messages[status] || 'Status unknown.';
@@ -934,7 +934,7 @@ class GRAPMappingInterface {
             const result = await response.json();
 
             if (result.success) {
-                this.showSuccess('Trial balance submitted for review successfully!');
+                this.showSuccess('Balance sheet submitted for review successfully!');
                 this.updateSubmissionUI('pending');
                 
                 // Store submission ID for status checking
@@ -1076,10 +1076,10 @@ class GRAPMappingInterface {
                     this.updateSubmissionUI(result.status);
                     
                     if (result.status === 'approved') {
-                        this.showSuccess('Your trial balance has been approved! 🎉');
+                        this.showSuccess('Your balance sheet has been approved! 🎉');
                         clearInterval(this.statusPollingInterval);
                     } else if (result.status === 'rejected') {
-                        this.showError('Your trial balance was rejected. Please review the feedback.');
+                        this.showError('Your balance sheet was rejected. Please review the feedback.');
                     }
                 }
             } catch (error) {

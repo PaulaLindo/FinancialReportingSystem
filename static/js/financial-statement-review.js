@@ -232,7 +232,7 @@ class FinancialStatementReview {
                     <table class="mappings-table">
                         <thead>
                             <tr>
-                                <th>Trial Balance Account</th>
+                                <th>Balance Sheet Account</th>
                                 <th>GRAP Category</th>
                                 <th>Mapping Status</th>
                                 <th>Confidence</th>

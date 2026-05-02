@@ -102,6 +102,62 @@ class TransactionApprovalModel:
         except:
             return f"User {user_id}"
     
+    def approve_submission(self, submission_id: str, approver_id: str, approver_role: str, approval_notes: str = '') -> bool:
+        """Approve a submission"""
+        try:
+            data = self._load_approval_data()
+            
+            # Create approval record
+            approval_record = {
+                'submission_id': submission_id,
+                'approver_id': approver_id,
+                'approver_role': approver_role,
+                'approved_at': datetime.now().isoformat(),
+                'approval_notes': approval_notes,
+                'status': 'approved'
+            }
+            
+            # Add to approved transactions
+            data['approved_transactions'].append(approval_record)
+            
+            # Remove from pending if exists
+            data['pending_transactions'] = [tx for tx in data['pending_transactions'] if tx.get('submission_id') != submission_id]
+            
+            self._save_approval_data(data)
+            return True
+            
+        except Exception as e:
+            print(f"Error approving submission: {str(e)}")
+            return False
+    
+    def reject_submission(self, submission_id: str, rejecter_id: str, rejecter_role: str, rejection_reason: str) -> bool:
+        """Reject a submission"""
+        try:
+            data = self._load_approval_data()
+            
+            # Create rejection record
+            rejection_record = {
+                'submission_id': submission_id,
+                'rejecter_id': rejecter_id,
+                'rejecter_role': rejecter_role,
+                'rejected_at': datetime.now().isoformat(),
+                'rejection_reason': rejection_reason,
+                'status': 'rejected'
+            }
+            
+            # Add to rejected transactions
+            data['rejected_transactions'].append(rejection_record)
+            
+            # Remove from pending if exists
+            data['pending_transactions'] = [tx for tx in data['pending_transactions'] if tx.get('submission_id') != submission_id]
+            
+            self._save_approval_data(data)
+            return True
+            
+        except Exception as e:
+            print(f"Error rejecting submission: {str(e)}")
+            return False
+
     def approve_transaction(self, approver_id: str, transaction_id: str, 
                           approval_reason: str) -> Dict[str, Any]:
         """Add approval to transaction"""

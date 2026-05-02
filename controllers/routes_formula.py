@@ -43,9 +43,9 @@ def permission_required(permission):
 
 # Formula data will be loaded from Supabase database
         
-@formula_bp.route('/breakdown/<trial_balance_id>/<line_item_id>')
+@formula_bp.route('/breakdown/<balance_sheet_id>/<line_item_id>')
 @permission_required('view_all')
-def get_formula_breakdown(trial_balance_id, line_item_id):
+def get_formula_breakdown(balance_sheet_id, line_item_id):
     """Get formula breakdown for a specific line item with processing state validation"""
     try:
         from flask import session
@@ -60,7 +60,7 @@ def get_formula_breakdown(trial_balance_id, line_item_id):
         
         # Check processing state and formula visibility
         visibility_check = processing_state.can_view_formulas(
-            trial_balance_id, user.role, user.id
+            balance_sheet_id, user.role, user.id
         )
         
         if not visibility_check['can_view']:
@@ -80,11 +80,11 @@ def get_formula_breakdown(trial_balance_id, line_item_id):
             }), 404
         
         # Get processing state for context
-        proc_state = processing_state.get_processing_state(trial_balance_id)
+        proc_state = processing_state.get_processing_state(balance_sheet_id)
         
         # Add metadata
         formula_data['lineItemId'] = line_item_id
-        formula_data['trialBalanceId'] = trial_balance_id
+        formula_data['balanceSheetId'] = balance_sheet_id
         formula_data['generatedAt'] = datetime.now().isoformat()
         formula_data['generatedBy'] = user.full_name
         formula_data['accessMode'] = visibility_check['mode']
@@ -285,14 +285,14 @@ def get_source_ledger_data(source_type):
             'error': f'Error retrieving source ledger: {str(e)}'
         }), 500
 
-@formula_bp.route('/trial-balance')
+@formula_bp.route('/balance-sheet')
 @permission_required('view_all')
-def get_trial_balance_data():
-    """Get raw trial balance data"""
+def get_balance_sheet_data():
+    """Get raw balance sheet data"""
     try:
-        # Trial balance data will be loaded from Supabase database
-        trial_balance = {
-            'title': 'Trial Balance',
+        # Balance sheet data will be loaded from Supabase database
+        balance_sheet = {
+            'title': 'Balance Sheet',
             'period': 'FY 2025-2026',
             'generated_at': datetime.now().isoformat(),
             'accounts': [],
@@ -304,21 +304,21 @@ def get_trial_balance_data():
         
         return jsonify({
             'success': True,
-            'data': trial_balance
+            'data': balance_sheet
         })
         
     except Exception as e:
         return jsonify({
             'success': False,
-            'error': f'Error retrieving trial balance: {str(e)}'
+            'error': f'Error retrieving balance sheet: {str(e)}'
         }), 500
 
 # Processing State Management Routes
 
-@formula_bp.route('/processing/create/<trial_balance_id>', methods=['POST'])
+@formula_bp.route('/processing/create/<balance_sheet_id>', methods=['POST'])
 @permission_required('upload')
-def create_processing_state(trial_balance_id):
-    """Create processing state for new Trial Balance"""
+def create_processing_state(balance_sheet_id):
+    """Create processing state for new Balance Sheet"""
     try:
         from flask import session
         
@@ -336,7 +336,7 @@ def create_processing_state(trial_balance_id):
         
         # Create processing state
         state = processing_state.create_processing_state(
-            trial_balance_id, period, user_data['username']
+            balance_sheet_id, period, user_data['username']
         )
         
         return jsonify({
@@ -351,10 +351,10 @@ def create_processing_state(trial_balance_id):
             'error': f'Error creating processing state: {str(e)}'
         }), 500
 
-@formula_bp.route('/processing/update/<trial_balance_id>', methods=['POST'])
+@formula_bp.route('/processing/update/<balance_sheet_id>', methods=['POST'])
 @permission_required('review')
-def update_processing_status(trial_balance_id):
-    """Update processing status for Trial Balance"""
+def update_processing_status(balance_sheet_id):
+    """Update processing status for Balance Sheet"""
     try:
         from flask import session
         
@@ -372,17 +372,17 @@ def update_processing_status(trial_balance_id):
         
         # Update processing status
         success = processing_state.update_processing_status(
-            trial_balance_id, new_status, user_data['id']
+            balance_sheet_id, new_status, user_data['id']
         )
         
         if not success:
             return jsonify({
                 'success': False,
-                'error': 'Trial Balance not found or update failed'
+                'error': 'Balance Sheet not found or update failed'
             }), 404
         
         # Get updated state
-        state = processing_state.get_processing_state(trial_balance_id)
+        state = processing_state.get_processing_state(balance_sheet_id)
         
         return jsonify({
             'success': True,

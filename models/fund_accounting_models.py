@@ -176,9 +176,9 @@ class FundAccountingModel:
             }
         }
     
-    def apply_fund_tags(self, trial_balance_data: pd.DataFrame) -> pd.DataFrame:
-        """Apply fund tags to trial balance data"""
-        tagged_data = trial_balance_data.copy()
+    def apply_fund_tags(self, balance_sheet_data: pd.DataFrame) -> pd.DataFrame:
+        """Apply fund tags to balance sheet data"""
+        tagged_data = balance_sheet_data.copy()
         
         # Initialize fund tag columns
         tagged_data['fund_code'] = ''
@@ -231,9 +231,9 @@ class FundAccountingModel:
         else:
             return self.fund_structure['own_revenue_funds']
     
-    def apply_department_tags(self, trial_balance_data: pd.DataFrame) -> pd.DataFrame:
-        """Apply department tags to trial balance data"""
-        tagged_data = trial_balance_data.copy()
+    def apply_department_tags(self, balance_sheet_data: pd.DataFrame) -> pd.DataFrame:
+        """Apply department tags to balance sheet data"""
+        tagged_data = balance_sheet_data.copy()
         
         # Initialize department tag columns
         tagged_data['department_code'] = ''
@@ -296,9 +296,9 @@ class FundAccountingModel:
         else:
             return self.department_structure['administration']
     
-    def apply_function_tags(self, trial_balance_data: pd.DataFrame) -> pd.DataFrame:
-        """Apply function tags to trial balance data"""
-        tagged_data = trial_balance_data.copy()
+    def apply_function_tags(self, balance_sheet_data: pd.DataFrame) -> pd.DataFrame:
+        """Apply function tags to balance sheet data"""
+        tagged_data = balance_sheet_data.copy()
         
         # Initialize function tag columns
         tagged_data['function_code'] = ''

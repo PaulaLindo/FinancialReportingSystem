@@ -110,17 +110,17 @@ class AuditTrailModel:
             user_agent='Budget Management Service'
         )
     
-    def log_trial_balance_processing(self, file_id: str, user_id: str = 'system',
+    def log_balance_sheet_processing(self, file_id: str, user_id: str = 'system',
                                 processing_result: Dict = None) -> Dict[str, Any]:
-        """Log trial balance processing"""
+        """Log balance sheet processing"""
         return self.log_change(
-            entity_type='trial_balance',
+            entity_type='balance_sheet',
             entity_id=file_id,
             action='process',
             old_data=None,
             new_data=processing_result,
             user_id=user_id,
-            reason='Trial balance processed for financial statements',
+            reason='Balance sheet processed for financial statements',
             ip_address='127.0.0.1',
             user_agent='GRAP Processing Service'
         )

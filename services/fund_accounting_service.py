@@ -16,12 +16,12 @@ class FundAccountingService:
         self.tagged_data = {}
         self.segment_reports = {}
         
-    def apply_fund_tags(self, trial_balance_path: str, 
+    def apply_fund_tags(self, balance_sheet_path: str, 
                      auto_tag: bool = True, user_id: str = 'system') -> Dict[str, Any]:
-        """Apply fund tags to trial balance data"""
+        """Apply fund tags to balance sheet data"""
         try:
-            # Import trial balance
-            df = pd.read_excel(trial_balance_path) if trial_balance_path.endswith('.xlsx') else pd.read_csv(trial_balance_path)
+            # Import balance sheet
+            df = pd.read_excel(balance_sheet_path) if balance_sheet_path.endswith('.xlsx') else pd.read_csv(balance_sheet_path)
             
             # Apply fund tags
             if auto_tag:
@@ -33,11 +33,11 @@ class FundAccountingService:
             data_id = f"FT_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             self.tagged_data[data_id] = {
                 'data_id': data_id,
-                'original_filename': trial_balance_path.split('\\')[-1],
+                'original_filename': balance_sheet_path.split('\\')[-1],
                 'created_at': datetime.now().isoformat(),
                 'created_by': user_id,
                 'tagged_data': tagged_data.to_dict('records'),
-                'auto_tagged': auto_tagged,
+                'auto_tagged': auto_tag,
                 'fund_analysis': self.fund_model._analyze_fund_segments(tagged_data),
                 'department_analysis': self.fund_model._analyze_department_segments(tagged_data),
                 'function_analysis': self.fund_model._analyze_function_segments(tagged_data),

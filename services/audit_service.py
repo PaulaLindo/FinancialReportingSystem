@@ -166,11 +166,11 @@ class AuditService:
             'message': f'Budget deletion logged: {budget_id}'
         }
     
-    def log_trial_balance_processing(self, file_id: str, processing_result: Dict) -> Dict[str, Any]:
-        """Log trial balance processing"""
+    def log_balance_sheet_processing(self, file_id: str, processing_result: Dict) -> Dict[str, Any]:
+        """Log balance sheet processing"""
         client_info = self.get_client_info()
         
-        change_record = self.audit_model.log_trial_balance_processing(
+        change_record = self.audit_model.log_balance_sheet_processing(
             file_id=file_id,
             processing_result=processing_result,
             user_id=client_info['user_id']
@@ -183,7 +183,7 @@ class AuditService:
         return {
             'success': True,
             'audit_record': change_record,
-            'message': f'Trial balance processing logged: {file_id}'
+            'message': f'Balance sheet processing logged: {file_id}'
         }
     
     def log_financial_statement_generation(self, file_id: str, statement_type: str, 

@@ -1,11 +1,11 @@
 """
 SADPMR Financial Reporting System - Validators
-Data validation functions for trial balances and file formats
+Data validation functions for balance sheets and file formats
 """
 
 import pandas as pd
 import os
-from utils.constants import ALLOWED_EXTENSIONS, COLUMN_MAPPINGS, REQUIRED_COLUMNS, TRIAL_BALANCE_TOLERANCE
+from utils.constants import ALLOWED_EXTENSIONS, COLUMN_MAPPINGS, REQUIRED_COLUMNS, BALANCE_SHEET_TOLERANCE
 
 
 def validate_file_format(filepath):
@@ -46,8 +46,8 @@ def validate_file_format(filepath):
         return False, f"Error reading file: {str(e)}"
 
 
-def validate_trial_balance(df):
-    """Validate trial balance data integrity"""
+def validate_balance_sheet(df):
+    """Validate balance sheet data integrity"""
     errors = []
     warnings = []
     
@@ -76,12 +76,12 @@ def validate_trial_balance(df):
         if not both_values.empty:
             warnings.append(f"Found {len(both_values)} accounts with both debit and credit balances.")
         
-        # Check if trial balance balances
+        # Check if balance sheet balances
         total_debit = df['Debit Balance'].sum()
         total_credit = df['Credit Balance'].sum()
         
-        if abs(total_debit - total_credit) > TRIAL_BALANCE_TOLERANCE:
-            warnings.append(f"Trial balance doesn't balance: Debit R{total_debit:,.2f} vs Credit R{total_credit:,.2f}")
+        if abs(total_debit - total_credit) > BALANCE_SHEET_TOLERANCE:
+            warnings.append(f"Balance sheet doesn't balance: Debit R{total_debit:,.2f} vs Credit R{total_credit:,.2f}")
     
     # Check for negative values in unusual places
     if 'Debit Balance' in df.columns:

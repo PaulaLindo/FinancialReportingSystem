@@ -1,6 +1,6 @@
 """
 GRAP Mapping Service - AI-Powered Account Mapping Suggestions
-Provides intelligent suggestions for mapping trial balance accounts to GRAP categories
+Provides intelligent suggestions for mapping balance sheet accounts to GRAP categories
 """
 
 import re

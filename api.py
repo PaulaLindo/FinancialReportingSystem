@@ -54,13 +54,13 @@ async def root():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@app.post("/upload-trial-balance")
-async def upload_trial_balance(
+@app.post("/upload-balance-sheet")
+async def upload_balance_sheet(
     file: UploadFile = File(...),
     current_user: Dict = Depends(get_current_user)
 ):
     """
-    Upload and process trial balance file
+    Upload and process balance sheet file
     Returns financial statements and ratios
     """
     try:
@@ -80,11 +80,11 @@ async def upload_trial_balance(
             # Process with existing GRAP engine
             engine = GRAPMappingEngine()
             
-            # Import and validate trial balance
-            trial_balance = engine.import_trial_balance(tmp_file_path)
+            # Import and validate balance sheet
+            balance_sheet = engine.import_balance_sheet(tmp_file_path)
             
             # Map to GRAP codes
-            mapped_data = engine.map_to_grap(trial_balance)
+            mapped_data = engine.map_to_grap(balance_sheet)
             
             # Check for unmapped accounts
             unmapped_accounts = mapped_data[mapped_data['grap_code'].isna()]
@@ -130,13 +130,13 @@ async def upload_trial_balance(
             # Save to Supabase
             supabase = get_supabase_service()
             if supabase:
-                tb_result = supabase.save_trial_balance(
+                bs_result = supabase.save_balance_sheet(
                     file_content, file.filename, current_user['user_id']
                 )
                 
-                if tb_result['success']:
+                if bs_result['success']:
                     results_result = supabase.save_financial_results(
-                        results, tb_result['record_id'], current_user['user_id']
+                        results, bs_result['record_id'], current_user['user_id']
                     )
                     results['record_id'] = results_result.get('record_id')
             else:
@@ -144,7 +144,7 @@ async def upload_trial_balance(
             
             return {
                 'success': True,
-                'message': 'Trial balance processed successfully',
+                'message': 'Balance sheet processed successfully',
                 'results': results
             }
             
@@ -173,7 +173,7 @@ async def generate_pdf_report(
         if not supabase:
             raise HTTPException(status_code=503, detail="Database service not available")
             
-        results_data = supabase.get_trial_balance(record_id)
+        results_data = supabase.get_balance_sheet(record_id)
         if not results_data:
             raise HTTPException(status_code=404, detail="Results not found")
         

@@ -42,9 +42,9 @@ ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv', 'xlsm', 'xlsb', 'tsv'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def validate_flexible_trial_balance(df, file_extension):
+def validate_flexible_balance_sheet(df, file_extension):
     """
-    Flexible trial balance validation that can handle different structures and formats.
+    Flexible balance sheet validation that can handle different structures and formats.
     Detects the structure automatically and validates accordingly.
     """
     result = {
@@ -68,31 +68,51 @@ def validate_flexible_trial_balance(df, file_extension):
         
         if financial_analysis_indicators:
             result['file_type_detected'] = 'financial_analysis_template'
-            result['error'] = 'This appears to be a financial analysis template, not a trial balance.'
-            result['suggestion'] = 'Please upload a trial balance with account codes, descriptions, and balance amounts.'
+            result['error'] = 'This appears to be a financial analysis template, not a balance sheet.'
+            result['suggestion'] = 'Please upload a balance sheet with account codes, descriptions, and balance amounts.'
             return result
         
-        # Try different trial balance structure detection methods
+        # Try different balance sheet structure detection methods
         
-        # Method 1: Standard trial balance format
-        standard_cols = ['Account Code', 'Account Description']
-        if all(col in df.columns for col in standard_cols):
-            # Check for balance columns
+        # Method 1: Standard balance sheet format
+        # Check for both naming conventions (camelCase and snake_case)
+        standard_cols_camel = ['Account Code', 'Account Description']
+        standard_cols_snake = ['account_code', 'account_description']
+        
+        if all(col in df.columns for col in standard_cols_camel):
+            account_code_col = 'Account Code'
+            account_desc_col = 'Account Description'
+        elif all(col in df.columns for col in standard_cols_snake):
+            account_code_col = 'account_code'
+            account_desc_col = 'account_description'
+        else:
+            account_code_col = None
+            account_desc_col = None
+            
+        if account_code_col and account_desc_col:
+            # Check for balance columns (both naming conventions)
             balance_variations = [
-                ['Debit Balance', 'Credit Balance'],
-                ['Net Balance'],
-                ['Balance'],
-                ['Amount'],
-                ['Debit', 'Credit']
+                (['Debit Balance', 'Credit Balance'], ['debit_balance', 'credit_balance']),
+                (['Net Balance'], ['net_balance']),
+                (['Balance'], ['balance']),
+                (['Amount'], ['amount']),
+                (['Debit', 'Credit'], ['debit', 'credit'])
             ]
             
-            for balance_set in balance_variations:
-                if all(col in df.columns for col in balance_set):
+            for balance_set_camel, balance_set_snake in balance_variations:
+                if all(col in df.columns for col in balance_set_camel):
                     result['is_valid'] = True
-                    result['detected_structure'] = 'standard_trial_balance'
-                    result['account_code_col'] = 'Account Code'
-                    result['account_desc_col'] = 'Account Description'
-                    result['balance_cols'] = balance_set
+                    result['detected_structure'] = 'standard_balance_sheet'
+                    result['account_code_col'] = account_code_col
+                    result['account_desc_col'] = account_desc_col
+                    result['balance_cols'] = balance_set_camel
+                    return result
+                elif all(col in df.columns for col in balance_set_snake):
+                    result['is_valid'] = True
+                    result['detected_structure'] = 'standard_balance_sheet'
+                    result['account_code_col'] = account_code_col
+                    result['account_desc_col'] = account_desc_col
+                    result['balance_cols'] = balance_set_snake
                     return result
         
         # Method 1.5: Handle numeric_only structure (detected by flexible service)
@@ -109,7 +129,7 @@ def validate_flexible_trial_balance(df, file_extension):
             for balance_set in balance_variations:
                 if all(col in df.columns for col in balance_set):
                     result['is_valid'] = True
-                    result['detected_structure'] = 'standard_trial_balance'  # Treat as standard
+                    result['detected_structure'] = 'standard_balance_sheet'  # Treat as standard
                     result['account_code_col'] = 'Account Code'
                     result['account_desc_col'] = 'Account Description'
                     result['balance_cols'] = balance_set
@@ -148,16 +168,6 @@ def validate_flexible_trial_balance(df, file_extension):
                 elif has_financial_data:
                     financial_cols.append(col_idx)
             
-            # If we found the hospital structure
-            if dept_code_col is not None and account_desc_col is not None and len(financial_cols) >= 2:
-                result['is_valid'] = True
-                result['detected_structure'] = 'hospital_department_format'
-                result['account_code_col'] = dept_code_col
-                result['account_desc_col'] = account_desc_col
-                result['balance_cols'] = financial_cols
-                result['file_type_detected'] = 'hospital_trial_balance'
-                return result
-        
         # Method 3: Generic format detection - look for any column with codes and any column with descriptions
         code_col = None
         desc_col = None
@@ -201,15 +211,15 @@ def validate_flexible_trial_balance(df, file_extension):
         # If we found a generic structure
         if code_col is not None and desc_col is not None and len(balance_cols) >= 1:
             result['is_valid'] = True
-            result['detected_structure'] = 'generic_trial_balance'
+            result['detected_structure'] = 'generic_balance_sheet'
             result['account_code_col'] = code_col
             result['account_desc_col'] = desc_col
             result['balance_cols'] = balance_cols
-            result['file_type_detected'] = 'generic_trial_balance'
+            result['file_type_detected'] = 'generic_balance_sheet'
             return result
         
         # If no structure was detected
-        result['error'] = 'Unable to detect trial balance structure.'
+        result['error'] = 'Unable to detect balance sheet structure.'
         result['suggestion'] = 'Please ensure your file has account codes, account descriptions, and balance amounts.'
         result['file_type_detected'] = 'unrecognized_format'
         
@@ -220,17 +230,17 @@ def validate_flexible_trial_balance(df, file_extension):
     return result
 
 
-def convert_to_standard_format(trial_balance, validation_result):
+def convert_to_standard_balance_sheet(balance_sheet, validation_result):
     """
-    Convert different trial balance formats to standard format for GRAP mapping engine
+    Convert different balance sheet formats to standard format for GRAP mapping engine
     """
     try:
         detected_structure = validation_result['detected_structure']
         
-        if detected_structure == 'standard_trial_balance':
+        if detected_structure == 'standard_balance_sheet':
             # Already in standard format - just clean it up
             # Remove summary rows and empty rows
-            clean_df = trial_balance.copy()
+            clean_df = balance_sheet.copy()
             clean_df = clean_df.dropna(subset=['Account Code', 'Account Description'])
             clean_df = clean_df[~clean_df['Account Code'].astype(str).str.contains('TOTAL', na=False)]
             
@@ -241,51 +251,7 @@ def convert_to_standard_format(trial_balance, validation_result):
             
             return clean_df
         
-        elif detected_structure == 'hospital_department_format':
-            # Convert hospital format to standard format
-            account_code_col = validation_result['account_code_col']
-            account_desc_col = validation_result['account_desc_col']
-            balance_cols = validation_result['balance_cols']
-            
-            standard_data = []
-            
-            for idx, row in trial_balance.iterrows():
-                # Skip empty rows and summary rows
-                if pd.isna(row.iloc[account_code_col]) or pd.isna(row.iloc[account_desc_col]):
-                    continue
-                
-                account_code = str(row.iloc[account_code_col])
-                account_desc = str(row.iloc[account_desc_col])
-                
-                # Skip if this looks like a summary row
-                if 'TOTAL' in account_desc.upper() or account_desc.strip() == '':
-                    continue
-                
-                # Calculate net balance from all financial columns
-                net_balance = 0
-                for col_idx in balance_cols:
-                    if col_idx < len(trial_balance.columns):
-                        col_name = trial_balance.columns[col_idx]
-                        if col_name in row and pd.notna(row[col_name]):
-                            try:
-                                value = float(row[col_name])
-                                net_balance += abs(value)  # Treat all as positive for hospital format
-                            except (ValueError, TypeError):
-                                continue
-                
-                # Determine if this is a debit or credit based on account type
-                # For hospital format, we'll treat all as positive values
-                standard_data.append({
-                    'Account Code': account_code,
-                    'Account Description': account_desc,
-                    'Debit Balance': net_balance if net_balance > 0 else 0,
-                    'Credit Balance': 0,
-                    'Net Balance': net_balance
-                })
-            
-            return pd.DataFrame(standard_data)
-        
-        elif detected_structure == 'generic_trial_balance':
+        elif detected_structure == 'generic_balance_sheet':
             # Convert generic format to standard format
             account_code_col = validation_result['account_code_col']
             account_desc_col = validation_result['account_desc_col']
@@ -293,7 +259,7 @@ def convert_to_standard_format(trial_balance, validation_result):
             
             standard_data = []
             
-            for idx, row in trial_balance.iterrows():
+            for idx, row in balance_sheet.iterrows():
                 # Skip empty rows
                 if pd.isna(row.iloc[account_code_col]) or pd.isna(row.iloc[account_desc_col]):
                     continue
@@ -304,8 +270,8 @@ def convert_to_standard_format(trial_balance, validation_result):
                 # Calculate net balance from balance columns
                 net_balance = 0
                 for col_idx in balance_cols:
-                    if col_idx < len(trial_balance.columns):
-                        col_name = trial_balance.columns[col_idx]
+                    if col_idx < len(balance_sheet.columns):
+                        col_name = balance_sheet.columns[col_idx]
                         if col_name in row and pd.notna(row[col_name]):
                             try:
                                 value = float(row[col_name])
@@ -334,13 +300,13 @@ def convert_to_standard_format(trial_balance, validation_result):
             account_descs = []
             net_balances = []
             
-            for idx, row in trial_balance.iterrows():
+            for idx, row in balance_sheet.iterrows():
                 # Try to identify account codes (numeric or alphanumeric)
                 code_found = False
                 desc_found = False
                 balance_found = False
                 
-                for col_idx, col_name in enumerate(trial_balance.columns):
+                for col_idx, col_name in enumerate(balance_sheet.columns):
                     value = row.iloc[col_idx]
                     
                     if pd.isna(value):
@@ -370,9 +336,10 @@ def convert_to_standard_format(trial_balance, validation_result):
                                 balance_found = True
                         except (ValueError, TypeError):
                             continue
-            
-                # If we found all three, add to standard data
+                
+                # If we found all required data, create a standard row
                 if code_found and desc_found and balance_found:
+                    # Determine debit/credit based on sign
                     net_balance = net_balances[-1] if net_balances else 0
                     debit_balance = net_balance if net_balance > 0 else 0
                     credit_balance = abs(net_balance) if net_balance < 0 else 0
@@ -587,15 +554,103 @@ def index():
 @login_required
 def dashboard():
     """Authenticated dashboard - requires login"""
+    print("=== DASHBOARD ROUTE CALLED ===")
     user = get_current_user()
+    
+    # DEBUG: Show user info at the very beginning
+    print(f"DEBUG: Dashboard accessed by user: {user}")
+    if user:
+        print(f"DEBUG: User role: {user.role}")
+        print(f"DEBUG: User ID: {user.id}")
+    else:
+        print("DEBUG: No user found!")
     
     # Prepare data for Finance Clerk dashboard
     if user and user.role == 'FINANCE_CLERK':
-        from models.workflow_models import workflow_model
-        periods = workflow_model.get_open_periods()
-        stats = workflow_model.get_period_stats()
+        print("DEBUG: Entering FINANCE_CLERK dashboard logic")
+        from services.period_management_service import period_management_service
         
-        return render_template('dashboard.html', user=user, periods=periods, stats=stats)
+        try:
+            # Get real period data
+            dashboard_data = period_management_service.get_dashboard_data()
+            periods = dashboard_data['periods']
+            stats = dashboard_data['stats']
+            
+            # Get actual pending uploads count for current user
+            from models.balance_sheet_models import balance_sheet_model
+            try:
+                user_sessions = balance_sheet_model.get_user_sessions(user.id, limit=100)
+                
+                # DEBUG: Print what we actually got from Supabase
+                print(f"DEBUG: Retrieved {len(user_sessions)} sessions from Supabase for user {user.id}")
+                for i, session in enumerate(user_sessions):
+                    print(f"  Session {i+1}: status={session.status}, created_at={session.created_at}")
+                
+                # Count sessions with pending statuses (uploaded, processing, mapped, pending)
+                # These are all states that still require action from the finance clerk
+                pending_statuses = ['uploaded', 'processing', 'mapped', 'pending']
+                pending_uploads_count = len([s for s in user_sessions if s.status in pending_statuses])
+                
+                # Count balance sheets submitted today (balanced and mapped)
+                from datetime import datetime
+                today = datetime.now().date()
+                submitted_today_count = len([s for s in user_sessions 
+                    if s.created_at and s.created_at.date() == today 
+                    and s.status in ['mapped', 'pending', 'submitted', 'approved']])
+                
+                # DEBUG: Show the calculation
+                print(f"DEBUG: Today is {today}")
+                print(f"DEBUG: submitted_today_count = {submitted_today_count}")
+                for i, s in enumerate(user_sessions):
+                    if s.created_at and s.created_at.date() == today:
+                        counts = s.status in ['pending', 'submitted', 'approved']
+                        print(f"  Session {i+1}: status={s.status}, counts={counts}")
+                
+                # Count balance sheets approved this month
+                current_month = datetime.now().month
+                current_year = datetime.now().year
+                approved_this_month_count = len([s for s in user_sessions 
+                    if s.status == 'approved' and s.updated_at 
+                    and s.updated_at.month == current_month 
+                    and s.updated_at.year == current_year])
+            except Exception as e:
+                pending_uploads_count = 0
+                submitted_today_count = 0
+                approved_this_month_count = 0
+            
+            # Add additional stats for clerk dashboard
+            clerk_stats = {
+                'open_periods': stats.get('open_periods', 0),
+                'available_periods': stats.get('available_periods', 0),
+                'urgent_periods': stats.get('urgent_periods', 0),
+                'submitted_today': submitted_today_count,
+                'approved_this_month': approved_this_month_count,
+                'pending_uploads': pending_uploads_count,
+                'pending_approvals': 0,
+                'completed_reports': 0,
+                'total_assets': 0,
+                'total_liabilities': 0
+            }
+            
+            return render_template('dashboard.html', user=user, periods=periods, stats=clerk_stats)
+            
+        except Exception as e:
+            app.logger.error(f"Error loading dashboard data: {str(e)}")
+            # Fallback to default data
+            stats = {
+                'open_periods': 0,
+                'available_periods': 0,
+                'urgent_periods': 0,
+                'submitted_today': 0,
+                'approved_this_month': 0,
+                'pending_uploads': 0,
+                'pending_approvals': 0,
+                'completed_reports': 0,
+                'total_assets': 0,
+                'total_liabilities': 0
+            }
+            
+            return render_template('dashboard.html', user=user, periods=[], stats=stats)
     else:
         # Provide default stats data to prevent template errors
         stats = {
@@ -621,7 +676,7 @@ def approvals_page():
 @app.route('/upload')
 @login_required
 def upload_page():
-    """Trial Balance Upload Page"""
+    """Balance Sheet Upload Page"""
     user = get_current_user()
     if not user.can_upload():
         flash('You do not have permission to upload files.', 'error')
@@ -652,9 +707,9 @@ def finance_clerk_workflow():
 
 
 @app.route('/api/upload', methods=['POST'])
-def upload_trial_balance():
+def upload_balance_sheet():
     """
-    API endpoint to handle Trial Balance file upload with flexible format detection
+    API endpoint to handle Balance Sheet file upload with flexible format detection
     Processes file directly into database for GRAP compliance
     Returns: JSON with upload status and session details
     """
@@ -706,16 +761,19 @@ def upload_trial_balance():
                 temp_filepath = temp_file.name
             
             try:
-                print(" Starting flexible trial balance processing...")
+                print(" Starting flexible balance sheet processing...")
                 
-                # Use flexible trial balance service for processing
-                from services.flexible_trial_balance_service import flexible_trial_balance_service
+                # Use flexible balance sheet service for processing
+                from services.flexible_balance_sheet_service import flexible_balance_sheet_service
                 
                 print(" Processing upload with flexible service...")
-                processing_result = flexible_trial_balance_service.process_upload(
+                # Get period_id from form data if provided
+                period_id = request.form.get('period_id')
+                processing_result = flexible_balance_sheet_service.process_upload(
                     file_path=temp_filepath,
                     user_id=current_user.id,
-                    filename=processing_filename
+                    filename=processing_filename,
+                    period_id=period_id
                 )
                 
                 print(f" Processing result: {processing_result}")
@@ -729,7 +787,7 @@ def upload_trial_balance():
                 
                 print(" Getting session summary...")
                 # Get session summary for detailed response
-                session_summary = flexible_trial_balance_service.get_session_summary(processing_result['session_id'])
+                session_summary = flexible_balance_sheet_service.get_session_summary(processing_result['session_id'])
                 
                 print(" Upload processing completed successfully")
                 return jsonify({
@@ -760,7 +818,11 @@ def upload_trial_balance():
         
         else:
             print(f" File type not allowed: {file.filename}")
-            return jsonify({'success': False, 'error': 'Invalid file type'}), 400
+            file_extension = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'unknown'
+            return jsonify({
+                'success': False, 
+                'error': f'Invalid file type: .{file_extension}\n\nAllowed file types: .xlsx, .xls, .csv, .xlsm, .xlsb, .tsv\n\nPlease upload a balance sheet file in one of the supported formats.'
+            }), 400
         
     except Exception as e:
         print(f" Exception in upload processing: {str(e)}")
@@ -779,9 +841,9 @@ def debug_test():
 
 
 @app.route('/api/validate-balance', methods=['POST'])
-def validate_trial_balance():
+def validate_balance_sheet():
     """
-    API endpoint to validate trial balance before processing
+    API endpoint to validate balance sheet before processing
     Returns balance check results and enables/disables submit button
     """
     try:
@@ -797,16 +859,56 @@ def validate_trial_balance():
         if not session_id:
             return jsonify({'success': False, 'error': 'No session ID provided'}), 400
         
-        # Get trial balance data from database/session storage
-        from services.flexible_trial_balance_service import flexible_trial_balance_service
+        # Get balance sheet data from database
+        from models.balance_sheet_models import balance_sheet_model
         
         with open('balance_check_debug.log', 'a') as f:
-            f.write(f"[{datetime.now().isoformat()}] Retrieving session data for ID: {session_id}\n")
+            f.write(f"[{datetime.now().isoformat()}] Retrieving session data from database for ID: {session_id}\n")
         
-        print(f"🔍 Retrieving session data for ID: {session_id}")
+        print(f"🔍 Retrieving session data from database for ID: {session_id}")
         
-        # Retrieve the processed data from the session
-        session_data = flexible_trial_balance_service.get_session_data(session_id)
+        # Get session and data from database
+        session = balance_sheet_model.get_session(session_id)
+        if not session:
+            error_msg = f'Session not found in database for session_id: {session_id}'
+            with open('balance_check_debug.log', 'a') as f:
+                f.write(f"[{datetime.now().isoformat()}] Balance check failed: {error_msg}\n")
+            print(f"❌ Balance check failed: {error_msg}")
+            return jsonify({'success': False, 'error': error_msg}), 404
+        
+        # Get balance sheet data from database
+        data_rows = balance_sheet_model.get_session_data(session_id)
+        if not data_rows:
+            error_msg = f'Balance sheet data not found in database for session_id: {session_id}'
+            with open('balance_check_debug.log', 'a') as f:
+                f.write(f"[{datetime.now().isoformat()}] Balance check failed: {error_msg}\n")
+            print(f"❌ Balance check failed: {error_msg}")
+            return jsonify({'success': False, 'error': error_msg}), 404
+        
+        # Convert data rows to list format for validation
+        balance_sheet_data = []
+        for row in data_rows:
+            # Handle None values properly
+            debit_val = getattr(row, 'debit_balance', None)
+            credit_val = getattr(row, 'credit_balance', None)
+            net_val = getattr(row, 'net_balance', None)
+            
+            balance_sheet_data.append({
+                'account_code': getattr(row, 'account_code', ''),
+                'account_description': getattr(row, 'account_description', ''),
+                'debit_balance': float(debit_val) if debit_val is not None else 0.0,
+                'credit_balance': float(credit_val) if credit_val is not None else 0.0,
+                'net_balance': float(net_val) if net_val is not None else 0.0
+            })
+        
+        # Create session data structure similar to what flexible service returns
+        session_data = {
+            'success': True,
+            'balance_sheet_data': balance_sheet_data,
+            'session_id': session_id,
+            'file_format': session.file_format or 'xlsx',
+            'metadata': session.metadata or {}
+        }
         
         with open('balance_check_debug.log', 'a') as f:
             f.write(f"[{datetime.now().isoformat()}] Session data result: {session_data}\n")
@@ -820,28 +922,28 @@ def validate_trial_balance():
             print(f" Balance check failed: {error_msg}")
             return jsonify({'success': False, 'error': error_msg}), 404
         
-        # Get the trial balance data from session
-        trial_balance_data = session_data.get('trial_balance_data')
-        if not trial_balance_data:
+        # Get the balance sheet data from session
+        balance_sheet_data = session_data.get('balance_sheet_data')
+        if not balance_sheet_data:
             return jsonify({
                 'success': False,
-                'error': 'Trial balance data not found in session'
+                'error': 'Balance sheet data not found in session'
             }), 404
         
         # Convert to DataFrame for validation
         import pandas as pd
-        trial_balance = pd.DataFrame(trial_balance_data)
+        balance_sheet = pd.DataFrame(balance_sheet_data)
         
         # Validate that we have data
-        if trial_balance.empty:
+        if balance_sheet.empty:
             return jsonify({
                 'success': False,
-                'error': 'The trial balance data appears to be empty.'
+                'error': 'The balance sheet data appears to be empty.'
             }), 500
         
         # Use flexible validation to understand the structure
         file_extension = session_data.get('file_format', 'xlsx')
-        validation_result = validate_flexible_trial_balance(trial_balance, file_extension)
+        validation_result = validate_flexible_balance_sheet(balance_sheet, file_extension)
         
         if not validation_result['is_valid']:
             return jsonify({
@@ -856,50 +958,67 @@ def validate_trial_balance():
         total_debits = 0
         total_credits = 0
         
-        if validation_result['detected_structure'] == 'standard_trial_balance':
-            # Standard format - use column names
-            if 'Debit Balance' in trial_balance.columns:
-                total_debits = trial_balance['Debit Balance'].sum()
-            if 'Credit Balance' in trial_balance.columns:
-                total_credits = trial_balance['Credit Balance'].sum()
+        if validation_result['detected_structure'] == 'standard_balance_sheet':
+            # Standard format - use column names (handle both naming conventions)
+            balance_cols = validation_result['balance_cols']
+            
+            # Check for debit/credit columns in both naming conventions
+            if 'Debit Balance' in balance_sheet.columns:
+                total_debits = balance_sheet['Debit Balance'].sum()
+            elif 'debit_balance' in balance_sheet.columns:
+                total_debits = balance_sheet['debit_balance'].sum()
+                
+            if 'Credit Balance' in balance_sheet.columns:
+                total_credits = balance_sheet['Credit Balance'].sum()
+            elif 'credit_balance' in balance_sheet.columns:
+                total_credits = balance_sheet['credit_balance'].sum()
             
             # Handle Net Balance column (common in Pastel exports)
-            if 'Net Balance' in trial_balance.columns:
-                net_balance = trial_balance['Net Balance'].sum()
-                if abs(net_balance) < 0.01:  # Balanced
-                    total_debits = trial_balance[trial_balance['Net Balance'] > 0]['Net Balance'].sum()
-                    total_credits = abs(trial_balance[trial_balance['Net Balance'] < 0]['Net Balance'].sum())
-        
-        elif validation_result['detected_structure'] == 'hospital_department_format':
-            # Hospital format - sum all financial columns as expenses/revenue
-            balance_cols = validation_result['balance_cols']
-            for col_idx in balance_cols:
-                if col_idx < len(trial_balance.columns):
-                    col_name = trial_balance.columns[col_idx]
-                    if col_name in trial_balance.columns:
-                        # Treat all numeric values as part of the balance calculation
-                        col_values = pd.to_numeric(trial_balance[col_name], errors='coerce').fillna(0)
-                        total_debits += abs(col_values.sum())  # Treat all as debits for hospital format
-        
-        elif validation_result['detected_structure'] == 'generic_trial_balance':
+            if 'Net Balance' in balance_sheet.columns:
+                net_balance = balance_sheet['Net Balance'].sum()
+                
+                # More tolerant check for balanced net balance (allowing for rounding errors)
+                tolerance = 0.01  # Can be increased to 0.1 or 1.0 for more tolerance
+                if abs(net_balance) <= tolerance:
+                    # Use Net Balance column instead of separate Debit/Credit columns
+                    # This is more reliable for Pastel exports
+                    positive_balances = balance_sheet[balance_sheet['Net Balance'] > 0]['Net Balance'].sum()
+                    negative_balances = balance_sheet[balance_sheet['Net Balance'] < 0]['Net Balance'].sum()
+                    
+                    total_debits = positive_balances
+                    total_credits = abs(negative_balances)
+                    
+                    print(f" Using Net Balance calculation: Debits={total_debits:,.2f}, Credits={total_credits:,.2f}")
+                else:
+                    print(f" Net Balance not balanced (sum={net_balance:,.2f}), using standard columns")
+            elif 'net_balance' in balance_sheet.columns:
+                net_balance = balance_sheet['net_balance'].sum()
+                
+                # More tolerant check for balanced net balance (allowing for rounding errors)
+                tolerance = 0.01  # Can be increased to 0.1 or 1.0 for more tolerance
+                if abs(net_balance) <= tolerance:
+                    # Use Net Balance column instead of separate Debit/Credit columns
+                    # This is more reliable for Pastel exports
+                    positive_balances = balance_sheet[balance_sheet['net_balance'] > 0]['net_balance'].sum()
+                    negative_balances = balance_sheet[balance_sheet['net_balance'] < 0]['net_balance'].sum()
+                    
+                    total_debits = positive_balances
+                    total_credits = abs(negative_balances)
+                    
+                    print(f" Using Net Balance calculation: Debits={total_debits:,.2f}, Credits={total_credits:,.2f}")
+                else:
+                    print(f" Net Balance not balanced (sum={net_balance:,.2f}), using standard columns")
+            
+        elif validation_result['detected_structure'] == 'generic_balance_sheet':
             # Generic format - try to identify debit/credit patterns
             balance_cols = validation_result['balance_cols']
             for col_idx in balance_cols:
-                if col_idx < len(trial_balance.columns):
-                    col_name = trial_balance.columns[col_idx]
-                    if col_name in trial_balance.columns:
-                        col_values = pd.to_numeric(trial_balance[col_name], errors='coerce').fillna(0)
+                if col_idx < len(balance_sheet.columns):
+                    col_name = balance_sheet.columns[col_idx]
+                    if col_name in balance_sheet.columns:
+                        col_values = pd.to_numeric(balance_sheet[col_name], errors='coerce').fillna(0)
                         # Simple approach: treat all as debits for balance check
                         total_debits += abs(col_values.sum())
-        
-        else:
-            # Unknown format - try basic balance detection
-            # Look for any numeric columns that might contain balance data
-            for col in trial_balance.columns:
-                if trial_balance[col].dtype in ['int64', 'float64']:
-                    col_sum = trial_balance[col].sum()
-                    if abs(col_sum) > 0:
-                        total_debits += abs(col_sum)
         
         # Calculate balance difference
         balance_difference = abs(total_debits - total_credits)
@@ -918,11 +1037,11 @@ def validate_trial_balance():
             'tolerance': tolerance,
             'can_submit': is_balanced,
             'allow_proceed_with_warning': bool(balance_difference <= (tolerance * 100)),  # Allow proceeding if difference is small
-            'message': 'Trial balance is balanced' if is_balanced else 
-                      f'Trial balance is not balanced. Difference: R {balance_difference:,.2f}',
+            'message': 'Balance sheet is balanced' if is_balanced else 
+                      f'Balance sheet is not balanced. Difference: R {balance_difference:,.2f}',
             'recommendation': 'You can proceed to mapping' if is_balanced else 
-                             'Please correct the trial balance or proceed with a warning',
-            'account_count': int(len(trial_balance)),
+                             'Please correct the balance sheet',
+            'account_count': int(len(balance_sheet)),
             'validation_timestamp': datetime.now().isoformat(),
             'next_steps': {
                 'balanced': ['Proceed to mapping', 'Generate financial statements'],
@@ -938,13 +1057,11 @@ def validate_trial_balance():
             'error': f'Balance validation error: {str(e)}'
         }), 500
 
-
-@app.route('/api/processing', methods=['POST'])
 @login_required
 @permission_required('process')
 def process_uploaded_file():
     """
-    API endpoint to process trial balance data for GRAP mapping and financial statement generation
+    API endpoint to process balance sheet data for GRAP mapping and financial statement generation
     Works with database-stored data instead of files
     """
     try:
@@ -959,22 +1076,32 @@ def process_uploaded_file():
         if not current_user:
             return jsonify({'success': False, 'error': 'User not authenticated'}), 401
         
-        print(f" Processing trial balance from database")
+        print(f" Processing balance sheet from database")
         print(f" User: {current_user.username}")
         print(f" Session ID: {session_id}")
         
-        # Use flexible trial balance service for GRAP processing
-        from services.flexible_trial_balance_service import flexible_trial_balance_service
+        # Update session status to "processing"
+        from models.balance_sheet_models import balance_sheet_model
+        try:
+            success = balance_sheet_model.update_session_status(session_id, 'processing')
+            print(f" Updated session status to: processing - Success: {success}")
+        except Exception as e:
+            print(f" Failed to update session status to processing: {str(e)}")
+            import traceback
+            print(f" Traceback: {traceback.format_exc()}")
+        
+        # Use flexible balance sheet service for GRAP processing
+        from services.flexible_balance_sheet_service import flexible_balance_sheet_service
         
         print(" Starting GRAP mapping and financial statement generation...")
         
         # Get session data for processing
-        session_data = flexible_trial_balance_service.get_session_data(session_id)
+        session_data = flexible_balance_sheet_service.get_session_data(session_id)
         if not session_data or not session_data.get('success'):
             return jsonify({'success': False, 'error': 'Session data not found or invalid'}), 404
         
         # Process GRAP mapping and financial statements
-        processing_result = flexible_trial_balance_service.process_grap_mapping(
+        processing_result = flexible_balance_sheet_service.process_grap_mapping(
             session_id=session_id,
             user_id=current_user.id
         )
@@ -990,9 +1117,18 @@ def process_uploaded_file():
         
         print(" Getting final session summary...")
         # Get final session summary with GRAP mapping results
-        session_summary = flexible_trial_balance_service.get_session_summary(session_id)
+        session_summary = flexible_balance_sheet_service.get_session_summary(session_id)
 
         print(" GRAP processing completed successfully")
+        
+        # Update session status to "mapped" since GRAP mapping is complete
+        try:
+            success = balance_sheet_model.update_session_status(session_id, 'mapped')
+            print(f" Updated session status to: mapped - Success: {success}")
+        except Exception as e:
+            print(f" ❌ Failed to update session status to mapped: {str(e)}")
+            import traceback
+            print(f" Traceback: {traceback.format_exc()}")
 
         # Extract mapping data for frontend
         mapped_accounts = processing_result.get('mapped_accounts', [])
@@ -1033,13 +1169,11 @@ def process_uploaded_file():
             'error': f'GRAP processing failed: {str(e)}'
         }), 500
 
-
-@app.route('/api/proceed-unbalanced', methods=['POST'])
 @login_required
 @permission_required('process')
 def proceed_with_unbalanced():
     """
-    API endpoint to proceed with unbalanced trial balance
+    API endpoint to proceed with unbalanced balance sheet
     Allows clerk to continue despite balance discrepancy
     """
     try:
@@ -1053,7 +1187,7 @@ def proceed_with_unbalanced():
         if not proceed_with_warning:
             return jsonify({'success': False, 'error': 'Must confirm proceeding with warning'}), 400
         
-        # Log the decision to proceed with unbalanced trial balance
+        # Log the decision to proceed with unbalanced balance sheet
         user = get_current_user()
         
         # Store warning flag in session for later processing
@@ -1064,7 +1198,7 @@ def proceed_with_unbalanced():
         
         return jsonify({
             'success': True,
-            'message': 'Proceeding with unbalanced trial balance',
+            'message': 'Proceeding with unbalanced balance sheet',
             'warning': 'Financial statements may not be accurate due to balance discrepancy',
             'next_step': 'Proceed to mapping interface'
         })
@@ -1073,6 +1207,60 @@ def proceed_with_unbalanced():
         return jsonify({
             'success': False,
             'error': f'Processing error: {str(e)}'
+        }), 500
+
+
+@app.route('/api/remove-upload', methods=['POST'])
+@login_required
+@permission_required('upload')
+def remove_uploaded_file():
+    """
+    API endpoint to remove uploaded file from database
+    Allows user to cancel upload and clean up data
+    """
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')
+        
+        if not session_id:
+            return jsonify({'success': False, 'error': 'No session ID provided'}), 400
+        
+        # Get current user for logging
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        print(f"🗑️ Removing uploaded file - Session ID: {session_id}")
+        print(f"👤 User: {current_user.username}")
+        
+        # Use cleanup service to remove the session
+        from services.cleanup_service import CleanupService
+        cleanup_service = CleanupService()
+        
+        # Clean up the specific session
+        cleanup_result = cleanup_service.cleanup_specific_session(session_id)
+        
+        if cleanup_result.get('success'):
+            print(f"✅ Successfully removed session {session_id}")
+            return jsonify({
+                'success': True,
+                'message': 'Uploaded file successfully removed',
+                'session_id': session_id
+            })
+        else:
+            print(f"❌ Failed to remove session {session_id}: {cleanup_result.get('error', 'Unknown error')}")
+            return jsonify({
+                'success': False,
+                'error': cleanup_result.get('error', 'Failed to remove uploaded file')
+            }), 500
+        
+    except Exception as e:
+        print(f"❌ Exception in remove_uploaded_file: {str(e)}")
+        import traceback
+        print(f"📋 Full traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': f'Failed to remove uploaded file: {str(e)}'
         }), 500
 
 
@@ -1174,7 +1362,7 @@ def get_files():
         outputs_dir = app.config['OUTPUT_FOLDER']
         files = []
         total_size = 0
-        trial_balances_count = 0
+        balance_sheets_count = 0
         pdf_reports_count = 0
         
         for filename in os.listdir(outputs_dir):
@@ -1185,14 +1373,14 @@ def get_files():
                     'id': f"output_{filename}",
                     'filename': filename,
                     'original_filename': filename,
-                    'file_type': 'trial_balance',
+                    'file_type': 'balance_sheet',
                     'file_size': stat.st_size,
                     'upload_date': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S'),
                     'status': 'completed'
                 }
                 files.append(file_info)
                 total_size += stat.st_size
-                trial_balances_count += 1
+                balance_sheets_count += 1
             elif os.path.isfile(filepath) and filename.endswith('.pdf'):
                 stat = os.stat(filepath)
                 file_info = {
@@ -1222,7 +1410,7 @@ def get_files():
         
         summary = {
             'total_files': total_files,
-            'trial_balances': trial_balances_count,
+            'balance_sheets': balance_sheets_count,
             'pdf_reports': pdf_reports_count,
             'storage_used': f"{storage_used} MB"
         }
@@ -1315,8 +1503,8 @@ def submission_status_page(submission_id):
         
         # First try to get from database
         try:
-            from models.trial_balance_models import TrialBalanceSession
-            tb_session = TrialBalanceSession()
+            from models.balance_sheet_models import BalanceSheetSession
+            tb_session = BalanceSheetSession()
             
             # Get submission from database
             result = tb_session.client.table('submissions').select('*').eq('id', submission_id).execute()
@@ -1353,12 +1541,13 @@ def submission_status_page(submission_id):
         # Format submission data for template
         formatted_submission = {
             'id': submission_data.get('id', submission_id),
-            'submission_name': submission_data.get('submission_name', 'Trial Balance Submission'),
+            'submission_name': submission_data.get('submission_name', 'Balance Sheet Submission'),
             'original_filename': submission_data.get('original_filename', 'Unknown'),
             'status': submission_data.get('status', 'pending'),
             'priority': submission_data.get('priority', 'normal'),
             'total_accounts': submission_data.get('total_accounts', 0),
             'mapped_accounts': submission_data.get('mapped_accounts', 0),
+            'mapped_accounts_count': submission_data.get('mapped_accounts', 0),
             'unmapped_accounts': submission_data.get('unmapped_accounts', 0),
             'mapping_completion_percentage': submission_data.get('mapping_completion_percentage', 0),
             'total_assets': submission_data.get('total_assets', 0),
@@ -1369,6 +1558,7 @@ def submission_status_page(submission_id):
             'data_quality_score': submission_data.get('data_quality_score', 0),
             'grap_categories_used': submission_data.get('grap_categories_used', 0),
             'submitted_at': submission_data.get('submitted_at'),
+            'submission_timestamp': submission_data.get('submission_timestamp'),
             'reviewed_by': submission_data.get('reviewed_by'),
             'reviewed_at': submission_data.get('reviewed_at'),
             'review_notes': submission_data.get('review_notes'),
@@ -1376,11 +1566,15 @@ def submission_status_page(submission_id):
             'rejection_reason': submission_data.get('rejection_reason'),
             'is_locked': submission_data.get('is_locked', False),
             'locked_at': submission_data.get('locked_at'),
+            'locked': submission_data.get('is_locked', False),
             'metadata': submission_data.get('metadata', {}),
             'grap_mapping_data': submission_data.get('grap_mapping_data', {}),
             'financial_statements': submission_data.get('financial_statements', {}),
             'user_id': submission_data.get('user_id'),
-            'session_id': submission_data.get('session_id')
+            'session_id': submission_data.get('session_id'),
+            'full_name': user.full_name,
+            'username': user.username,
+            'filepath': submission_data.get('submission_name') or submission_data.get('original_filename') or submission_data.get('filename') or 'N/A'
         }
         
         return render_template('submission_status.html', 
@@ -1452,54 +1646,241 @@ def get_submission_status(submission_id):
             'error': str(e)
         }), 500
 
+
+# Period Management API Endpoints
+
+@app.route('/api/periods', methods=['GET'])
+@login_required
+def get_periods():
+    """Get all financial periods"""
+    try:
+        user = get_current_user()
+        if not user.has_permission('view_all'):
+            return jsonify({'success': False, 'error': 'Permission denied'}), 403
+        
+        from services.period_management_service import period_management_service
+        periods = period_management_service.model.get_all_periods()
+        
+        return jsonify({
+            'success': True,
+            'periods': [period.to_dict() for period in periods]
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/periods/open', methods=['GET'])
+@login_required
+def get_open_periods():
+    """Get open financial periods"""
+    try:
+        user = get_current_user()
+        if not user.has_permission('view_all'):
+            return jsonify({'success': False, 'error': 'Permission denied'}), 403
+        
+        from services.period_management_service import period_management_service
+        periods = period_management_service.get_available_periods_for_upload()
+        
+        return jsonify({
+            'success': True,
+            'periods': [period.to_dict() for period in periods]
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/periods', methods=['POST'])
+@login_required
+def create_period():
+    """Create a new financial period"""
+    try:
+        user = get_current_user()
+        if not user.has_permission('manage_users'):
+            return jsonify({'success': False, 'error': 'Permission denied'}), 403
+        
+        data = request.get_json()
+        from services.period_management_service import period_management_service
+        
+        period = period_management_service.create_financial_period(
+            period_data=data,
+            created_by=user.id
+        )
+        
+        return jsonify({
+            'success': True,
+            'period': period.to_dict(),
+            'message': 'Financial period created successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/periods/<period_id>/open', methods=['POST'])
+@login_required
+def open_period(period_id):
+    """Open a period for uploads"""
+    try:
+        user = get_current_user()
+        if not user.has_permission('manage_users'):
+            return jsonify({'success': False, 'error': 'Permission denied'}), 403
+        
+        from services.period_management_service import period_management_service
+        period = period_management_service.open_period_for_uploads(period_id)
+        
+        return jsonify({
+            'success': True,
+            'period': period.to_dict(),
+            'message': 'Period opened for uploads'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/periods/<period_id>/close', methods=['POST'])
+@login_required
+def close_period(period_id):
+    """Close a period"""
+    try:
+        user = get_current_user()
+        if not user.has_permission('manage_users'):
+            return jsonify({'success': False, 'error': 'Permission denied'}), 403
+        
+        from services.period_management_service import period_management_service
+        period = period_management_service.close_period(period_id)
+        
+        return jsonify({
+            'success': True,
+            'period': period.to_dict(),
+            'message': 'Period closed'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/periods/dashboard', methods=['GET'])
+@login_required
+def get_dashboard_periods():
+    """Get period data for dashboard"""
+    try:
+        user = get_current_user()
+        
+        from services.period_management_service import period_management_service
+        dashboard_data = period_management_service.get_dashboard_data()
+        
+        return jsonify({
+            'success': True,
+            'periods': dashboard_data['periods'],
+            'stats': dashboard_data['stats']
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/periods/sample', methods=['POST'])
+@login_required
+def create_sample_periods():
+    """Create sample periods for testing"""
+    try:
+        user = get_current_user()
+        if not user.has_permission('manage_users'):
+            return jsonify({'success': False, 'error': 'Permission denied'}), 403
+        
+        from services.period_management_service import period_management_service
+        periods = period_management_service.create_sample_periods(user.id)
+        
+        return jsonify({
+            'success': True,
+            'periods': [period.to_dict() for period in periods],
+            'message': f'Created {len(periods)} sample periods'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @app.route('/api/submissions/user', methods=['GET'])
 @login_required
 def get_user_submissions():
-    """Get all submissions for the current user"""
+    """Get all submissions for the current user - Optimized for performance"""
+    print("🔥 API ENDPOINT CALLED: /api/submissions/user")
     try:
         user = get_current_user()
         user_id = user.id
         
-        # Get user sessions from trial balance model
-        from models.trial_balance_models import trial_balance_model
-        sessions = trial_balance_model.get_user_sessions(user_id, limit=50)
+        print(f"🚀 Loading submissions for user: {user_id}")
+        
+        # Get user sessions from balance sheet model with smaller limit for better performance
+        from models.balance_sheet_models import balance_sheet_model
+        sessions = balance_sheet_model.get_user_sessions(user_id, limit=25)  # Reduced from 50
+        
+        print(f"📊 Found {len(sessions)} sessions for user {user_id}")
         
         submissions = []
         session_ids_for_batch = []
         
         for session in sessions:
-            # Get session summary for mapped accounts count (optimized)
+            # Fast account counts from metadata only - NO EXPENSIVE FALLBACKS
             mapped_accounts_count = 0
             total_accounts_count = 0
             
-            # Try to get account counts from metadata first (faster)
-            if session.metadata and 'processing_results' in session.metadata:
-                processing_results = session.metadata['processing_results']
-                mapped_accounts_count = processing_results.get('mapped_accounts_count', 0)
-                total_accounts_count = processing_results.get('total_accounts_count', 0)
+            # Only get from metadata - no expensive service calls
+            if session.metadata:
+                # Check for mapped_accounts directly in metadata (this is the correct field)
+                mapped_accounts_count = session.metadata.get('mapped_accounts', 0)
+                total_accounts_count = session.metadata.get('total_accounts', 0)
+                
+                # Fallback to processing_results if direct field not found
+                if mapped_accounts_count == 0:
+                    processing_results = session.metadata.get('processing_results', {})
+                    mapped_accounts_count = processing_results.get('mapped_accounts', 0)
+                    total_accounts_count = processing_results.get('total_accounts', 0)
+                
+                # Fallback to grap_mapping if still not found
+                if mapped_accounts_count == 0 and 'grap_mapping' in session.metadata:
+                    grap_mapping = session.metadata['grap_mapping']
+                    mapped_accounts = grap_mapping.get('mapped_accounts', [])
+                    mapped_accounts_count = len(mapped_accounts) if mapped_accounts else 0
             
-            # Fallback to session summary only if needed
-            if total_accounts_count == 0:
-                try:
-                    from services.flexible_trial_balance_service import flexible_trial_balance_service
-                    session_summary = flexible_trial_balance_service.get_session_summary(session.id)
-                    mapped_accounts_count = session_summary.get('mapped_accounts_count', 0)
-                    total_accounts_count = session_summary.get('total_accounts_count', 0)
-                except Exception as e:
-                    print(f"⚠️ Debug - Error getting session summary for {session.id}: {str(e)}")
-                    pass  # Use default values
+            print(f"DEBUG: Final mapped_accounts_count for session {session.id}: {mapped_accounts_count}")
             
-            # Get validation status from trial balance data using batch approach
-            validation_status = session.status  # fallback to session status
-            try:
-                # Add session ID to list for batch query
-                session_ids_for_batch.append(session.id)
-            except NameError:
-                # Initialize the list on first iteration
-                session_ids_for_batch = [session.id]
+            # Use session status directly - no expensive batch queries for now
+            validation_status = session.status
             
-            # Skip expensive workflow checks for now - default to unlocked
-            locked_status = False
+            # Collect session IDs for potential batch query (but skip for performance)
+            # session_ids_for_batch.append(session.id)
+            
+            # Check if submission should be locked based on status
+            # Submissions that have been submitted for review should be locked
+            # 'mapped' status means accounts have been mapped and submission is locked for editing
+            locked_statuses = ['mapped', 'pending', 'submitted', 'approved', 'rejected']
+            locked_status = validation_status in locked_statuses
             
             # Format submission data
             submission_data = {
@@ -1508,7 +1889,7 @@ def get_user_submissions():
                 'filename': session.original_filename or session.filename,
                 'filepath': session.filename,
                 'submission_timestamp': session.created_at.isoformat() if session.created_at else None,
-                'status': validation_status,  # Use validation_status from trial_balance_data
+                'status': validation_status,
                 'mapped_accounts_count': mapped_accounts_count,
                 'total_accounts_count': total_accounts_count,
                 'file_type': session.file_type,
@@ -1517,35 +1898,18 @@ def get_user_submissions():
                 'grap_mapping': session.metadata.get('grap_mapping', {}),
                 'structure_info': session.metadata.get('structure_info', {}),
                 'processing_results': session.metadata.get('processing_results', {}),
-                'mapping_progress': session.metadata.get('mapping_progress', {})
+                'mapping_progress': session.metadata.get('mapping_progress', {}),
+                # DEBUG: Add metadata info for debugging
+                '_debug_metadata': session.metadata,
+                '_debug_mapped_accounts_count': mapped_accounts_count,
+                '_debug_processing_results': session.metadata.get('processing_results', {}) if session.metadata else {}
             }
             submissions.append(submission_data)
         
-        # Batch query to get all validation statuses at once
-        validation_status_map = {}
-        if session_ids_for_batch:
-            try:
-                # Get validation status for all sessions in one query
-                batch_result = trial_balance_model.client.table('trial_balance_data')\
-                    .select('session_id, validation_status')\
-                    .in_('session_id', session_ids_for_batch)\
-                    .execute()
-                
-                # Create a map of session_id -> validation_status
-                for row in batch_result.data:
-                    if row['session_id'] not in validation_status_map:
-                        validation_status_map[row['session_id']] = row['validation_status']
-                        print(f"🔍 Debug - Batch query - Session {row['session_id']} validation_status: {row['validation_status']}")
-                
-                # Update submissions with validation status from trial balance data
-                for submission in submissions:
-                    if submission['session_id'] in validation_status_map:
-                        submission['status'] = validation_status_map[submission['session_id']]
-                        print(f"🔍 Debug - Updated submission {submission['session_id']} status to: {submission['status']}")
-                
-            except Exception as e:
-                print(f"⚠️ Debug - Batch query failed: {str(e)}")
-                # Keep session status as fallback
+        # Skip expensive batch query for now to improve performance
+        # TODO: Add back later with proper indexing
+        
+        print(f"✅ Successfully prepared {len(submissions)} submissions for response")
         
         return jsonify({
             'success': True,
@@ -1554,10 +1918,15 @@ def get_user_submissions():
         
     except Exception as e:
         app.logger.error(f"Error getting user submissions: {str(e)}")
+        print(f"❌ Error in get_user_submissions: {str(e)}")
+        import traceback
+        print(f"📋 Full traceback: {traceback.format_exc()}")
         return jsonify({
             'success': False,
             'error': f'Error getting user submissions: {str(e)}'
         }), 500
+
+
 @app.route('/api/clear-submission-lock', methods=['POST'])
 @login_required
 def clear_submission_lock():
@@ -1591,7 +1960,7 @@ def clear_submission_lock():
                             submission_data.get('status') == 'pending'):
                             pending_count += 1
                             
-                            # Allow clerks to upload multiple trial balances even while pending ones exist
+                            # Allow clerks to upload multiple balance sheets even while pending ones exist
                             # No restriction on other users' pending submissions - clerks can always upload
                             
                             # Delete the submission file
@@ -1626,9 +1995,9 @@ def clear_submission_lock():
 def get_pending_submissions():
     """Get all submissions pending finance clerk review"""
     try:
-        # Use flexible trial balance service to get pending submissions
-        from services.flexible_trial_balance_service import flexible_trial_balance_service
-        pending_submissions = flexible_trial_balance_service.get_pending_submissions()
+        # Use flexible balance sheet service to get pending submissions
+        from services.flexible_balance_sheet_service import flexible_balance_sheet_service
+        pending_submissions = flexible_balance_sheet_service.get_pending_submissions()
         
         return jsonify({
             'success': True,
@@ -1640,6 +2009,177 @@ def get_pending_submissions():
         return jsonify({
             'success': False,
             'error': f'Error getting pending submissions: {str(e)}'
+        }), 500
+
+
+@app.route('/api/cleanup/session', methods=['POST'])
+@login_required
+def cleanup_user_session():
+    """Clean up a specific session owned by the current user"""
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')
+        
+        if not session_id:
+            return jsonify({'success': False, 'error': 'No session ID provided'}), 400
+        
+        # Get current user
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        # Verify the session belongs to the current user
+        from models.balance_sheet_models import BalanceSheetSession
+        session = BalanceSheetSession().get_session(session_id)
+        
+        if not session:
+            return jsonify({'success': False, 'error': 'Session not found'}), 404
+        
+        if str(session.user_id) != str(current_user.id):
+            return jsonify({'success': False, 'error': 'You can only clean up your own sessions'}), 403
+        
+        # Clean up the session
+        from services.cleanup_service import CleanupService
+        cleanup_service = CleanupService()
+        result = cleanup_service.cleanup_specific_session(session_id)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.error(f"Error cleaning up user session: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error cleaning up session: {str(e)}'
+        }), 500
+
+
+@app.route('/api/cleanup/unbalanced', methods=['POST'])
+@login_required
+@permission_required('admin')  # Only admins can clean up data
+def cleanup_unbalanced_balance_sheets():
+    """Clean up unbalanced balance sheets from the database (Admin only)"""
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')  # Optional specific session
+        
+        from services.cleanup_service import CleanupService
+        cleanup_service = CleanupService()
+        
+        if session_id:
+            # Clean up specific session
+            result = cleanup_service.cleanup_specific_session(session_id)
+        else:
+            # Clean up all unbalanced balance sheets
+            result = cleanup_service.cleanup_unbalanced_balance_sheets()
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.error(f"Error cleaning up unbalanced balance sheets: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error cleaning up unbalanced balance sheets: {str(e)}'
+        }), 500
+
+
+@app.route('/api/cleanup/failed-uploads', methods=['POST'])
+@login_required
+@permission_required('admin')  # Only admins can clean up data
+def cleanup_failed_uploads():
+    """Clean up recently failed uploads"""
+    try:
+        data = request.get_json()
+        hours_old = data.get('hours_old', 1)  # Default 1 hour
+        
+        from services.cleanup_service import cleanup_service
+        
+        result = cleanup_service.cleanup_failed_uploads(hours_old)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.error(f"Error cleaning up failed uploads: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error cleaning up failed uploads: {str(e)}'
+        }), 500
+
+
+@app.route('/api/cleanup/orphaned', methods=['POST'])
+@login_required
+@permission_required('admin')  # Only admins can clean up data
+def cleanup_orphaned_data():
+    """Clean up orphaned data"""
+    try:
+        from services.cleanup_service import cleanup_service
+        
+        result = cleanup_service.cleanup_orphaned_data()
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.error(f"Error cleaning up orphaned data: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error cleaning up orphaned data: {str(e)}'
+        }), 500
+
+
+@app.route('/api/cleanup/all', methods=['POST'])
+@login_required
+@permission_required('admin')  # Only admins can clean up data
+def cleanup_all():
+    """Clean up all types of failed data"""
+    try:
+        from services.cleanup_service import cleanup_service
+        
+        # Clean up unbalanced balance sheets (older than 24 hours)
+        unbalanced_result = cleanup_service.cleanup_unbalanced_balance_sheets(24)
+        
+        # Clean up failed uploads (older than 1 hour)
+        failed_uploads_result = cleanup_service.cleanup_failed_uploads(1)
+        
+        # Clean up orphaned data
+        orphaned_result = cleanup_service.cleanup_orphaned_data()
+        
+        total_cleaned = (
+            unbalanced_result.get('cleaned_count', 0) +
+            failed_uploads_result.get('cleaned_count', 0) +
+            orphaned_result.get('cleaned_count', 0)
+        )
+        
+        result = {
+            'success': True,
+            'total_cleaned': total_cleaned,
+            'unbalanced_cleaned': unbalanced_result.get('cleaned_count', 0),
+            'failed_uploads_cleaned': failed_uploads_result.get('cleaned_count', 0),
+            'orphaned_cleaned': orphaned_result.get('cleaned_count', 0),
+            'unbalanced_errors': unbalanced_result.get('errors', []),
+            'failed_upload_errors': failed_uploads_result.get('errors', []),
+            'orphaned_errors': orphaned_result.get('errors', []),
+            'message': f"Total cleaned: {total_cleaned} items (unbalanced: {unbalanced_result.get('cleaned_count', 0)}, failed uploads: {failed_uploads_result.get('cleaned_count', 0)}, orphaned: {orphaned_result.get('cleaned_count', 0)})"
+        }
+        
+        # Add error messages if any
+        all_errors = []
+        if unbalanced_result.get('errors'):
+            all_errors.extend([f"Unbalanced: {error}" for error in unbalanced_result['errors']])
+        if failed_uploads_result.get('errors'):
+            all_errors.extend([f"Failed Upload: {error}" for error in failed_uploads_result['errors']])
+        if orphaned_result.get('errors'):
+            all_errors.extend([f"Orphaned: {error}" for error in orphaned_result['errors']])
+        
+        if all_errors:
+            result['errors'] = all_errors
+            result['message'] += f". {len(all_errors)} errors occurred."
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.error(f"Error in comprehensive cleanup: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error in comprehensive cleanup: {str(e)}'
         }), 500
 
 
@@ -1696,18 +2236,18 @@ def get_unmapped_accounts(session_id):
     Returns: JSON with unmapped accounts and any existing mappings
     """
     try:
-        from models.trial_balance_models import trial_balance_model
+        from models.balance_sheet_models import BalanceSheetSession
         
         # Get session data from database
-        session = trial_balance_model.get_session(session_id)
+        session = BalanceSheetSession().get_session(session_id)
         if not session:
             return jsonify({
                 'success': False,
                 'error': f'Session {session_id} not found'
             }), 404
         
-        # Get trial balance data rows
-        data_rows = trial_balance_model.get_session_data(session_id)
+        # Get balance sheet data rows
+        data_rows = BalanceSheetSession().get_session_data(session_id)
         
         # Process accounts for mapping interface
         unmapped_accounts = []
@@ -1776,8 +2316,8 @@ def save_mapping_progress():
         user = get_current_user()
         
         # Get session data
-        from services.flexible_trial_balance_service import flexible_trial_balance_service
-        session_data = flexible_trial_balance_service.get_session_data(session_id)
+        from services.flexible_balance_sheet_service import flexible_balance_sheet_service
+        session_data = flexible_balance_sheet_service.get_session_data(session_id)
         
         if not session_data or not session_data.get('success'):
             return jsonify({'success': False, 'error': 'Session data not found or invalid'}), 404
@@ -1792,7 +2332,7 @@ def save_mapping_progress():
         }
         
         # Save progress to session metadata
-        flexible_trial_balance_service.update_session_metadata(session_id, {
+        flexible_balance_sheet_service.update_session_metadata(session_id, {
             'mapping_progress': progress_data,
             'last_saved_by': user.id,
             'last_saved_at': datetime.now().isoformat()
@@ -1808,19 +2348,18 @@ def save_mapping_progress():
         print(f"Error saving mapping progress: {str(e)}")
         return jsonify({'success': False, 'error': f'Failed to save mapping progress: {str(e)}'}), 500
 
-
-@app.route('/api/submit-for-review', methods=['POST'])
 @login_required
 @permission_required('process')
 def submit_mapping_for_review():
     """
-    API endpoint to submit mapped trial balance for review
+    API endpoint to submit mapped balance sheet for review
     Stores GRAP-compliant data in database
     """
     try:
         data = request.get_json()
         mapped_data = data.get('mapped_data')
         session_id = data.get('session_id')
+
         
         if not mapped_data:
             return jsonify({'success': False, 'error': 'No mapped data provided'}), 400
@@ -1831,8 +2370,8 @@ def submit_mapping_for_review():
         user = get_current_user()
         
         # Get session data with GRAP mapping results
-        from services.flexible_trial_balance_service import flexible_trial_balance_service
-        session_data = flexible_trial_balance_service.get_session_data(session_id)
+        from services.flexible_balance_sheet_service import flexible_balance_sheet_service
+        session_data = flexible_balance_sheet_service.get_session_data(session_id)
         
         if not session_data or not session_data.get('success'):
             return jsonify({'success': False, 'error': 'Session data not found or invalid'}), 404
@@ -1872,16 +2411,16 @@ def submit_mapping_for_review():
             if grap_category:
                 grap_categories_used.add(grap_category)
         
-        # Create submission record in database using trial balance models
-        from models.trial_balance_models import TrialBalanceSession
+        # Create submission record in database using balance sheet models
+        from models.balance_sheet_models import BalanceSheetSession
         
         # Initialize database connection
-        tb_session = TrialBalanceSession()
+        bs_session = BalanceSheetSession()
         
         submission_record = {
             'session_id': session_id,
             'user_id': user.id,
-            'submission_name': f"Trial Balance Submission - {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            'submission_name': f"Balance Sheet Submission - {datetime.now().strftime('%Y-%m-%d %H:%M')}",
             'original_filename': session_data.get('original_filename', 'Unknown'),
             'period_id': data.get('period_id'),
             'status': 'pending',
@@ -1920,14 +2459,14 @@ def submit_mapping_for_review():
         # Store submission in database
         try:
             # Use Supabase client to insert submission
-            result = tb_session.client.table('submissions').insert(submission_record).execute()
+            result = bs_session.client.table('submissions').insert(submission_record).execute()
             
             if not result.data:
                 raise Exception("Failed to create submission record")
             
             submission_id = result.data[0]['id']
             
-            # Update trial balance data rows with mapping status
+            # Update balance sheet data rows with mapping status
             for account in mapped_data:
                 account_id = account.get('id')
                 if account_id:
@@ -1942,10 +2481,10 @@ def submit_mapping_for_review():
                         'validation_status': 'pending'
                     }
                     
-                    tb_session.client.table('trial_balance_data').update(update_data).eq('id', account_id).execute()
+                    bs_session.client.table('balance_sheet_data').update(update_data).eq('id', account_id).execute()
             
             # Update session status
-            tb_session.client.table('trial_balance_sessions').update({
+            bs_session.client.table('balance_sheet_sessions').update({
                 'status': 'submitted',
                 'updated_at': datetime.now().isoformat()
             }).eq('id', session_id).execute()
@@ -1960,7 +2499,7 @@ def submit_mapping_for_review():
                 'success': True,
                 'submission_id': submission_id,
                 'status': 'pending',
-                'message': 'GRAP-compliant trial balance submitted for finance manager review successfully',
+                'message': 'GRAP-compliant balance sheet submitted for finance manager review successfully',
                 'locked': True,
                 'can_edit': False,
                 'storage_type': 'database',
@@ -2001,7 +2540,7 @@ def submit_mapping_for_review():
                 'success': True,
                 'submission_id': submission_id,
                 'status': 'pending',
-                'message': 'Trial balance submitted for review (file-based storage)',
+                'message': 'Balance sheet submitted for review (file-based storage)',
                 'locked': True,
                 'can_edit': False,
                 'storage_type': 'file',

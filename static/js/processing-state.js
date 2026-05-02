@@ -5,7 +5,7 @@
 
 class ProcessingStateManager {
     constructor() {
-        this.currentTrialBalance = null;
+        this.currentBalanceSheet = null;
         this.currentPeriod = null;
         this.processingState = null;
         this.initializeEventListeners();
@@ -23,26 +23,26 @@ class ProcessingStateManager {
     }
 
     async initialize() {
-        // Get current trial balance and period from page context
-        this.currentTrialBalance = this.getTrialBalanceFromPage();
+        // Get current balance sheet and period from page context
+        this.currentBalanceSheet = this.getBalanceSheetFromPage();
         this.currentPeriod = this.getPeriodFromPage();
         
-        if (this.currentTrialBalance) {
+        if (this.currentBalanceSheet) {
             await this.loadProcessingState();
             this.updateProcessingStateIndicator();
         }
     }
 
-    getTrialBalanceFromPage() {
-        // Try to get trial balance ID from page context
-        const tbElement = document.querySelector('[data-trial-balance-id]');
-        if (tbElement) {
-            return tbElement.dataset.trialBalanceId;
+    getBalanceSheetFromPage() {
+        // Try to get balance sheet ID from page context
+        const bsElement = document.querySelector('[data-balance-sheet-id]');
+        if (bsElement) {
+            return bsElement.dataset.balanceSheetId;
         }
         
         // Try to get from URL or global variable
-        if (window.currentTrialBalanceId) {
-            return window.currentTrialBalanceId;
+        if (window.currentBalanceSheetId) {
+            return window.currentBalanceSheetId;
         }
         
         return null;
@@ -65,10 +65,10 @@ class ProcessingStateManager {
     }
 
     async loadProcessingState() {
-        if (!this.currentTrialBalance) return;
+        if (!this.currentBalanceSheet) return;
 
         try {
-            const response = await fetch(`/api/processing/state/${this.currentTrialBalance}`, {
+            const response = await fetch(`/api/processing/state/${this.currentBalanceSheet}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -205,14 +205,14 @@ class ProcessingStateManager {
     
     // Public API methods
     async refreshProcessingState() {
-        if (this.currentTrialBalance) {
+        if (this.currentBalanceSheet) {
             await this.loadProcessingState();
             this.updateProcessingStateIndicator();
         }
     }
 
-    setTrialBalance(trialBalanceId) {
-        this.currentTrialBalance = trialBalanceId;
+    setBalanceSheet(balanceSheetId) {
+        this.currentBalanceSheet = balanceSheetId;
         this.refreshProcessingState();
     }
 
@@ -229,9 +229,9 @@ class ProcessingStateManager {
 }
 
 // Global functions for template integration
-function openDraftStatementViewer(trialBalanceId, statementType) {
+function openDraftStatementViewer(balanceSheetId, statementType) {
     if (window.draftStatementViewerController) {
-        window.draftStatementViewerController.open(trialBalanceId, statementType);
+        window.draftStatementViewerController.open(balanceSheetId, statementType);
     }
 }
 

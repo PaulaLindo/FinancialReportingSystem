@@ -11,8 +11,8 @@ from decimal import Decimal
 # Add the project root to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models.trial_balance_models import (
-    trial_balance_model, GRAPChartOfAccounts, MappingRule
+from models.balance_sheet_models import (
+    balance_sheet_model, GRAPChartOfAccounts, MappingRule
 )
 
 
@@ -382,7 +382,7 @@ def seed_grap_accounts():
             )
             
             # Save to database
-            account_id = trial_balance_model.create_mapping_rule(MappingRule(
+            account_id = balance_sheet_model.create_mapping_rule(MappingRule(
                 user_id='00000000-0000-0000-0000-000000000000',
                 rule_name=f"GRAP Account: {account_data['grap_account']}",
                 rule_type='category_mapping',

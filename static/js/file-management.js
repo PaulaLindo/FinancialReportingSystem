@@ -126,7 +126,7 @@ class FileManager {
                     file_size: 0, // Not available in submission data
                     upload_date: submission.submission_timestamp,
                     status: submission.status,
-                    type: 'trial_balance',
+                    type: 'balance_sheet',
                     user_id: submission.user_id,
                     username: submission.username,
                     full_name: submission.full_name,
@@ -253,19 +253,19 @@ class FileManager {
         fileItem.setAttribute('data-file-type', file.type);
         
         // Set icon
-        const trialBalanceIcon = clone.querySelector('.icon-trial-balance');
+        const balanceSheetIcon = clone.querySelector('.icon-balance-sheet');
         const pdfReportIcon = clone.querySelector('.icon-pdf-report');
         
-        if (file.type === 'trial_balance') {
-            trialBalanceIcon.classList.remove('element--hidden');
-            trialBalanceIcon.classList.add('element--visible');
+        if (file.type === 'balance_sheet') {
+            balanceSheetIcon.classList.remove('element--hidden');
+            balanceSheetIcon.classList.add('element--visible');
             pdfReportIcon.classList.add('element--hidden');
             pdfReportIcon.classList.remove('element--visible');
-        } else {
-            trialBalanceIcon.classList.add('element--hidden');
-            trialBalanceIcon.classList.remove('element--visible');
+        } else if (file.type === 'pdf_report') {
             pdfReportIcon.classList.remove('element--hidden');
             pdfReportIcon.classList.add('element--visible');
+            balanceSheetIcon.classList.add('element--hidden');
+            balanceSheetIcon.classList.remove('element--visible');
         }
         
         // Set file info
@@ -300,8 +300,8 @@ class FileManager {
         try {
             let downloadUrl;
             
-            if (file.type === 'trial_balance') {
-                const response = await SADPMRUtils.safeFetch(`/api/download-trial-balance/${file.id}?user_id=demo_user`);
+            if (file.type === 'balance_sheet') {
+                const response = await SADPMRUtils.safeFetch(`/api/download-balance-sheet/${file.id}?user_id=demo_user`);
                 
                 if (!response.success) {
                     throw new Error(response.error);
@@ -344,19 +344,19 @@ class FileManager {
         document.getElementById('detailUploadDate').textContent = this.formatDate(file.upload_date);
         document.getElementById('detailStatus').textContent = this.formatStatus(file.status);
         
-        // Show/hide trial balance info
-        const trialBalanceRow = document.getElementById('detailTrialBalanceRow');
-        if (file.type === 'pdf_report' && file.trial_balance_id) {
-            trialBalanceRow.classList.remove('element--hidden');
-            trialBalanceRow.classList.add('element--visible');
-            // Find associated trial balance
-            const trialBalance = this.files.find(f => f.id === file.trial_balance_id);
-            if (trialBalance) {
-                document.getElementById('detailTrialBalance').textContent = trialBalance.original_filename || trialBalance.filename;
+        // Show/hide balance sheet info
+        const balanceSheetRow = document.getElementById('detailBalanceSheetRow');
+        if (file.type === 'pdf_report' && file.balance_sheet_id) {
+            balanceSheetRow.classList.remove('element--hidden');
+            balanceSheetRow.classList.add('element--visible');
+            // Find associated balance sheet
+            const balanceSheet = this.files.find(f => f.id === file.balance_sheet_id);
+            if (balanceSheet) {
+                document.getElementById('detailBalanceSheet').textContent = balanceSheet.original_filename || balanceSheet.filename;
             }
         } else {
-            trialBalanceRow.classList.add('element--hidden');
-            trialBalanceRow.classList.remove('element--visible');
+            balanceSheetRow.classList.add('element--hidden');
+            balanceSheetRow.classList.remove('element--visible');
         }
         
         // Show modal
@@ -389,8 +389,8 @@ class FileManager {
         try {
             let deleteUrl;
             
-            if (file.type === 'trial_balance') {
-                deleteUrl = `/api/delete-trial-balance/${file.id}?user_id=demo_user`;
+            if (file.type === 'balance_sheet') {
+                deleteUrl = `/api/delete-balance-sheet/${file.id}?user_id=demo_user`;
             } else if (file.type === 'pdf_report') {
                 deleteUrl = `/api/delete-pdf-report/${file.id}?user_id=demo_user`;
             }
@@ -437,7 +437,7 @@ class FileManager {
 
     updateSummaryStats(summary) {
         document.getElementById('totalFilesCount').textContent = summary.total_files || 0;
-        document.getElementById('trialBalancesCount').textContent = summary.trial_balances || 0;
+        document.getElementById('balanceSheetsCount').textContent = summary.balance_sheets || 0;
         document.getElementById('pdfReportsCount').textContent = summary.pdf_reports || 0;
         document.getElementById('storageUsed').textContent = this.formatFileSize(summary.total_size_mb * 1024 * 1024) + ' MB';
     }
@@ -470,7 +470,7 @@ class FileManager {
 
     formatFileType(type) {
         const typeMap = {
-            'trial_balance': 'Trial Balance',
+            'balance_sheet': 'Balance Sheet',
             'pdf_report': 'PDF Report'
         };
         

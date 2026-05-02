@@ -1,6 +1,6 @@
 """
 SADPMR Financial Reporting System - Processing State Models
-Tracks Trial Balance processing phases and formula visibility states
+Tracks Balance Sheet processing phases and formula visibility states
 """
 
 from datetime import datetime
@@ -9,7 +9,7 @@ import json
 import os
 
 class ProcessingStateModel:
-    """Manages Trial Balance processing states and formula visibility"""
+    """Manages Balance Sheet processing states and formula visibility"""
     
     def __init__(self):
         self.processing_db_file = 'data/processing_states.json'
@@ -45,11 +45,11 @@ class ProcessingStateModel:
         with open(self.processing_db_file, 'w') as f:
             json.dump(data, f, indent=2)
     
-    def create_processing_state(self, trial_balance_id: str, period: str, 
+    def create_processing_state(self, balance_sheet_id: str, period: str, 
                               uploaded_by: str) -> Dict[str, Any]:
-        """Create new processing state for uploaded Trial Balance"""
+        """Create new processing state for uploaded Balance Sheet"""
         processing_state = {
-            'trial_balance_id': trial_balance_id,
+            'balance_sheet_id': balance_sheet_id,
             'period': period,
             'status': 'uploaded',  # uploaded -> mapping -> processing -> review -> finalized
             'uploaded_by': uploaded_by,
@@ -70,20 +70,20 @@ class ProcessingStateModel:
         
         # Save to database
         data = self._load_processing_data()
-        data['processing_states'][trial_balance_id] = processing_state
+        data['processing_states'][balance_sheet_id] = processing_state
         self._save_processing_data(data)
         
         return processing_state
     
-    def update_processing_status(self, trial_balance_id: str, new_status: str, 
+    def update_processing_status(self, balance_sheet_id: str, new_status: str, 
                                 user_id: str = None) -> bool:
         """Update processing status and timestamps"""
         data = self._load_processing_data()
         
-        if trial_balance_id not in data['processing_states']:
+        if balance_sheet_id not in data['processing_states']:
             return False
         
-        state = data['processing_states'][trial_balance_id]
+        state = data['processing_states'][balance_sheet_id]
         old_status = state['status']
         state['status'] = new_status
         
@@ -113,17 +113,17 @@ class ProcessingStateModel:
         self._save_processing_data(data)
         return True
     
-    def get_processing_state(self, trial_balance_id: str) -> Optional[Dict[str, Any]]:
-        """Get current processing state for Trial Balance"""
+    def get_processing_state(self, balance_sheet_id: str) -> Optional[Dict[str, Any]]:
+        """Get current processing state for Balance Sheet"""
         data = self._load_processing_data()
-        return data['processing_states'].get(trial_balance_id)
+        return data['processing_states'].get(balance_sheet_id)
     
-    def can_view_formulas(self, trial_balance_id: str, user_role: str, 
+    def can_view_formulas(self, balance_sheet_id: str, user_role: str, 
                          user_id: str = None) -> Dict[str, Any]:
         """Check if user can view formulas based on processing state and role"""
-        state = self.get_processing_state(trial_balance_id)
+        state = self.get_processing_state(balance_sheet_id)
         if not state:
-            return {'can_view': False, 'reason': 'Trial Balance not found'}
+            return {'can_view': False, 'reason': 'Balance Sheet not found'}
         
         formula_visibility = state['formula_visibility']
         status = state['status']
@@ -171,12 +171,12 @@ class ProcessingStateModel:
         
         return {'can_view': False, 'reason': 'Role not recognized for formula access'}
     
-    def add_mapped_account(self, trial_balance_id: str, tb_account: str, 
+    def add_mapped_account(self, balance_sheet_id: str, tb_account: str, 
                           grap_line_item: str, mapped_by: str) -> bool:
         """Add mapped account to processing state"""
         data = self._load_processing_data()
         
-        if trial_balance_id not in data['processing_states']:
+        if balance_sheet_id not in data['processing_states']:
             return False
         
         mapping = {
@@ -186,15 +186,15 @@ class ProcessingStateModel:
             'mapped_at': datetime.now().isoformat()
         }
         
-        data['processing_states'][trial_balance_id]['mapped_accounts'].append(mapping)
+        data['processing_states'][balance_sheet_id]['mapped_accounts'].append(mapping)
         self._save_processing_data(data)
         return True
     
-    def add_grap_validation(self, trial_balance_id: str, validation_result: Dict[str, Any]) -> bool:
+    def add_grap_validation(self, balance_sheet_id: str, validation_result: Dict[str, Any]) -> bool:
         """Add GRAP validation result"""
         data = self._load_processing_data()
         
-        if trial_balance_id not in data['processing_states']:
+        if balance_sheet_id not in data['processing_states']:
             return False
         
         validation = {
@@ -207,7 +207,7 @@ class ProcessingStateModel:
             'validated_by': validation_result.get('validated_by')
         }
         
-        data['processing_states'][trial_balance_id]['grap_validations'].append(validation)
+        data['processing_states'][balance_sheet_id]['grap_validations'].append(validation)
         self._save_processing_data(data)
         return True
     
@@ -223,7 +223,7 @@ class ProcessingStateModel:
                 'opened_at': datetime.now().isoformat(),
                 'closed_at': None,
                 'locked_at': None,
-                'finalized_trial_balances': [],
+                'finalized_balance_sheets': [],
                 'audit_access_granted': False
             }
             self._save_processing_data(data)
@@ -256,7 +256,7 @@ class ProcessingStateModel:
         data['period_status'][period]['locked_by'] = locked_by
         data['period_status'][period]['audit_access_granted'] = True
         
-        # Set all trial balances in this period to audit mode
+        # Set all balance sheets in this period to audit mode
         for tb_id, state in data['processing_states'].items():
             if state.get('period') == period:
                 state['formula_visibility'] = 'audit'
@@ -265,17 +265,17 @@ class ProcessingStateModel:
         self._save_processing_data(data)
         return True
     
-    def get_trial_balances_by_period(self, period: str) -> List[Dict[str, Any]]:
-        """Get all trial balances for a specific period"""
+    def get_balance_sheets_by_period(self, period: str) -> List[Dict[str, Any]]:
+        """Get all balance sheets for a specific period"""
         data = self._load_processing_data()
         
-        trial_balances = []
+        balance_sheets = []
         for tb_id, state in data['processing_states'].items():
             if state.get('period') == period:
-                state['trial_balance_id'] = tb_id
-                trial_balances.append(state)
+                state['balance_sheet_id'] = tb_id
+                balance_sheets.append(state)
         
-        return trial_balances
+        return balance_sheets
 
 # Initialize processing state model
 processing_state = ProcessingStateModel()

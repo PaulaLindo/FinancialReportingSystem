@@ -1230,6 +1230,15 @@ h4.text-center {
     display: block;
 }
 
+.file-info--hidden, .upload__error-message--hidden, .processing-loader--hidden {
+    display: none;
+}
+
+.upload-section .upload__error-message.upload__error-message--hidden {
+    display: none;
+}
+
+
 .upload-section .upload__error-message.error-message--visible {
     display: block;
 }

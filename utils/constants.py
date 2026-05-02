@@ -47,8 +47,8 @@ COLUMN_MAPPINGS = {
 # Required Columns
 REQUIRED_COLUMNS = ['Account Code', 'Account Description']
 
-# Trial Balance Validation Thresholds
-TRIAL_BALANCE_TOLERANCE = 0.01
+# Balance Sheet Validation Thresholds
+BALANCE_SHEET_TOLERANCE = 0.01
 
 # HTTP Status Messages
 ERROR_MESSAGES = {
@@ -112,7 +112,7 @@ class SubmissionStatus:
 class StatusMessages:
     """User-facing status messages"""
     MESSAGES = {
-        SubmissionStatus.UPLOADED: "Pending Review",      # Trial balance uploaded, waiting for mapping
+        SubmissionStatus.UPLOADED: "Pending Review",      # Balance sheet uploaded, waiting for mapping
         SubmissionStatus.PROCESSING: "Processing",        # Being processed/mapped
         SubmissionStatus.MAPPED: "Mapped",              # Accounts mapped, waiting for review
         SubmissionStatus.SUBMITTED: "Pending Review",    # Submitted for approval

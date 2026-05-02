@@ -16,25 +16,22 @@ class SupabaseServiceSecure:
     """Secure Supabase integration with private storage and signed URLs"""
     
     def __init__(self):
-        """Initialize Supabase client with legacy JWT keys"""
+        """Initialize Supabase client with anon key only"""
         # Load environment variables if not already loaded
         from dotenv import load_dotenv
         load_dotenv()
         
         self.supabase_url = os.environ.get('SUPABASE_URL')
         self.supabase_anon_key = os.environ.get('SUPABASE_ANON_KEY')
-        self.supabase_service_key = os.environ.get('SUPABASE_SECRET_KEY')
         
         if not self.supabase_url or not self.supabase_anon_key:
-            raise ValueError("Supabase credentials not found in environment variables. Check SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY")
-        
-        # Use ANON_KEY since it's the only working key
-        api_key = self.supabase_anon_key
+            raise ValueError("Supabase credentials not found. Check SUPABASE_URL and SUPABASE_ANON_KEY in .env file")
         
         try:
-            self.client = create_client(self.supabase_url, api_key)
+            self.client = create_client(self.supabase_url, self.supabase_anon_key)
+            print("✅ Supabase service initialized with anon key (secure, RLS-compliant)")
         except Exception as e:
-            raise ValueError(f"Failed to initialize Supabase client: {e}")
+            raise ValueError(f"Failed to initialize Supabase client with anon key: {e}")
         self.storage_bucket = 'financial-reports'
     
     def upload_file_to_storage(self, file_data: bytes, file_path: str) -> Dict[str, Any]:
@@ -66,11 +63,11 @@ class SupabaseServiceSecure:
         except Exception as e:
             return None
     
-    def save_trial_balance(self, file_data: bytes, filename: str, user_id: str) -> Dict[str, Any]:
-        """Save trial balance to private storage"""
+    def save_balance_sheet(self, file_data: bytes, filename: str, user_id: str) -> Dict[str, Any]:
+        """Save balance sheet to private storage"""
         try:
             # Create storage path
-            storage_path = f"trial-balances/{user_id}/{filename}"
+            storage_path = f"balance-sheets/{user_id}/{filename}"
             
             # Upload to private storage
             upload_result = self.upload_file_to_storage(file_data, storage_path)
@@ -88,7 +85,7 @@ class SupabaseServiceSecure:
                 'status': 'uploaded'
             }
             
-            db_result = self.client.table('trial_balances').insert(record).execute()
+            db_result = self.client.table('balance_sheets').insert(record).execute()
             
             return {
                 'success': True,
@@ -100,11 +97,11 @@ class SupabaseServiceSecure:
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
-    def get_trial_balance_file(self, record_id: str, user_id: str) -> Dict[str, Any]:
-        """Get trial balance file with signed URL"""
+    def get_balance_sheet_file(self, record_id: str, user_id: str) -> Dict[str, Any]:
+        """Get balance sheet file with signed URL"""
         try:
             # Get record from database
-            record = self.client.table('trial_balances').select('*').eq('id', record_id).execute()
+            record = self.client.table('balance_sheets').select('*').eq('id', record_id).execute()
             
             if not record.data or record.data[0]['user_id'] != user_id:
                 return {'success': False, 'error': 'File not found or unauthorized'}
@@ -125,11 +122,11 @@ class SupabaseServiceSecure:
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
-    def save_financial_results(self, results: Dict[str, Any], trial_balance_id: str, user_id: str) -> Dict[str, Any]:
+    def save_financial_results(self, results: Dict[str, Any], balance_sheet_id: str, user_id: str) -> Dict[str, Any]:
         """Save financial statement results to database"""
         try:
             record = {
-                'trial_balance_id': trial_balance_id,
+                'balance_sheet_id': balance_sheet_id,
                 'user_id': user_id,
                 'results': results,
                 'generated_at': datetime.utcnow().isoformat(),
@@ -256,8 +253,8 @@ class SupabaseServiceSecure:
     def get_storage_stats(self, user_id: str) -> Dict[str, Any]:
         """Get storage statistics for a user"""
         try:
-            # Get trial balances
-            tb_result = self.client.table('trial_balances').select('file_size').eq('user_id', user_id).execute()
+            # Get balance sheets
+            tb_result = self.client.table('balance_sheets').select('file_size').eq('user_id', user_id).execute()
             tb_size = sum(r['file_size'] for r in tb_result.data) if tb_result.data else 0
             
             # Get PDF reports
@@ -267,7 +264,7 @@ class SupabaseServiceSecure:
             return {
                 'total_files': len(tb_result.data or []) + len(pdf_result.data or []),
                 'total_size_mb': round((tb_size + pdf_size) / (1024 * 1024), 2),
-                'trial_balance_count': len(tb_result.data or []),
+                'balance_sheet_count': len(tb_result.data or []),
                 'pdf_report_count': len(pdf_result.data or []),
                 'storage_type': 'private_with_signed_urls'
             }

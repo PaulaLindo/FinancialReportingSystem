@@ -13,23 +13,20 @@ class SupabaseAuthModel:
     """Supabase-based user authentication model"""
     
     def __init__(self):
-        """Initialize Supabase client with legacy JWT keys"""
+        """Initialize Supabase client with anon key only"""
         # Load environment variables if not already loaded
         from dotenv import load_dotenv
         load_dotenv()
         
         self.supabase_url = os.environ.get('SUPABASE_URL')
         self.supabase_anon_key = os.environ.get('SUPABASE_ANON_KEY')
-        self.supabase_service_key = os.environ.get('SUPABASE_SECRET_KEY')
         
         if not self.supabase_url or not self.supabase_anon_key:
-            raise ValueError("Supabase credentials not found in environment variables. Check SUPABASE_URL and SUPABASE_ANON_KEY")
-        
-        # Use ANON_KEY since SERVICE_ROLE_KEY is not working
-        api_key = self.supabase_anon_key
+            raise ValueError("Supabase credentials not found. Check SUPABASE_URL and SUPABASE_ANON_KEY in .env file")
         
         try:
-            self.client = create_client(self.supabase_url, api_key)
+            self.client = create_client(self.supabase_url, self.supabase_anon_key)
+            print("✅ Supabase auth model initialized with anon key (secure, RLS-compliant)")
         except Exception as e:
             raise ValueError(f"Supabase authentication unavailable: {e}")
     
@@ -250,7 +247,7 @@ def get_role_description(role):
         'AUDITOR': 'Auditor - View Only Access (Read-Only)',
         'SYSTEM_ADMIN': 'System Administrator - User & System Management (No Financial Access)',
         'ACCOUNTANT': 'Accountant - Review, Approve, Process & Generate Reports',
-        'CLERK': 'Clerk - Upload Trial Balances & View Own Files'
+        'CLERK': 'Clerk - Upload Balance Sheets & View Own Files'
     }
     return descriptions.get(role, role)
 

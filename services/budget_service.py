@@ -15,12 +15,12 @@ class BudgetService:
         self.budget_model = BudgetModel()
         self.budget_storage = {}  # In production, this would be database
     
-    def create_budget_from_trial_balance(self, trial_balance_path: str, 
+    def create_budget_from_balance_sheet(self, balance_sheet_path: str, 
                                      fiscal_year: int = 2026) -> Dict[str, Any]:
-        """Create budget from trial balance data"""
+        """Create budget from balance sheet data"""
         try:
-            # Import trial balance
-            df = pd.read_excel(trial_balance_path) if trial_balance_path.endswith('.xlsx') else pd.read_csv(trial_balance_path)
+            # Import balance sheet
+            df = pd.read_excel(balance_sheet_path) if balance_sheet_path.endswith('.xlsx') else pd.read_csv(balance_sheet_path)
             
             # Create budget structure
             budget_structure = self.budget_model.create_budget_structure(df)
@@ -43,11 +43,11 @@ class BudgetService:
                 'error': f'Failed to create budget: {str(e)}'
             }
     
-    def import_actual_data(self, trial_balance_path: str, budget_id: str) -> Dict[str, Any]:
+    def import_actual_data(self, balance_sheet_path: str, budget_id: str) -> Dict[str, Any]:
         """Import actual data for budget comparison"""
         try:
-            # Import trial balance
-            df = pd.read_excel(trial_balance_path) if trial_balance_path.endswith('.xlsx') else pd.read_csv(trial_balance_path)
+            # Import balance sheet
+            df = pd.read_excel(balance_sheet_path) if balance_sheet_path.endswith('.xlsx') else pd.read_csv(balance_sheet_path)
             
             # Get budget structure
             if budget_id not in self.budget_storage:

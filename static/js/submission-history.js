@@ -1,13 +1,13 @@
 /**
  * Submission History Manager
- * Handles loading and displaying user's own trial balance submissions
+ * Handles loading and displaying user's own balance sheet submissions
  */
 
 // Status messages for display formatting
 const StatusMessages = {
     get_message: function(status) {
         const messages = {
-            'uploaded': 'Uploaded',           // Trial balance uploaded
+            'uploaded': 'Uploaded',           // Balance sheet uploaded
             'processing': 'Processing',      // Being processed/mapped
             'mapped': 'Pending Review',      // Accounts mapped - pending finance manager approval
             'approved': 'Approved',          // Approved by finance manager
@@ -110,12 +110,14 @@ class SubmissionHistoryManager {
         }
     }
     
-    async loadSubmissions(page = 1) {
+    async loadSubmissions(page = 1, retryCount = 0) {
         this.showLoading(true);
         this.currentPage = page;
         
         try {
             const url = `/api/submissions/user?page=${page}&per_page=${this.perPage}`;
+            console.log('🔍 Debug - Fetching URL:', url);
+            
             const response = await SADPMRUtils.safeFetch(url);
             
             console.log('🔍 Debug - API Response:', response);
@@ -128,12 +130,37 @@ class SubmissionHistoryManager {
                 this.showLoading(false);
                 this.hideError();
             } else {
-                throw new Error(response.error || 'Failed to load submissions');
+                // Handle specific error cases
+                if (response.error && response.error.includes('401')) {
+                    throw new Error('Authentication required. Please log in again.');
+                } else if (response.error && response.error.includes('403')) {
+                    throw new Error('Permission denied. You do not have access to view submissions.');
+                } else {
+                    throw new Error(response.error || 'Failed to load submissions');
+                }
             }
         } catch (error) {
             console.error('🔍 Debug - Error loading submissions:', error);
+            
+            // Retry logic for temporary failures
+            if (retryCount < 2 && (error.name === 'AbortError' || error.message.includes('timed out'))) {
+                console.log(`🔄 Retrying... Attempt ${retryCount + 1}/2`);
+                setTimeout(() => {
+                    this.loadSubmissions(page, retryCount + 1);
+                }, 2000 * (retryCount + 1)); // Exponential backoff
+                return;
+            }
+            
             this.showLoading(false);
-            this.showError(error.message);
+            
+            // Handle AbortError specifically
+            if (error.name === 'AbortError') {
+                this.showError('Request timed out after multiple attempts. Please refresh the page and try again.');
+            } else if (error.message.includes('Authentication required')) {
+                this.showError('Your session has expired. Please refresh the page and log in again.');
+            } else {
+                this.showError(error.message || 'Failed to load submissions. Please try again.');
+            }
         }
     }
     
@@ -242,12 +269,12 @@ class SubmissionHistoryManager {
         const submissionItem = clone.querySelector('.submission-item');
         submissionItem.dataset.submissionId = submission.session_id;
         
-        // Set icon (always trial balance for submissions)
-        const trialBalanceIcon = clone.querySelector('.icon-trial-balance');
+        // Set icon (always balance sheet for submissions)
+        const balanceSheetIcon = clone.querySelector('.icon-balance-sheet');
         const pdfReportIcon = clone.querySelector('.icon-pdf-report');
         
-        trialBalanceIcon.classList.remove('element--hidden');
-        trialBalanceIcon.classList.add('element--visible');
+        balanceSheetIcon.classList.remove('element--hidden');
+        balanceSheetIcon.classList.add('element--visible');
         pdfReportIcon.classList.add('element--hidden');
         pdfReportIcon.classList.remove('element--visible');
         
@@ -285,20 +312,15 @@ class SubmissionHistoryManager {
         document.getElementById('detailSubmissionDate').textContent = this.formatDate(submission.submission_timestamp);
         document.getElementById('detailMappedAccounts').textContent = submission.mapped_accounts_count || 0;
         document.getElementById('detailReviewNotes').textContent = submission.review_notes || 'No review notes';
+        
+        // Use the correct field name: 'locked' (not 'is_locked')
         document.getElementById('detailLocked').textContent = submission.locked ? 'Yes' : 'No';
         
         // Set status class
         const statusEl = document.getElementById('detailStatus');
         statusEl.className = `submission-status status-${submission.status}`;
         
-        // Update modal button
-        const modalViewBtn = document.getElementById('modalViewBtn');
-        if (modalViewBtn) {
-            modalViewBtn.onclick = () => {
-                window.location.href = `/submission/${submission.session_id}`;
-            };
-        }
-        
+                
         this.showModal();
     }
     

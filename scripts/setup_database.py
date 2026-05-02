@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Database Setup Script
-Initializes the Supabase database with trial balance schema and GRAP accounts
+Initializes the Supabase database with balance sheet schema and GRAP accounts
 """
 
 import sys
@@ -12,7 +12,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
-from models.trial_balance_models import trial_balance_model
+from models.balance_sheet_models import balance_sheet_model
 from scripts.seed_grap_accounts import seed_grap_accounts
 
 
@@ -78,7 +78,7 @@ def setup_database():
     
     # Step 2: Create database schema
     print("\n📋 Step 1: Creating database schema...")
-    schema_file = project_root / 'supabase_trial_balance_schema.sql'
+    schema_file = project_root / 'supabase_balance_sheet_schema.sql'
     
     if schema_file.exists():
         if not execute_sql_file(str(schema_file)):
@@ -106,12 +106,12 @@ def setup_database():
     print("\n🔍 Step 4: Verifying database setup...")
     try:
         # Test database connection
-        grap_accounts = trial_balance_model.get_grap_accounts()
+        grap_accounts = balance_sheet_model.get_grap_accounts()
         print(f"✅ Database connection successful")
         print(f"✅ Found {len(grap_accounts)} GRAP accounts")
         
         # Test mapping rules
-        mapping_rules = trial_balance_model.get_mapping_rules(active_only=True)
+        mapping_rules = balance_sheet_model.get_mapping_rules(active_only=True)
         print(f"✅ Found {len(mapping_rules)} mapping rules")
         
     except Exception as e:
@@ -121,7 +121,7 @@ def setup_database():
     print("\n🎉 Database setup completed successfully!")
     print("=" * 60)
     print("📊 Database Summary:")
-    print("   - Trial balance tables created")
+    print("   - Balance sheet tables created")
     print("   - GRAP chart of accounts seeded")
     print("   - Mapping rules configured")
     print("   - Row Level Security enabled")
@@ -145,10 +145,10 @@ def show_usage():
     print("  - SUPABASE_SERVICE_ROLE_KEY")
     print("  - SUPABASE_ANON_KEY")
     print("\nFiles Used:")
-    print("  - supabase_trial_balance_schema.sql")
+    print("  - supabase_balance_sheet_schema.sql")
     print("  - scripts/seed_grap_accounts.py")
     print("\nAfter Setup:")
-    print("  - Database is ready for trial balance uploads")
+    print("  - Database is ready for balance sheet uploads")
     print("  - GRAP accounts are available for mapping")
     print("  - Auto-mapping rules are configured")
 

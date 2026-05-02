@@ -19,9 +19,9 @@
                     <span class="state-value state-unknown" id="processingStateValue">Unknown</span>
                 </div>
                 
-                {% if current_trial_balance_id %}
+                {% if current_balance_sheet_id %}
                 <div class="draft-statement-controls">
-                    <button type="button" class="draft-btn draft-btn-primary" data-action="open-draft-statement-viewer" data-trial-balance-id="{{ current_trial_balance_id }}" data-statement-type="financial-performance">
+                    <button type="button" class="draft-btn draft-btn-primary" data-action="open-draft-statement-viewer" data-balance-sheet-id="{{ current_balance_sheet_id }}" data-statement-type="financial-performance">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8zm0 0v11M11 1v11"/>
                         </svg>

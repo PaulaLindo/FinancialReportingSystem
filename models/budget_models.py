@@ -15,8 +15,8 @@ class BudgetModel:
         self.actual_data = {}
         self.variance_data = {}
         
-    def create_budget_structure(self, trial_balance_data: pd.DataFrame) -> Dict[str, Any]:
-        """Create budget structure from trial balance data"""
+    def create_budget_structure(self, balance_sheet_data: pd.DataFrame) -> Dict[str, Any]:
+        """Create budget structure from balance sheet data"""
         budget_structure = {
             'budget_id': f"BUD_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             'created_at': datetime.now().isoformat(),
@@ -31,8 +31,8 @@ class BudgetModel:
             }
         }
         
-        # Map trial balance accounts to budget categories
-        for _, row in trial_balance_data.iterrows():
+        # Map balance sheet accounts to budget categories
+        for _, row in balance_sheet_data.iterrows():
             account_code = str(row.get('Account Code', ''))
             account_desc = row.get('Account Description', '')
             net_balance = row.get('Net Balance', 0)

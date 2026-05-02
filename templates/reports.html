@@ -7,7 +7,7 @@
     <div class="container-content">
         <div class="reports-header">
             <h1>📁 File Management</h1>
-            <p>Manage your uploaded trial balances and generated financial reports</p>
+            <p>Manage your uploaded balance sheets and generated financial reports</p>
             
             <!-- Summary Stats -->
             <div class="file-stats-summary" id="fileStatsSummary">
@@ -16,8 +16,8 @@
                     <div class="stat-label">Total Files</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number" id="trialBalancesCount">0</div>
-                    <div class="stat-label">Trial Balances</div>
+                    <div class="stat-number" id="balanceSheetsCount">0</div>
+                    <div class="stat-label">Balance Sheets</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number" id="pdfReportsCount">0</div>
@@ -40,7 +40,7 @@
                 <label for="fileTypeFilter" class="filter-label">File Type:</label>
                 <select id="fileTypeFilter" class="filter-select" data-filter="fileType">
                     <option value="all">All Files</option>
-                    <option value="trial_balance">Trial Balances</option>
+                    <option value="balance_sheet">Balance Sheets</option>
                     <option value="pdf_report">PDF Reports</option>
                 </select>
             </div>
@@ -107,7 +107,7 @@
         <div id="emptyState" class="empty-state element--hidden">
             <div class="empty-icon">📂</div>
             <h3>No Files Found</h3>
-            <p>You haven't uploaded any trial balances or generated reports yet.</p>
+            <p>You haven't uploaded any balance sheets or generated reports yet.</p>
             <a href="/upload" class="btn btn-primary">Upload Your First File</a>
         </div>
     </div>
@@ -117,7 +117,7 @@
 <template id="fileItemTemplate">
     <div class="file-item" data-file-id="" data-file-type="">
         <div class="file-icon">
-            <span class="icon-trial-balance">📊</span>
+            <span class="icon-balance-sheet">📊</span>
             <span class="icon-pdf-report">�</span>
         </div>
         
@@ -180,9 +180,9 @@
                 <label>Status:</label>
                 <span id="detailStatus"></span>
             </div>
-            <div class="detail-row" id="detailTrialBalanceRow">
-                <label>Associated Trial Balance:</label>
-                <span id="detailTrialBalance"></span>
+            <div class="detail-row" id="detailBalanceSheetRow">
+                <label>Associated Balance Sheet:</label>
+                <span id="detailBalanceSheet"></span>
             </div>
         </div>
         <div class="file-details-footer">

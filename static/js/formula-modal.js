@@ -9,7 +9,7 @@ class FormulaModalController {
         this.modal = null;
         this.isOpen = false;
         this.formulaData = new Map(); // Cache formula data
-        this.currentTrialBalanceId = null;
+        this.currentBalanceSheetId = null;
         this.currentProcessingState = null;
         this.currentAccess = null;
         this.initializeEventListeners();
@@ -147,7 +147,7 @@ class FormulaModalController {
 
     async fetchFormulaData(lineItemId, itemName, currentValue) {
         // Check cache first
-        const cacheKey = `${this.currentTrialBalanceId || 'legacy'}_${lineItemId}`;
+        const cacheKey = `${this.currentBalanceSheetId || 'legacy'}_${lineItemId}`;
         if (this.formulaData.has(cacheKey)) {
             return this.formulaData.get(cacheKey);
         }
@@ -158,9 +158,9 @@ class FormulaModalController {
         try {
             // Determine API endpoint based on processing state
             let apiUrl;
-            if (this.currentTrialBalanceId && this.currentProcessingState) {
+            if (this.currentBalanceSheetId && this.currentProcessingState) {
                 // Use processing state-aware endpoint
-                apiUrl = `/api/formula/breakdown/${this.currentTrialBalanceId}/${lineItemId}`;
+                apiUrl = `/api/formula/breakdown/${this.currentBalanceSheetId}/${lineItemId}`;
             } else {
                 // Use legacy endpoint
                 apiUrl = `/api/formula/breakdown/${lineItemId}`;
@@ -296,7 +296,7 @@ class FormulaModalController {
                         <path d="M21 11h-6v10h6V11z"/>
                         <path d="M15 3H9v6h6V3z"/>
                     </svg>
-                    Mapped Trial Balance Accounts
+                    Mapped Balance Sheet Accounts
                 </h3>
                 <div class="formula-section-badge">Account Mapping</div>
             </div>
@@ -365,7 +365,7 @@ class FormulaModalController {
         
         // Adjust button visibility based on access mode
         const exportButton = modalActions.querySelector('button[onclick="exportBreakdownPDF()"]');
-        const sourceLedgerButton = modalActions.querySelector('button[onclick="viewRawTrialBalance()"]');
+        const sourceLedgerButton = modalActions.querySelector('button[onclick="viewRawBalanceSheet()"]');
         const modalFooter = modalActions.closest('.formula-modal-footer');
         
         // Clear existing read-only indicators
@@ -442,7 +442,7 @@ class FormulaModalController {
                         <line x1="16" y1="17" x2="8" y2="17"/>
                         <polyline points="10,9 9,9 8,9"/>
                     </svg>
-                    View Raw Trial Balance Data
+                    View Raw Balance Sheet Data
                 `;
             }
         }
@@ -676,20 +676,20 @@ class FormulaModalController {
         // Formula data will be loaded on-demand from Supabase API
     }
     
-    setProcessingContext(trialBalanceId, processingState) {
+    setProcessingContext(balanceSheetId, processingState) {
         // Set processing context for formula requests
-        this.currentTrialBalanceId = trialBalanceId;
+        this.currentBalanceSheetId = balanceSheetId;
         this.currentProcessingState = processingState;
         
         // Clear cache when context changes
-        if (trialBalanceId) {
+        if (balanceSheetId) {
             this.formulaData.clear();
         }
     }
     
     clearProcessingContext() {
         // Clear processing context and revert to legacy mode
-        this.currentTrialBalanceId = null;
+        this.currentBalanceSheetId = null;
         this.currentProcessingState = null;
         this.currentAccess = null;
     }
@@ -718,10 +718,10 @@ class FormulaModalController {
         }
     }
 
-    viewRawTrialBalance() {
-        // Navigate to trial balance or open in modal
-        const tbUrl = '/accounting/trial-balance';
-        window.open(tbUrl, '_blank', 'width=1200,height=800,scrollbars=yes');
+    viewRawBalanceSheet() {
+        // Navigate to balance sheet or open in modal
+        const bsUrl = '/accounting/balance-sheet';
+        window.open(bsUrl, '_blank', 'width=1200,height=800,scrollbars=yes');
     }
 
 showLoading() {
@@ -799,9 +799,9 @@ function viewSourceLedger(sourceType, variableName) {
     }
 }
 
-function viewRawTrialBalance() {
+function viewRawBalanceSheet() {
     if (window.formulaModalController) {
-        window.formulaModalController.viewRawTrialBalance();
+        window.formulaModalController.viewRawBalanceSheet();
     }
 }
 

@@ -56,7 +56,7 @@ class SADPMRUtils {
             ALLOWED_EXTENSIONS: ['xlsx', 'xls', 'csv', 'xlsm', 'xlsb', 'tsv']
         },
         API: {
-            TIMEOUT: 30000
+            TIMEOUT: 60000
         }
     };
 
@@ -183,7 +183,7 @@ class SADPMRUtils {
                 valid: false,
                 error: `Unsupported file format: .${fileExtension}\n\n` +
                       `Supported formats: ${supportedExtensions.map(ext => '.' + ext).join(', ')}\n\n` +
-                      `Please export your trial balance as an Excel file (.xlsx, .xls) or CSV file (.csv).`
+                      `Please export your balance sheet as an Excel file (.xlsx, .xls) or CSV file (.csv).`
             };
         }
 

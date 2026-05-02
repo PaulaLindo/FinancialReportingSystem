@@ -500,7 +500,7 @@
     box-shadow: var(--shadow-sm);
     border-left: 4px solid var(--success);
     text-align: center; /* Center the button */
-    display: block; /* Override display: none with same specificity */
+    display: none; /* Hidden by default */
 }
 
 /* Fallback for any other instances */

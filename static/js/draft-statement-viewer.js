@@ -1,6 +1,6 @@
 /**
  * Draft Statement Viewer JavaScript
- * Handles draft statement viewing during Trial Balance mapping phase
+ * Handles draft statement viewing during Balance Sheet mapping phase
  */
 
 // This file is already included in the draft-statement-viewer.html component
@@ -8,9 +8,9 @@
 // This file serves as a reference and additional utilities
 
 // Global functions for template integration
-function openDraftStatementViewer(trialBalanceId, statementType) {
+function openDraftStatementViewer(balanceSheetId, statementType) {
     if (window.draftStatementViewerController) {
-        window.draftStatementViewerController.open(trialBalanceId, statementType);
+        window.draftStatementViewerController.open(balanceSheetId, statementType);
     }
 }
 
@@ -21,9 +21,9 @@ function closeDraftStatementViewer() {
 }
 
 function refreshDraftStatement() {
-    if (window.draftStatementViewerController && window.draftStatementViewerController.currentTrialBalance) {
+    if (window.draftStatementViewerController && window.draftStatementViewerController.currentBalanceSheet) {
         window.draftStatementViewerController.open(
-            window.draftStatementViewerController.currentTrialBalance,
+            window.draftStatementViewerController.currentBalanceSheet,
             window.draftStatementViewerController.currentStatement
         );
     }
@@ -36,7 +36,7 @@ function exportDraftStatement() {
             // Create export data
             const exportData = {
                 statementType: draftData.statementType,
-                trialBalanceId: draftData.trialBalanceId,
+                balanceSheetId: draftData.balanceSheetId,
                 period: draftData.period,
                 generatedAt: new Date().toISOString(),
                 data: draftData

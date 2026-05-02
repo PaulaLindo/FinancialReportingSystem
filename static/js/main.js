@@ -480,7 +480,7 @@ class EventDelegationSystem {
         // Formula modal handlers
         this.registerHandler('close-formula-modal', this.handleCloseFormulaModal.bind(this));
         this.registerHandler('view-source-ledger', this.handleViewSourceLedger.bind(this));
-        this.registerHandler('view-raw-trial-balance', this.handleViewRawTrialBalance.bind(this));
+        this.registerHandler('view-raw-balance-sheet', this.handleViewRawBalanceSheet.bind(this));
         this.registerHandler('export-breakdown-pdf', this.handleExportBreakdownPDF.bind(this));
 
         // Draft statement viewer handlers
@@ -603,9 +603,9 @@ class EventDelegationSystem {
         }
     }
 
-    handleViewRawTrialBalance(data, element) {
-        if (typeof viewRawTrialBalance === 'function') {
-            viewRawTrialBalance();
+    handleViewRawBalanceSheet(data, element) {
+        if (typeof viewRawBalanceSheet === 'function') {
+            viewRawBalanceSheet();
         }
     }
 
@@ -637,7 +637,7 @@ class EventDelegationSystem {
     // Financial Statement Handlers
     handleOpenDraftStatementViewer(data, element) {
         if (typeof openDraftStatementViewer === 'function') {
-            openDraftStatementViewer(data.trialBalanceId, data.statementType);
+            openDraftStatementViewer(data.balanceSheetId, data.statementType);
         }
     }
 }
