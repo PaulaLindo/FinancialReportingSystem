@@ -8,9 +8,10 @@
 
 class FluidNavigation {
     constructor() {
-        this.menuToggle = document.getElementById('mobileMenuToggle');
+        this.menuToggle = document.getElementById('navToggle');
         this.navMenu = document.getElementById('navMenu');
         this.menuOverlay = document.getElementById('mobileMenuOverlay');
+        this.mobileClose = document.getElementById('navMobileClose');
         this.isOpen = false;
         
         this.init();
@@ -18,14 +19,7 @@ class FluidNavigation {
     
     init() {
         if (!this.menuToggle || !this.navMenu || !this.menuOverlay) {
-            console.warn('Navigation elements not found');
             return;
-        }
-        
-        // Fallback: Ensure mobile menu toggle is visible on mobile devices
-        if (window.innerWidth <= 1023) {
-            this.menuToggle.classList.add('mobile-menu-toggle--visible');
-            this.menuToggle.classList.remove('mobile-menu-toggle--hidden');
         }
         
         // Bind event listeners
@@ -44,6 +38,14 @@ class FluidNavigation {
             e.preventDefault();
             this.toggleMenu();
         });
+        
+        // Mobile close button click
+        if (this.mobileClose) {
+            this.mobileClose.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.closeMenu();
+            });
+        }
         
         // Overlay click
         this.menuOverlay.addEventListener('click', () => {
@@ -69,12 +71,7 @@ class FluidNavigation {
             const resizeObserver = new ResizeObserver((entries) => {
                 for (const entry of entries) {
                     if (entry.contentRect.width <= 1023) {
-                        this.menuToggle.classList.add('mobile-menu-toggle--visible');
-                        this.menuToggle.classList.remove('mobile-menu-toggle--hidden');
-                    } else {
-                        this.menuToggle.classList.add('mobile-menu-toggle--hidden');
-                        this.menuToggle.classList.remove('mobile-menu-toggle--visible');
-                        // Close menu if open when expanding
+                        // Mobile breakpoint - ensure CSS handles visibility
                         if (this.isOpen) {
                             this.closeMenu();
                         }
@@ -91,17 +88,9 @@ class FluidNavigation {
     }
     
     checkInitialState() {
-        // Check if navigation should be collapsed based on available space
-        const navbar = document.querySelector('.navbar');
-        if (navbar) {
-            const width = navbar.getBoundingClientRect().width;
-            if (width <= 1023) {
-                this.menuToggle.classList.add('mobile-menu-toggle--visible');
-                this.menuToggle.classList.remove('mobile-menu-toggle--hidden');
-            } else {
-                this.menuToggle.classList.add('mobile-menu-toggle--hidden');
-                this.menuToggle.classList.remove('mobile-menu-toggle--visible');
-            }
+        // CSS handles visibility, just ensure menu is closed on desktop
+        if (window.innerWidth > 1023 && this.isOpen) {
+            this.closeMenu();
         }
     }
     

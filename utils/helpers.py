@@ -52,7 +52,6 @@ def calculate_ratios(sofp_data, sofe_data):
         return ratios
         
     except Exception as e:
-        print(f"Error calculating ratios: {str(e)}")
         return {}
 
 

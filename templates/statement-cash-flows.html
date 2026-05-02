@@ -194,8 +194,12 @@
 
         <div class="statement-footer grid-container">
             <div class="footer-actions">
+                {% if current_user and current_user.can_generate_pdf() %}
                 <button class="btn btn-primary">Download PDF</button>
+                {% endif %}
+                {% if current_user and current_user.can_export() %}
                 <button class="btn btn-secondary">Export to Excel</button>
+                {% endif %}
                 <button class="btn btn-secondary">Print Statement</button>
             </div>
         </div>

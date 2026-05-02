@@ -4,108 +4,126 @@
 
 {% block content %}
 
-    <div class="container-content results-container">
-        <h1>Processing Results</h1>
-        <p class="page-subtitle">Results from trial balance processing and GRAP mapping</p>
+<div class="results-page">
+    <div class="results-header">
+        <div class="container-content">
+            <h1>Processing Results</h1>
+            <p>Results from trial balance processing and GRAP mapping</p>
+        </div>
+    </div>
 
-        <div class="results-section">
-            <div class="results-card">
-                <h3>📊 Financial Statements Generated</h3>
-                <p>Your trial balance has been processed and mapped to GRAP standards</p>
-                <div class="results-details">
-                    <p>Processing completed successfully. View your generated financial statements below.</p>
-                </div>
-            </div>
-
-            <div class="pdf-preview-container">
-                <div class="pdf-preview-header">
-                    <h2>Financial Statements Preview</h2>
-                    <div class="pdf-preview-actions">
-                        <button class="pdf-download" id="downloadPdf" type="button" aria-label="Download PDF">Download PDF</button>
-                        <button class="pdf-fullscreen-btn" id="fullscreenBtn" type="button" aria-label="Full screen view" aria-expanded="false">Full Screen</button>
-                    </div>
-                    <div class="pdf-preview-info">
-                        <p>Scroll through the PDF preview below or download the complete financial statements</p>
-                    </div>
-                </div>
-                <div class="pdf-viewer-wrapper">
-                    <iframe id="pdfPreview" class="pdf-viewer" src="" title="Financial Statements Preview" aria-label="Financial Statements PDF Preview"></iframe>
-                </div>
-            </div>
-
-            <!-- Full Screen PDF Preview Container -->
-            <div class="pdf-fullscreen-container" id="pdfFullscreenContainer" aria-hidden="true">
-                <div class="pdf-fullscreen-content">
-                    <iframe id="pdfFullscreenViewer" class="pdf-fullscreen-iframe" src="" title="Full Screen Financial Statements Preview" aria-label="Full Screen Financial Statements PDF Preview"></iframe>
-                    <div class="pdf-fullscreen-controls">
-                        <button class="pdf-fullscreen-download" id="fullscreenDownloadBtn" type="button" aria-label="Download PDF in full screen">Download PDF</button>
-                        <button class="pdf-fullscreen-close" id="fullscreenCloseBtn" type="button" aria-label="Close full screen view" title="Close (Escape)">✕</button>
-                    </div>
-                </div>
-            </div>
-
+    <div class="results-content">
+        <div class="container-content">
             <div class="results-summary">
                 <h2>Summary of Results</h2>
-                <div class="summary-grid grid-auto-fit-md">
+                <div class="summary-grid">
                     <div class="summary-item">
-                        <label>Total Assets</label>
-                        <span class="amount">R 0.00</span>
+                        <div class="summary-label">Total Assets</div>
+                        <div class="summary-value" id="totalAssets">R 0.00</div>
                     </div>
                     <div class="summary-item">
-                        <label>Total Liabilities</label>
-                        <span class="amount">R 0.00</span>
+                        <div class="summary-label">Total Liabilities</div>
+                        <div class="summary-value" id="totalLiabilities">R 0.00</div>
                     </div>
                     <div class="summary-item">
-                        <label>Net Assets</label>
-                        <span class="amount">R 0.00</span>
+                        <div class="summary-label">Net Assets</div>
+                        <div class="summary-value" id="netAssets">R 0.00</div>
                     </div>
                     <div class="summary-item">
-                        <label>Total Revenue</label>
-                        <span class="amount">R 0.00</span>
+                        <div class="summary-label">Total Revenue</div>
+                        <div class="summary-value" id="totalRevenue">R 0.00</div>
                     </div>
                     <div class="summary-item">
-                        <label>Total Expenses</label>
-                        <span class="amount">R 0.00</span>
+                        <div class="summary-label">Total Expenses</div>
+                        <div class="summary-value" id="totalExpenses">R 0.00</div>
                     </div>
                     <div class="summary-item">
-                        <label>Surplus/Deficit</label>
-                        <span class="amount">R 0.00</span>
+                        <div class="summary-label">Surplus/Deficit</div>
+                        <div class="summary-value" id="surplusDeficit">R 0.00</div>
                     </div>
+                </div>
+            </div>
+
+            <div class="results-preview">
+                <h2>Financial Statements Preview</h2>
+                <div class="pdf-preview-container">
+                    <div class="pdf-preview-placeholder">
+                        <div class="pdf-preview-loading">
+                            <div class="spinner"></div>
+                            <p>Loading PDF preview...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="results-actions">
+                    {% if current_user and current_user.can_generate_pdf() %}
+                    <button class="btn btn-primary" id="downloadPdf">Download PDF</button>
+                    {% endif %}
+                    <button class="btn btn-secondary" id="fullscreenBtn">Full Screen</button>
                 </div>
             </div>
 
             <div class="results-statements">
                 <h2>Generated Financial Statements</h2>
-                <div class="statements-grid grid-auto-fit-md">
-                    <div class="statement-card">
-                        <h4>📄 Statement of Financial Position</h4>
+                <div class="reports-grid">
+                    <div class="report-card">
+                        <div class="report-icon">📄</div>
+                        <h3>Statement of Financial Position</h3>
                         <p>Balance sheet with complete asset, liability and equity breakdown</p>
-                        <a href="/statement-financial-position" class="btn btn-primary" type="button">View Statement</a>
+                        <div class="report-meta">
+                            <span class="report-date">Generated: Jan 29, 2026</span>
+                            <span class="report-status status-complete">Complete</span>
+                        </div>
+                        <a href="/statement-financial-position" class="btn btn-primary">View Statement</a>
                     </div>
-                    <div class="statement-card">
-                        <h4>📈 Statement of Financial Performance</h4>
+                    <div class="report-card">
+                        <div class="report-icon">📈</div>
+                        <h3>Statement of Financial Performance</h3>
                         <p>Income statement with revenue, expenses and surplus/deficit</p>
-                        <a href="/statement-financial-performance" class="btn btn-primary" type="button">View Statement</a>
+                        <div class="report-meta">
+                            <span class="report-date">Generated: Jan 29, 2026</span>
+                            <span class="report-status status-complete">Complete</span>
+                        </div>
+                        <a href="/statement-financial-performance" class="btn btn-primary">View Statement</a>
                     </div>
-                    <div class="statement-card">
-                        <h4>💰 Statement of Cash Flows</h4>
+                    <div class="report-card">
+                        <div class="report-icon">💰</div>
+                        <h3>Statement of Cash Flows</h3>
                         <p>Statement of cash flows with operating, investing and financing activities</p>
-                        <a href="/statement-cash-flows" class="btn btn-primary" type="button">View Statement</a>
+                        <div class="report-meta">
+                            <span class="report-date">Generated: Jan 29, 2026</span>
+                            <span class="report-status status-complete">Complete</span>
+                        </div>
+                        <a href="/statement-cash-flows" class="btn btn-primary">View Statement</a>
                     </div>
-                    <div class="statement-card">
-                        <h4>📊 Financial Ratios</h4>
+                    <div class="report-card">
+                        <div class="report-icon">📊</div>
+                        <h3>Financial Ratios</h3>
                         <p>Key financial ratios and performance metrics</p>
-                        <button class="btn btn-primary" type="button">View Ratios</button>
+                        <div class="report-meta">
+                            <span class="report-date">Generated: Jan 29, 2026</span>
+                            <span class="report-status status-pending">Calculating</span>
+                        </div>
+                        <button class="btn btn-primary">View Ratios</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
             </div>
 
             <div class="results-actions">
                 <h2>Next Steps</h2>
                 <div class="action-buttons grid-auto-fit">
+                    {% if current_user and current_user.can_generate_pdf() %}
                     <button id="generatePdfBtn" class="btn btn-primary btn-lg" type="button">Generate PDF Report</button>
-                    <button id="uploadAnotherBtn" class="btn btn-secondary" type="button">Upload Another Trail Balance</button>
+                    {% endif %}
+                    {% if current_user and current_user.can_upload() %}
+                    <button id="uploadAnotherBtn" class="btn btn-secondary" type="button">Upload Another Trial Balance</button>
+                    {% endif %}
+                    {% if current_user and current_user.can_view_all() %}
                     <button class="btn btn-secondary" type="button">Download Files</button>
+                    {% endif %}
                 </div>
             </div>
         </div>

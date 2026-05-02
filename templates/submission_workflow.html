@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Submit for Review - SADPMR Financial Reporting System{% endblock %}
+
+{% block extra_css %}
+<!-- Submission workflow styles are included in main styles.css -->
+{% endblock %}
+
+{% block content %}
+
+<div class="section submission-section">
+    <div class="submission-container">
+        
+        <!-- Header -->
+        <div class="submission-header">
+            <h1 class="submission-title">Submit for Review</h1>
+            <p class="mapping-subtitle">
+                Review your trial balance and mapping before submitting for management approval
+            </p>
+        </div>
+
+        <!-- Review Content -->
+        <div class="review-content">
+            
+            <!-- File Status Section -->
+            <div class="review-section">
+                <div class="section-header">
+                    <h2 class="section-title">File Status</h2>
+                    <span class="status-badge status-{{ submission.status|default('draft') }}">
+                        {{ submission.status|default('draft')|title }}
+                    </span>
+                </div>
+                
+                <!-- Summary Stats -->
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-value">{{ submission.total_accounts or 0 }}</div>
+                        <div class="summary-label">Total Accounts</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value">{{ submission.mapped_accounts or 0 }}</div>
+                        <div class="summary-label">Mapped Accounts</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value">{{ submission.total_assets or 'R 0.00' }}</div>
+                        <div class="summary-label">Total Assets</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-value">{{ submission.total_liabilities or 'R 0.00' }}</div>
+                        <div class="summary-label">Total Liabilities</div>
+                    </div>
+                </div>
+                
+                <!-- File Details -->
+                <div class="file-details">
+                    <div class="detail-row">
+                        <span class="detail-label">File Name:</span>
+                        <span class="detail-value">{{ submission.filename or 'N/A' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Upload Date:</span>
+                        <span class="detail-value">{{ submission.upload_date or 'N/A' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Period:</span>
+                        <span class="detail-value">{{ submission.period or 'N/A' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Prepared By:</span>
+                        <span class="detail-value">{{ submission.prepared_by or current_user.full_name if current_user else 'Finance Clerk' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mapping Summary Section -->
+            <div class="review-section">
+                <div class="section-header">
+                    <h2 class="section-title">Mapping Summary</h2>
+                    <span class="status-badge status-{{ 'approved' if submission.mapped_accounts == submission.total_accounts else 'pending' }}">
+                        {{ 'Complete' if submission.mapped_accounts == submission.total_accounts else 'Incomplete' }}
+                    </span>
+                </div>
+                
+                <div class="mapping-summary">
+                    <div class="mapping-stats">
+                        <div class="mapping-stat">
+                            <div class="mapping-number">{{ submission.mapped_accounts or 0 }}</div>
+                            <div class="mapping-label">Accounts Mapped</div>
+                        </div>
+                        <div class="mapping-stat">
+                            <div class="mapping-number">{{ submission.unmapped_accounts or 0 }}</div>
+                            <div class="mapping-label">Accounts Remaining</div>
+                        </div>
+                        <div class="mapping-stat">
+                            <div class="mapping-number">{{ submission.grap_categories_used or 0 }}</div>
+                            <div class="mapping-label">GRAP Categories</div>
+                        </div>
+                        <div class="mapping-stat">
+                            <div class="mapping-number">{{ submission.mapping_completeness or '0%' }}</div>
+                            <div class="mapping-label">Completeness</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approval Timeline Section -->
+            <div class="review-section">
+                <div class="section-header">
+                    <h2 class="section-title">Approval Timeline</h2>
+                </div>
+                
+                <div class="approval-timeline">
+                    <div class="timeline-item completed">
+                        <div class="timeline-content">
+                            <div class="timeline-title">File Uploaded</div>
+                            <div class="timeline-description">Trial balance file successfully uploaded and validated</div>
+                            <div class="timeline-time">{{ submission.upload_date or 'Just now' }}</div>
+                        </div>
+                    </div>
+                    
+                    {% if submission.mapped_accounts == submission.total_accounts %}
+                    <div class="timeline-item completed">
+                        <div class="timeline-content">
+                            <div class="timeline-title">Mapping Complete</div>
+                            <div class="timeline-description">All accounts successfully mapped to GRAP categories</div>
+                            <div class="timeline-time">{{ submission.mapping_date or 'Just now' }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="timeline-item {{ 'current' if submission.status == 'draft' else ('pending' if submission.status == 'submitted' else 'completed') if submission.status == 'approved' else 'completed' if submission.status == 'rejected' else '') }}">
+                        <div class="timeline-content">
+                            <div class="timeline-title">
+                                {% if submission.status == 'draft' %}
+                                    Ready for Submission
+                                {% elif submission.status == 'submitted' %}
+                                    Pending Review
+                                {% elif submission.status == 'approved' %}
+                                    Approved
+                                {% elif submission.status == 'rejected' %}
+                                    Rejected
+                                {% else %}
+                                    Unknown Status
+                                {% endif %}
+                            </div>
+                            <div class="timeline-description">
+                                {% if submission.status == 'draft' %}
+                                    File is ready to be submitted for management review
+                                {% elif submission.status == 'submitted' %}
+                                    File has been submitted and is awaiting management approval
+                                {% elif submission.status == 'approved' %}
+                                    File has been approved by management and is ready for final processing
+                                {% elif submission.status == 'rejected' %}
+                                    File was rejected by management. Please review feedback and make necessary corrections.
+                                {% else %}
+                                    Status is unknown
+                                {% endif %}
+                            </div>
+                            <div class="timeline-time">{{ submission.status_date or 'N/A' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            {% if submission.status == 'draft' %}
+                {% if submission.mapped_accounts == submission.total_accounts %}
+                    <button id="submitBtn" class="btn-submit" type="button">
+                        ✓ Submit for Review
+                    </button>
+                {% else %}
+                    <button class="btn-submit" type="button" disabled>
+                        ⚠️ Complete Mapping First
+                    </button>
+                {% endif %}
+                
+                <button id="editBtn" class="btn-secondary" type="button">
+                    ✏️ Edit Mapping
+                </button>
+                
+                <button id="deleteBtn" class="btn-danger" type="button">
+                    🗑️ Delete Submission
+                </button>
+                
+            {% elif submission.status == 'submitted' %}
+                <button class="btn-submit" type="button" disabled>
+                    ⏳ Pending Review
+                </button>
+                
+                <button id="withdrawBtn" class="btn-secondary" type="button">
+                    ↩️ Withdraw Submission
+                </button>
+                
+            {% elif submission.status == 'approved' %}
+                <button class="btn-submit" type="button" disabled>
+                    ✓ Approved
+                </button>
+                
+                <button id="generateBtn" class="btn-secondary" type="button">
+                    📄 Generate Final Report
+                </button>
+                
+            {% elif submission.status == 'rejected' %}
+                <button id="resubmitBtn" class="btn-submit" type="button">
+                    🔄 Resubmit After Corrections
+                </button>
+                
+                <button id="viewFeedbackBtn" class="btn-secondary" type="button">
+                    💬 View Feedback
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Pass data to JavaScript
+window.sessionId = '{{ session_id }}';
+window.submissionData = {{ submission|tojson if submission else '{}' }};
+</script>
+<script src="{{ url_for('static', filename='js/submission-workflow.js') }}"></script>
+<script src="{{ url_for('static', filename='js/submission-workflow-init.js') }}"></script>
+{% endblock %}

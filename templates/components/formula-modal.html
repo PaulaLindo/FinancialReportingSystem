@@ -1,0 +1,156 @@
+<!-- Formula Transparency Modal Component -->
+<!-- Designed for CFO and AUDITOR roles with GRAP compliance -->
+<div id="formulaModal" class="formula-modal-overlay visibility--hidden">
+    <div class="formula-modal-container">
+        <!-- Modal Header -->
+        <div class="formula-modal-header">
+            <div class="formula-modal-title-section">
+                <h2 id="modalTitle" class="formula-modal-title">Calculation Breakdown: Loading...</h2>
+                <div class="formula-modal-subtitle">
+                    <span id="auditReference" class="audit-reference">GRAP 17 Asset Class: Loading... | Period: Loading...</span>
+                </div>
+            </div>
+            <button type="button" class="formula-modal-close" data-action="close-formula-modal" aria-label="Close modal">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="formula-modal-body">
+            <!-- Section A: Inputs (The Variables) -->
+            <div class="formula-section">
+                <div class="formula-section-header">
+                    <h3 class="formula-section-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                        </svg>
+                        Section A: Input Variables
+                    </h3>
+                    <div class="formula-section-badge">Source Data</div>
+                </div>
+                
+                <div class="variables-grid" id="variablesGrid">
+                    <!-- Variables will be populated dynamically -->
+                    <div class="variable-item">
+                        <div class="variable-label">Historic Cost</div>
+                        <div class="variable-value">R2,500,000.00</div>
+                        <button type="button" class="variable-source-link" data-action="view-source-ledger" data-ledger="historic_cost">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path>
+                                <polyline points="15,3 21,3 21,9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                            View Asset Sub-ledger
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section B: The Calculation Path -->
+            <div class="formula-section">
+                <div class="formula-section-header">
+                    <h3 class="formula-section-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                        Section B: Calculation Path
+                    </h3>
+                    <div class="formula-section-badge">Formula Logic</div>
+                </div>
+
+                <!-- Formula Visualization -->
+                <div class="calculation-flow">
+                    <div class="formula-display">
+                        <div class="formula-label">Formula:</div>
+                        <div class="formula-expression" id="formulaExpression">(Cost - Residual) / Useful Life</div>
+                    </div>
+
+                    <!-- Calculation Steps -->
+                    <div class="calculation-steps" id="calculationSteps">
+                        <div class="calculation-step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <div class="step-formula">R2,500,000.00 - R185,000.00</div>
+                                <div class="step-result">= R2,315,000.00</div>
+                            </div>
+                            <div class="step-arrow">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12,5 19,12 12,19"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="calculation-step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <div class="step-formula">R2,315,000.00 / 10</div>
+                                <div class="step-result">= R231,500.00</div>
+                            </div>
+                            <div class="step-arrow">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12,5 19,12 12,19"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="calculation-final">
+                            <div class="final-label">Final Result:</div>
+                            <div class="final-value" id="finalValue">R231,500.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="formula-modal-footer">
+            <!-- Auditor's Seal of Approval -->
+            <div class="auditor-seal">
+                <div class="seal-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                    </svg>
+                </div>
+                <div class="seal-text">
+                    <div class="seal-title">Verification Stamp</div>
+                    <div class="seal-status">Auditable Logic Verified</div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="modal-actions">
+                <button type="button" class="modal-btn modal-btn-secondary" data-action="view-raw-trial-balance">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10,9 9,9 8,9"/>
+                    </svg>
+                    View Raw Trial Balance Data
+                </button>
+                
+                <button type="button" class="modal-btn modal-btn-primary" data-action="export-breakdown-pdf">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="7,10 12,15 17,10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Export This Breakdown (PDF)
+                </button>
+                
+                <button type="button" class="modal-btn modal-btn-close" data-action="close-formula-modal">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+

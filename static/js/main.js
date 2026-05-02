@@ -245,7 +245,6 @@ class MainApplication {
         const scrolled = window.pageYOffset;
         const parallax = scrolled * 0.5;
         this.elements.hero.classList.add('hero--parallax');
-        this.elements.hero.style.setProperty('--parallax-y', parallax + 'px');
     }
 
     /**
@@ -264,13 +263,13 @@ class MainApplication {
         this.elements.playButton.addEventListener('click', () => {
             const placeholder = this.elements.playButton.parentElement;
             placeholder.innerHTML = `
-                <div style="padding: 2rem; text-align: center;">
-                    <h3 style="color: var(--primary-900); margin-bottom: 1rem;">Demo Video</h3>
-                    <p style="color: var(--gray-700);">
+                <div class="demo-video-content">
+                    <h3 class="demo-video-title">Demo Video</h3>
+                    <p class="demo-video-text">
                         Live demonstration will be recorded and uploaded here after the February 3, 2026 presentation.
                     </p>
-                    <p style="color: var(--gray-600); margin-top: 1rem; font-size: 0.9rem;">
-                        For now, please <a href="#contact" style="color: var(--primary-600); text-decoration: underline;">contact us</a> 
+                    <p class="demo-video-subtext">
+                        For now, please <a href="#contact" class="demo-video-link">contact us</a> 
                         to schedule a personalized live demo.
                     </p>
                 </div>
@@ -361,9 +360,292 @@ class MainApplication {
     }
 }
 
+/**
+ * Event Delegation System
+ * Handles all data-action events from HTML templates
+ */
+class EventDelegationSystem {
+    constructor() {
+        this.actionHandlers = new Map();
+        this.init();
+    }
+
+    init() {
+        this.setupEventDelegation();
+        this.registerHandlers();
+    }
+
+    /**
+     * Setup event delegation on document
+     */
+    setupEventDelegation() {
+        document.addEventListener('click', this.handleClick.bind(this));
+        document.addEventListener('change', this.handleChange.bind(this));
+        document.addEventListener('submit', this.handleSubmit.bind(this));
+    }
+
+    /**
+     * Handle click events
+     */
+    handleClick(event) {
+        const element = event.target.closest('[data-action]');
+        if (!element) return;
+
+        const action = element.dataset.action;
+        const data = this.getElementData(element);
+        
+        this.executeAction(action, data, element, event);
+    }
+
+    /**
+     * Handle change events
+     */
+    handleChange(event) {
+        const element = event.target.closest('[data-action]');
+        if (!element) return;
+
+        const action = element.dataset.action;
+        const data = this.getElementData(element);
+        
+        this.executeAction(action, data, element, event);
+    }
+
+    /**
+     * Handle submit events
+     */
+    handleSubmit(event) {
+        const element = event.target.closest('[data-action]');
+        if (!element) return;
+
+        const action = element.dataset.action;
+        const data = this.getElementData(element);
+        
+        this.executeAction(action, data, element, event);
+    }
+
+    /**
+     * Get all data attributes from element
+     */
+    getElementData(element) {
+        const data = {};
+        for (const attr of element.attributes) {
+            if (attr.name.startsWith('data-')) {
+                const key = attr.name.replace('data-', '').replace(/-([a-z])/g, (match, letter) => letter.toUpperCase());
+                data[key] = attr.value;
+            }
+        }
+        return data;
+    }
+
+    /**
+     * Execute action handler
+     */
+    executeAction(action, data, element, event) {
+        const handler = this.actionHandlers.get(action);
+        if (handler && typeof handler === 'function') {
+            try {
+                handler(data, element, event);
+            } catch (error) {
+                // Error executing action
+            }
+        } else {
+            // No handler found for action
+        }
+    }
+
+    /**
+     * Register action handlers
+     */
+    registerHandlers() {
+        // Budget page handlers
+        this.registerHandler('create-budget', this.handleCreateBudget.bind(this));
+        this.registerHandler('clear-form', this.handleClearForm.bind(this));
+        this.registerHandler('import-actual-data', this.handleImportActualData.bind(this));
+        this.registerHandler('calculate-variance', this.handleCalculateVariance.bind(this));
+        this.registerHandler('export-budget-report', this.handleExportBudgetReport.bind(this));
+        this.registerHandler('create-revision', this.handleCreateRevision.bind(this));
+        this.registerHandler('delete-budget', this.handleDeleteBudget.bind(this));
+        this.registerHandler('close-revision-modal', this.handleCloseRevisionModal.bind(this));
+        this.registerHandler('submit-revision', this.handleSubmitRevision.bind(this));
+
+        // Tab switching handlers
+        this.registerHandler('show-tab', (data) => this.showTab(data.tab));
+
+        // Approvals page handlers
+        this.registerHandler('load-transaction-history', this.handleLoadTransactionHistory.bind(this));
+        this.registerHandler('load-compliance-report', this.handleLoadComplianceReport.bind(this));
+        this.registerHandler('export-compliance-report', this.handleExportComplianceReport.bind(this));
+        this.registerHandler('close-approval-chain-modal', this.handleCloseApprovalChainModal.bind(this));
+
+        // Formula modal handlers
+        this.registerHandler('close-formula-modal', this.handleCloseFormulaModal.bind(this));
+        this.registerHandler('view-source-ledger', this.handleViewSourceLedger.bind(this));
+        this.registerHandler('view-raw-trial-balance', this.handleViewRawTrialBalance.bind(this));
+        this.registerHandler('export-breakdown-pdf', this.handleExportBreakdownPDF.bind(this));
+
+        // Draft statement viewer handlers
+        this.registerHandler('refresh-draft-statement', this.handleRefreshDraftStatement.bind(this));
+        this.registerHandler('export-draft-statement', this.handleExportDraftStatement.bind(this));
+        this.registerHandler('close-draft-statement-viewer', this.handleCloseDraftStatementViewer.bind(this));
+
+        // Financial statement handlers
+        this.registerHandler('open-draft-statement-viewer', this.handleOpenDraftStatementViewer.bind(this));
+    }
+
+    /**
+     * Register an action handler
+     */
+    registerHandler(action, handler) {
+        this.actionHandlers.set(action, handler);
+    }
+
+    // Budget Page Handlers
+    handleCreateBudget(data, element) {
+        // Call existing budget functionality
+        if (typeof createBudget === 'function') {
+            createBudget();
+        }
+    }
+
+    handleClearForm(data, element) {
+        if (data.target) {
+            const targetElement = document.getElementById(data.target);
+            if (targetElement) {
+                targetElement.value = '';
+            }
+        }
+    }
+
+    handleImportActualData(data, element) {
+        if (typeof importActualData === 'function') {
+            importActualData();
+        }
+    }
+
+    handleCalculateVariance(data, element) {
+        if (typeof calculateVariance === 'function') {
+            calculateVariance();
+        }
+    }
+
+    handleExportBudgetReport(data, element) {
+        if (typeof exportBudgetReport === 'function') {
+            exportBudgetReport();
+        }
+    }
+
+    handleCreateRevision(data, element) {
+        if (typeof createRevision === 'function') {
+            createRevision();
+        }
+    }
+
+    handleDeleteBudget(data, element) {
+        if (typeof deleteBudget === 'function') {
+            deleteBudget();
+        }
+    }
+
+    handleCloseRevisionModal(data, element) {
+        if (typeof closeRevisionModal === 'function') {
+            closeRevisionModal();
+        }
+    }
+
+    handleSubmitRevision(data, element) {
+        if (typeof submitRevision === 'function') {
+            submitRevision();
+        }
+    }
+
+    // Tab switching
+    showTab(tabName) {
+        if (typeof showTab === 'function') {
+            showTab(tabName);
+        }
+    }
+
+    // Approvals Page Handlers
+    handleLoadTransactionHistory(data, element) {
+        if (window.approvalWorkflow && typeof approvalWorkflow.loadTransactionHistory === 'function') {
+            approvalWorkflow.loadTransactionHistory();
+        }
+    }
+
+    handleLoadComplianceReport(data, element) {
+        if (window.approvalWorkflow && typeof approvalWorkflow.loadComplianceReport === 'function') {
+            approvalWorkflow.loadComplianceReport();
+        }
+    }
+
+    handleExportComplianceReport(data, element) {
+        if (window.approvalWorkflow && typeof approvalWorkflow.exportComplianceReport === 'function') {
+            approvalWorkflow.exportComplianceReport();
+        }
+    }
+
+    handleCloseApprovalChainModal(data, element) {
+        if (typeof closeApprovalChainModal === 'function') {
+            closeApprovalChainModal();
+        }
+    }
+
+    // Formula Modal Handlers
+    handleCloseFormulaModal(data, element) {
+        if (typeof closeFormulaModal === 'function') {
+            closeFormulaModal();
+        }
+    }
+
+    handleViewSourceLedger(data, element) {
+        if (typeof viewSourceLedger === 'function') {
+            viewSourceLedger(data.ledger);
+        }
+    }
+
+    handleViewRawTrialBalance(data, element) {
+        if (typeof viewRawTrialBalance === 'function') {
+            viewRawTrialBalance();
+        }
+    }
+
+    handleExportBreakdownPDF(data, element) {
+        if (typeof exportBreakdownPDF === 'function') {
+            exportBreakdownPDF();
+        }
+    }
+
+    // Draft Statement Viewer Handlers
+    handleRefreshDraftStatement(data, element) {
+        if (typeof refreshDraftStatement === 'function') {
+            refreshDraftStatement();
+        }
+    }
+
+    handleExportDraftStatement(data, element) {
+        if (typeof exportDraftStatement === 'function') {
+            exportDraftStatement();
+        }
+    }
+
+    handleCloseDraftStatementViewer(data, element) {
+        if (typeof closeDraftStatementViewer === 'function') {
+            closeDraftStatementViewer();
+        }
+    }
+
+    // Financial Statement Handlers
+    handleOpenDraftStatementViewer(data, element) {
+        if (typeof openDraftStatementViewer === 'function') {
+            openDraftStatementViewer(data.trialBalanceId, data.statementType);
+        }
+    }
+}
+
 // Initialize application when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.mainApp = new MainApplication();
+    window.eventDelegation = new EventDelegationSystem();
 });
 
 // Handle page unload for cleanup

@@ -6,6 +6,8 @@
 class SADPMRUtils {
     // Configuration constants
     static CONFIG = {
+        // Base URL for API requests - helps identify routing issues
+        BASE_URL: window.location.origin,
         ANIMATION: {
             DURATION: 800,
             EASING: 'cubic-bezier(0.4, 0, 0.2, 1)',
@@ -36,10 +38,22 @@ class SADPMRUtils {
         },
         FILE: {
             MAX_SIZE_MB: 16,
-            ALLOWED_TYPES: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
-                           'application/vnd.ms-excel', 
-                           'text/csv'],
-            ALLOWED_EXTENSIONS: ['xlsx', 'xls', 'csv']
+            ALLOWED_TYPES: [
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',  // .xlsx
+                'application/vnd.ms-excel',  // .xls
+                'text/csv',  // .csv
+                'application/csv',  // Alternative CSV MIME type
+                'text/plain',  // Some systems send CSV as plain text
+                'application/octet-stream',  // Generic binary - let server validate
+                'application/excel',  // Some older systems
+                'application/x-excel',  // Alternative Excel MIME type
+                'application/x-msexcel',  // Another Excel variant
+                'application/vnd.ms-excel.sheet.macroEnabled.12',  // .xlsm
+                'application/vnd.ms-excel.sheet.binary.macroEnabled.12',  // .xlsb
+                'text/comma-separated-values',  // CSV variant
+                'text/tab-separated-values'  // TSV files
+            ],
+            ALLOWED_EXTENSIONS: ['xlsx', 'xls', 'csv', 'xlsm', 'xlsb', 'tsv']
         },
         API: {
             TIMEOUT: 30000
@@ -151,20 +165,7 @@ class SADPMRUtils {
      * Validate file type and size
      */
     static validateFile(file) {
-        // Check file type
-        const isValidType = this.CONFIG.FILE.ALLOWED_TYPES.includes(file.type) || 
-                           this.CONFIG.FILE.ALLOWED_EXTENSIONS.some(ext => 
-                               file.name.toLowerCase().endsWith(`.${ext}`)
-                           );
-        
-        if (!isValidType) {
-            return {
-                valid: false,
-                error: `Invalid file type. Please upload ${this.CONFIG.FILE.ALLOWED_EXTENSIONS.join(', ').toUpperCase()} file.`
-            };
-        }
-
-        // Check file size
+        // Check file size first
         const maxSizeBytes = this.CONFIG.FILE.MAX_SIZE_MB * 1024 * 1024;
         if (file.size > maxSizeBytes) {
             return {
@@ -173,6 +174,21 @@ class SADPMRUtils {
             };
         }
 
+        // Check file extension - be more permissive and let server handle detailed validation
+        const fileExtension = file.name.toLowerCase().split('.').pop();
+        const supportedExtensions = ['xlsx', 'xls', 'csv', 'xlsm', 'xlsb', 'tsv'];
+        
+        if (!supportedExtensions.includes(fileExtension)) {
+            return {
+                valid: false,
+                error: `Unsupported file format: .${fileExtension}\n\n` +
+                      `Supported formats: ${supportedExtensions.map(ext => '.' + ext).join(', ')}\n\n` +
+                      `Please export your trial balance as an Excel file (.xlsx, .xls) or CSV file (.csv).`
+            };
+        }
+
+        // For supported extensions, be permissive with MIME types
+        // The server will handle detailed format validation
         return { valid: true };
     }
 
@@ -234,7 +250,11 @@ class SADPMRUtils {
         const timeoutId = setTimeout(() => controller.abort(), this.CONFIG.API.TIMEOUT);
 
         try {
-            const response = await fetch(url, {
+            // Use base URL for API requests
+            const fullUrl = url.startsWith('/') ? `${this.CONFIG.BASE_URL}${url}` : url;
+            
+                        
+            const response = await fetch(fullUrl, {
                 ...options,
                 signal: controller.signal,
                 credentials: 'include' // Include cookies for authentication
@@ -252,6 +272,12 @@ class SADPMRUtils {
                 } catch (e) {
                     // If we can't read the response text, just use the status
                 }
+                
+                // Add helpful context for common routing issues
+                if (response.status === 404 && url.startsWith('/api/')) {
+                    errorMessage += `\n\n⚠️ Routing Issue Detected:\nIf you're seeing this error, make sure you're accessing the app through http://localhost:5000 (not through IDE preview or direct file opening).`;
+                }
+                
                 throw new Error(errorMessage);
             }
             
@@ -263,15 +289,35 @@ class SADPMRUtils {
     }
 
     /**
-     * Console branding
+     * Format date string consistently across the application
+     */
+    static formatDate(dateString, options = {}) {
+        if (!dateString) return 'Invalid Date';
+        
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'Invalid Date';
+        
+        const defaultOptions = {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        
+        return date.toLocaleDateString('en-US', { ...defaultOptions, ...options });
+    }
+
+    /**
+     * Show branding information
      */
     static showBranding() {
-        console.log('%c SADPMR Financial Reporting System ', 'background: #0a1128; color: #d4a574; font-size: 18px; padding: 10px; font-weight: bold;');
-        console.log('%c Built with precision for public sector excellence ', 'background: #10b981; color: white; font-size: 12px; padding: 5px;');
-        console.log('%c February 3, 2026 Demo | Schedule 3A PFMA Compliance ', 'color: #1e3a5f; font-size: 11px;');
-        console.log('\n👋 Interested in the technology behind this system?\nGet in touch: demo@sadpmr-system.co.za');
+        console.log('🏛️ SADPMR Financial Reporting System');
+        console.log('📊 GRAP-Compliant Financial Statement Automation');
+        console.log('🔐 Secure, Efficient, User-Friendly');
     }
-}
+
+    }
 
 // Export for global use
 window.SADPMRUtils = SADPMRUtils;

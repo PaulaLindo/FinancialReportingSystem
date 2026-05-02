@@ -4,81 +4,121 @@
 
 {% block content %}
 
-    <div class="container-content admin-container">
-        <h1 class="text-center">Administration</h1>
-        <p class="page-subtitle">System administration and user management</p>
-
-        <div class="admin-section">
-            <div class="admin-card">
-                <h3 class="text-left">👥 User Management</h3>
-                <p>Manage user accounts and permissions</p>
-                <button class="btn btn-primary">Manage Users</button>
-            </div>
-            
-            <div class="admin-card">
-                <h3 class="text-left">🔧 System Settings</h3>
-                <p>Configure system parameters and GRAP mappings</p>
-                <button class="btn btn-primary">Settings</button>
-            </div>
-            
-            <div class="admin-card">
-                <h3 class="text-left">📊 System Logs</h3>
-                <p>View system activity and audit logs</p>
-                <button class="btn btn-primary">View Logs</button>
-            </div>
-            
-            <div class="admin-card">
-                <h3 class="text-left">💾 Data Backup</h3>
-                <p>Backup and restore system data</p>
-                <button class="btn btn-primary">Backup Data</button>
-            </div>
+<div class="admin-page">
+    <div class="admin-header">
+        <div class="container-content">
+            <h1>Administration</h1>
+            <p>System administration and user management</p>
         </div>
+    </div>
 
-        <div class="system-status">
-            <h2 class="text-center">System Status</h2>
-            <div class="status-grid">
-                <div class="status-item">
-                    <h4>Database</h4>
-                    <p class="status-ok">✅ Connected</p>
+    <div class="admin-content">
+        <div class="container-content">
+            <div class="admin-stats">
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon">👥</div>
+                    <div class="admin-stat-value">24</div>
+                    <div class="admin-stat-label">Total Users</div>
                 </div>
-                <div class="status-item">
-                    <h4>File Storage</h4>
-                    <p class="status-ok">✅ Available</p>
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon">📊</div>
+                    <div class="admin-stat-value">156</div>
+                    <div class="admin-stat-label">Reports Generated</div>
                 </div>
-                <div class="status-item">
-                    <h4>PDF Generation</h4>
-                    <p class="status-ok">✅ Operational</p>
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon">💾</div>
+                    <div class="admin-stat-value">2.4GB</div>
+                    <div class="admin-stat-label">Storage Used</div>
                 </div>
-                <div class="status-item">
-                    <h4>GRAP Engine</h4>
-                    <p class="status-ok">✅ Ready</p>
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon">⚡</div>
+                    <div class="admin-stat-value">99.9%</div>
+                    <div class="admin-stat-label">Uptime</div>
                 </div>
             </div>
-        </div>
 
-        <div class="recent-activity">
-            <h2>Recent Activity</h2>
-            <div class="activity-list">
-                <div class="activity-item">
-                    <div class="activity-info">
-                        <h4>Trial Balance Uploaded</h4>
-                        <p>By Thabo Mthembu (Accountant) • 2 hours ago</p>
+            <div class="admin-actions">
+                <div class="admin-action-card">
+                    <h3>👥 User Management</h3>
+                    <p>Manage user accounts and permissions</p>
+                    {% if current_user and current_user.can_manage_users() %}
+                    <button class="btn btn-primary">Manage Users</button>
+                    {% endif %}
+                </div>
+                
+                <div class="admin-action-card">
+                    <h3>🔧 System Settings</h3>
+                    <p>Configure system parameters and GRAP mappings</p>
+                    {% if current_user and current_user.can_manage_users() %}
+                    <button class="btn btn-primary">Settings</button>
+                    {% endif %}
+                </div>
+                
+                <div class="admin-action-card">
+                    <h3>📊 System Logs</h3>
+                    <p>View system activity and audit logs</p>
+                    {% if current_user and current_user.can_manage_users() %}
+                    <button class="btn btn-primary">View Logs</button>
+                    {% endif %}
+                </div>
+                
+                <div class="admin-action-card">
+                    <h3>💾 Data Backup</h3>
+                    <p>Backup and restore system data</p>
+                    {% if current_user and current_user.can_manage_users() %}
+                    <button class="btn btn-primary">Backup Data</button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="admin-status">
+                <h2>System Status</h2>
+                <div class="admin-stats">
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-icon">🗄️</div>
+                        <div class="admin-stat-value status-ok">✅</div>
+                        <div class="admin-stat-label">Database</div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-icon">📁</div>
+                        <div class="admin-stat-value status-ok">✅</div>
+                        <div class="admin-stat-label">File Storage</div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-icon">📄</div>
+                        <div class="admin-stat-value status-ok">✅</div>
+                        <div class="admin-stat-label">PDF Generation</div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-icon">⚙️</div>
+                        <div class="admin-stat-value status-ok">✅</div>
+                        <div class="admin-stat-label">GRAP Engine</div>
                     </div>
                 </div>
-                <div class="activity-item">
-                    <div class="activity-info">
-                        <h4>Financial Statements Generated</h4>
-                        <p>By Sarah Nkosi (CFO) • 4 hours ago</p>
+            </div>
+
+            <div class="admin-activity">
+                <h2>Recent Activity</h2>
+                <div class="export-history-list">
+                    <div class="export-history-item">
+                        <div class="export-history-date">2 hours ago</div>
+                        <div class="export-history-title">Trial Balance Uploaded</div>
+                        <div class="export-history-status">By Thabo Mthembu (Accountant)</div>
                     </div>
-                </div>
-                <div class="activity-item">
-                    <div class="activity-info">
-                        <h4>PDF Report Downloaded</h4>
-                        <p>By AGSA Auditor • 1 day ago</p>
+                    <div class="export-history-item">
+                        <div class="export-history-date">4 hours ago</div>
+                        <div class="export-history-title">Financial Statements Generated</div>
+                        <div class="export-history-status">By Sarah Nkosi (CFO)</div>
+                    </div>
+                    <div class="export-history-item">
+                        <div class="export-history-date">1 day ago</div>
+                        <div class="export-history-title">PDF Report Downloaded</div>
+                        <div class="export-history-status">By AGSA Auditor</div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
 {% endblock %}

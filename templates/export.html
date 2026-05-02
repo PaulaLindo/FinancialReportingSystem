@@ -4,50 +4,80 @@
 
 {% block content %}
 
-    <div class="container export-container">
-        <h1>Export Center</h1>
-        <p class="page-subtitle">Export financial statements in various formats</p>
-
-        <div class="export-section">
-            <div class="export-card">
-                <h3>📄 PDF Report</h3>
-                <p>Complete financial statements in PDF format for AGSA submission</p>
-                <button class="btn btn-primary">Generate PDF</button>
-            </div>
-            
-            <div class="export-card">
-                <h3>📊 Excel Workbook</h3>
-                <p>Financial statements in Excel format with detailed calculations</p>
-                <button class="btn btn-primary">Export to Excel</button>
-            </div>
-            
-            <div class="export-card">
-                <h3>📋 CSV Data</h3>
-                <p>Raw data export for further analysis and reporting</p>
-                <button class="btn btn-primary">Export CSV</button>
-            </div>
-            
-            <div class="export-card">
-                <h3>🗃️ Archive Package</h3>
-                <p>Complete package with all statements, notes, and supporting documents</p>
-                <button class="btn btn-primary">Download Archive</button>
-            </div>
+<div class="export-page">
+    <div class="export-header">
+        <div class="container-content">
+            <h1>Export Center</h1>
+            <p>Export financial statements in various formats</p>
         </div>
+    </div>
 
-        <div class="export-history">
-            <h2>Export History</h2>
-            <div class="export-list">
-                <div class="export-item">
-                    <div class="export-info">
-                        <h4>Annual Financial Statements 2025</h4>
-                        <p>PDF • 2.4 MB • Generated on January 29, 2026 at 14:30</p>
+    <div class="export-content">
+        <div class="container-content">
+            <div class="export-options">
+                <h2>Export Options</h2>
+                <div class="export-form">
+                    <div class="admin-action-card">
+                        <h3>📄 PDF Report</h3>
+                        <p>Complete financial statements in PDF format for AGSA submission</p>
+                        {% if current_user and current_user.can_generate_pdf() %}
+                        <button class="btn btn-primary">Generate PDF</button>
+                        {% endif %}
                     </div>
-                    <div class="export-actions">
-                        <button class="btn btn-download">Download</button>
+                    
+                    <div class="admin-action-card">
+                        <h3>📊 Excel Workbook</h3>
+                        <p>Financial statements in Excel format with detailed calculations</p>
+                        {% if current_user and current_user.can_export() %}
+                        <button class="btn btn-primary">Export to Excel</button>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="admin-action-card">
+                        <h3>📋 CSV Data</h3>
+                        <p>Raw data export for further analysis and reporting</p>
+                        {% if current_user and current_user.can_export_audit() %}
+                        <button class="btn btn-primary">Export CSV</button>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="admin-action-card">
+                        <h3>🗃️ Archive Package</h3>
+                        <p>Complete package with all statements, notes, and supporting documents</p>
+                        {% if current_user and current_user.can_export() %}
+                        <button class="btn btn-primary">Download Archive</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="export-history">
+                <h2>Export History</h2>
+                <div class="export-history-list">
+                    <div class="export-history-item">
+                        <div class="export-history-date">January 29, 2026 at 14:30</div>
+                        <div class="export-history-title">Annual Financial Statements 2025</div>
+                        <div class="export-history-status status-complete">PDF • 2.4 MB</div>
+                    </div>
+                    <div class="export-history-item">
+                        <div class="export-history-date">January 28, 2026 at 10:15</div>
+                        <div class="export-history-title">Quarterly Report Q4 2025</div>
+                        <div class="export-history-status status-complete">Excel • 1.8 MB</div>
+                    </div>
+                    <div class="export-history-item">
+                        <div class="export-history-date">January 25, 2026 at 16:45</div>
+                        <div class="export-history-title">Monthly Analysis January 2026</div>
+                        <div class="export-history-status status-complete">CSV • 845 KB</div>
+                    </div>
+                    <div class="export-history-item">
+                        <div class="export-history-date">January 20, 2026 at 09:30</div>
+                        <div class="export-history-title">Complete Archive 2025</div>
+                        <div class="export-history-status status-complete">ZIP • 12.3 MB</div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
 {% endblock %}

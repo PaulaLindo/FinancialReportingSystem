@@ -59,10 +59,10 @@ FinancialReportingSystem/
 │   ├── index.html             # Dashboard
 │   ├── upload.html            # File upload interface
 │   └── about.html             # System information
-├── docs/                       # GitHub Pages demo
+├── docs/                       # Static demo files (deprecated)
 │   ├── index.html             # Marketing landing page
 │   ├── css/style.css          # Demo styling
-│   ├── js/main.js             # Interactive features
+│   └── js/main.js             # Interactive features
 │   └── README.md              # Demo documentation
 ├── uploads/                    # Uploaded trial balances
 └── outputs/                    # Generated PDF reports

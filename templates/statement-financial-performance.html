@@ -5,8 +5,33 @@
 {% block content %}
 
     <div class="container-content financial-statement-container">
-        <h1>Statement of Financial Performance</h1>
-        <p class="page-subtitle">For the year ended {{ current_date or 'December 31, 2025' }}</p>
+        <!-- Processing State Header -->
+        <div class="processing-state-header">
+            <div class="processing-state-info">
+                <h1>Statement of Financial Performance</h1>
+                <p class="page-subtitle">For the year ended {{ current_date or 'December 31, 2025' }}</p>
+            </div>
+            
+            <div class="processing-state-controls">
+                {% if current_user and current_user.can_review() %}
+                <div class="processing-state-indicator" id="processingStateIndicator">
+                    <span class="state-label">Processing State:</span>
+                    <span class="state-value state-unknown" id="processingStateValue">Unknown</span>
+                </div>
+                
+                {% if current_trial_balance_id %}
+                <div class="draft-statement-controls">
+                    <button type="button" class="draft-btn draft-btn-primary" data-action="open-draft-statement-viewer" data-trial-balance-id="{{ current_trial_balance_id }}" data-statement-type="financial-performance">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8zm0 0v11M11 1v11"/>
+                        </svg>
+                        View Draft Statement
+                    </button>
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
 
         <div class="table-fluid-wrapper">
             <table class="table-fluid income-statement-table">
@@ -229,8 +254,12 @@
 
         <div class="statement-footer grid-container">
             <div class="footer-actions">
+                {% if current_user and current_user.can_generate_pdf() %}
                 <button class="btn btn-primary">Download PDF</button>
+                {% endif %}
+                {% if current_user and current_user.can_export() %}
                 <button class="btn btn-secondary">Export to Excel</button>
+                {% endif %}
                 <button class="btn btn-secondary">Print Statement</button>
             </div>
         </div>

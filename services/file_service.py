@@ -48,6 +48,8 @@ class FileService:
         try:
             if filepath.endswith('.xlsx'):
                 df = pd.read_excel(filepath)
+            elif filepath.endswith('.xml'):
+                df = pd.read_xml(filepath)
             else:
                 df = pd.read_csv(filepath)
             

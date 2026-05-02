@@ -1,79 +1,71 @@
-/* Main Stylesheet - SADPMR Financial Reporting System */
-/* Clean CSS Architecture: Base → Layout → Components → Pages → Reports → Navigation */
+/* SADPMR Financial Reporting System - Main Stylesheet */
+/* Fluid scaling system with CSS custom properties */
 
 /* ======================================== */
-/* 1. BASE STYLES (Foundation) */
+/* 1. FOUNDATION STYLES */
 /* ======================================== */
 @import url('base.css');
 
 /* ======================================== */
-/* 2. LAYOUT STYLES (Structure & Grid) */
+/* 2. LAYOUT STYLES */
 /* ======================================== */
 @import url('layout.css');
 
 /* ======================================== */
-/* 3. COMPONENT STYLES (Reusable UI) */
+/* 3. COMPONENT STYLES */
 /* ======================================== */
 @import url('components.css');
 
 /* ======================================== */
-/* 4. PAGE-SPECIFIC STYLES */
+/* 4. NAVIGATION STYLES */
+/* ======================================== */
+@import url('navigation.css');
+
+/* ======================================== */
+/* 5. PAGE-SPECIFIC STYLES */
 /* ======================================== */
 @import url('pages.css');
 
 /* ======================================== */
-/* 5. REPORTS & PDF STYLES */
+/* 6. REPORTS & PDF STYLES */
 /* ======================================== */
 @import url('reports.css');
 
 /* ======================================== */
-/* 6. RESPONSIVE FINANCIAL TABLES */
-/* ======================================== */
-@import url('responsive-financial-tables.css');
-
-/* ======================================== */
-/* 7. NAVIGATION SYSTEM */
-/* ======================================== */
-@import url('navigation-fluid.css');
-
-/* ======================================== */
-/* 8. COMPONENT UTILITIES (BEM Extracted Styles) */
+/* 7. COMPONENT UTILITIES */
 /* ======================================== */
 @import url('component-utilities.css');
 
 /* ======================================== */
-/* 9. RESPONSIVE & TOUCH STYLES */
-/* ======================================== */
-@import url('mobile.css');
-@import url('desktop.css');
-@import url('touch-friendly-interactive.css');
-
-/* ======================================== */
-/* 10. SPECIALIZED STYLES */
+/* 8. SPECIALIZED COMPONENTS */
 /* ======================================== */
 @import url('login.css');
+@import url('draft-statement-viewer.css');
 
 /* ======================================== */
-/* CLEAN ARCHITECTURE IMPLEMENTED */
+/* TRULY FLUID ARCHITECTURE */
 /* ======================================== */
 /*
- * This file has been restructured to follow modern CSS architecture:
+ * This stylesheet implements a truly fluid design system:
  * 
- * 1. base.css - CSS resets, variables, and global styles
- * 2. layout.css - Grid systems and structural rules
- * 3. components.css - Reusable UI components
- * 4. pages.css - Page-specific overrides
- * 5. reports.css - Financial statements and PDF preview
- * 6. component-utilities.css - BEM extracted styles and final overrides
+ * NO MEDIA QUERIES - NO BREAKPOINTS - NO MOBILE/DESKTOP SEPARATION
  * 
- * All legacy imports have been removed and consolidated into the new structure.
- * All extracted inline styles now follow BEM methodology with proper
- * component scoping and specificity hierarchy.
+ * Key Features:
+ * - clamp() for all font sizes and spacing
+ * - vw/vh units for viewport-relative scaling  
+ * - CSS Grid auto-fit for natural reflow
+ * - Single ruleset that works from 320px to 4K+
+ * - No layout jumps or breakpoint transitions
  * 
  * Benefits:
- * - Clear separation of concerns
- * - Proper cascade order
- * - No duplicate or redundant rules
- * - Maintainable and scalable architecture
- * - Industry best practices compliance
+ * - Perfect scaling at any viewport size
+ * - No mobile/desktop code duplication
+ * - Simplified maintenance
+ * - Better performance (no media query evaluation)
+ * - Future-proof for any screen size
+ * 
+ * Fluid Scale Range:
+ * - Base font: clamp(14px, 2.5vw, 18px)
+ * - Works perfectly from 320px phones to 4K displays
+ * - Smooth continuous scaling - no jumps!
  */

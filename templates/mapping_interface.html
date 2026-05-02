@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}GRAP Mapping - SADPMR Financial Reporting System{% endblock %}
+
+{% block extra_css %}
+<!-- Mapping interface styles are included in main styles.css -->
+{% endblock %}
+
+{% block content %}
+
+<div class="section mapping-section">
+    <div class="mapping-container">
+        
+        <!-- Header -->
+        <div class="mapping-header">
+            <h1 class="mapping-title">GRAP Account Mapping</h1>
+            <p class="mapping-subtitle">
+                Drag unmapped accounts to their correct GRAP categories to complete the mapping process
+            </p>
+        </div>
+
+        <!-- Mapping Content -->
+        <div class="mapping-content">
+            
+            <!-- Unmapped Accounts -->
+            <div class="unmapped-accounts">
+                <div class="section-header">
+                    <h2 class="section-title">Unmapped Accounts</h2>
+                    <span class="account-count" id="unmappedCount">0 accounts</span>
+                </div>
+                
+                <div class="accounts-list" id="unmappedAccountsList">
+                    <!-- Unmapped accounts will be populated here -->
+                </div>
+            </div>
+
+            <!-- GRAP Categories -->
+            <div class="grap-categories">
+                <div class="section-header">
+                    <h2 class="section-title">GRAP Categories</h2>
+                    <span class="account-count" id="categoryCount">0 categories</span>
+                </div>
+                
+                <div class="category-grid" id="grapCategories">
+                    <!-- GRAP categories will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="progress-section">
+            <div class="progress-info">
+                <h3>Mapping Progress</h3>
+                <div class="progress-stats">
+                    <div class="progress-stat">
+                        <div class="progress-number" id="totalAccounts">0</div>
+                        <div class="progress-label">Total Accounts</div>
+                    </div>
+                    <div class="progress-stat">
+                        <div class="progress-number" id="mappedAccounts">0</div>
+                        <div class="progress-label">Mapped</div>
+                    </div>
+                    <div class="progress-stat">
+                        <div class="progress-number" id="remainingAccounts">0</div>
+                        <div class="progress-label">Remaining</div>
+                    </div>
+                    <div class="progress-stat">
+                        <div class="progress-number" id="completionPercentage">0%</div>
+                        <div class="progress-label">Complete</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Review Status -->
+        <div class="submission-status display-none" id="submissionStatus">
+            <div class="status-card">
+                <div class="status-header">
+                    <h3>Mapping Review Status</h3>
+                    <span class="status-badge" id="statusBadge">Review Required</span>
+                </div>
+                <div class="status-content">
+                    <p id="statusMessage">Please review the auto-mapped accounts and make any necessary corrections before submitting.</p>
+                    <div class="review-warnings" id="reviewWarnings">
+                        <!-- Confidence warnings will be shown here -->
+                    </div>
+                    <div class="status-actions" id="statusActions">
+                        <button id="submitForReviewBtn" class="btn-submit-review" type="button" disabled>
+                            📋 Submit for Manager Review
+                        </button>
+                        <button id="saveMappingBtn" class="btn-secondary" type="button">
+                            💾 Save Mapping Progress
+                        </button>
+                        <button id="editMappingBtn" class="btn-secondary display-none" type="button">
+                            ✏️ Edit Mapping
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button id="submitMappingBtn" class="btn-mapping" type="button" disabled>
+                ✓ Submit Mapping & Continue
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Pass data to JavaScript
+window.sessionId = '{{ session_id }}';
+</script>
+<script src="{{ url_for('static', filename='js/mapping-interface.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mapping-interface-init.js') }}"></script>
+{% endblock %}

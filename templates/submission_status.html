@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Submission Status - SADPMR Financial Reporting System{% endblock %}
+
+{% block extra_css %}
+<!-- Submission status styles are included in main styles.css -->
+{% endblock %}
+
+{% block content %}
+<div class="submission-status">
+    <div class="status-header">
+        <div class="status-badge {{ submission.status }}">
+            <span class="status-icon">
+                {% if submission.status == 'pending' %}⏳{% endif %}
+                {% if submission.status == 'approved' %}✅{% endif %}
+                {% if submission.status == 'rejected' %}❌{% endif %}
+            </span>
+            {{ submission.status|title }}
+        </div>
+        <h1>Submission Status</h1>
+        <p>Your trial balance submission has been received and is being processed.</p>
+    </div>
+
+    {% if submission.locked %}
+    <div class="locked-notice">
+        <span class="icon">🔒</span>
+        <div>
+            <strong>File Locked:</strong> This submission is currently locked and cannot be edited while under review.
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="submission-details">
+        <h2>Submission Details</h2>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <div class="detail-label">Submission ID</div>
+                <div class="detail-value">{{ submission_id }}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Submitted By</div>
+                <div class="detail-value">{{ submission.full_name }} ({{ submission.username }})</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Submission Date</div>
+                <div class="detail-value">{{ submission.submission_timestamp[:19] if submission.submission_timestamp else 'N/A' }}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Mapped Accounts</div>
+                <div class="detail-value">{{ submission.mapped_accounts_count }} accounts</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">File</div>
+                <div class="detail-value">{{ submission.filepath or 'N/A' }}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Status</div>
+                <div class="detail-value">{{ submission.status|title }}</div>
+            </div>
+        </div>
+    </div>
+
+    {% if submission.next_steps %}
+    <div class="next-steps">
+        <h3>Next Steps</h3>
+        <ul class="steps-list">
+            {% for step in submission.next_steps %}
+            <li>
+                <span class="step-number">{{ loop.index }}</span>
+                <span class="step-text">{{ step }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if submission.review_notes %}
+    <div class="submission-details">
+        <h3>Review Notes</h3>
+        <p>{{ submission.review_notes }}</p>
+    </div>
+    {% endif %}
+
+    <div class="action-buttons">
+        <a href="/submission-history" class="btn btn-secondary">
+            <span>📊</span>
+            View All Submissions
+        </a>
+        <a href="/upload" class="btn btn-primary">
+            <span>📤</span>
+            Upload New Trial Balance
+        </a>
+    </div>
+</div>
+{% endblock %}
