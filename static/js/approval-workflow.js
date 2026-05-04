@@ -1,5 +1,5 @@
 /**
- * SADPMR Financial Reporting System - Four-Eyes Approval Workflow
+ * Varydian Financial Reporting System - Four-Eyes Approval Workflow
  * JavaScript for transaction approval UI and workflow management
  */
 
@@ -505,7 +505,7 @@ class ApprovalWorkflow {
     }
 
     formatDate(dateString) {
-        return SADPMRUtils.formatDate(dateString);
+        return VarydianUtils.formatDate(dateString);
     }
 
     getCurrentUserRole() {

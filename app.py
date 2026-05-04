@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Main Application Entry Point
+Varydian Financial Reporting System - Main Application Entry Point
 Flask Web Application for GRAP Financial Statement Generation
 """
 
@@ -15,6 +15,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import the main application from controllers (using auth-enabled version)
 from controllers.routes import app
+
+# Import and register universal routes for multi-document support
+from controllers.routes_universal import register_universal_routes
+register_universal_routes(app)
 
 if __name__ == '__main__':
     # Run the application

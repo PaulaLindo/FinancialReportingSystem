@@ -24,7 +24,7 @@ class BalanceSheetSession:
     original_filename: str = ""
     file_type: str = "unknown"
     file_format: str = "unknown"
-    status: str = "uploaded"
+    status: str = "draft"
     total_rows: int = 0
     total_columns: int = 0
     file_size_bytes: int = 0

@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Models Package
+Varydian Financial Reporting System - Models Package
 Data models and business logic for GRAP financial statements
 """
 

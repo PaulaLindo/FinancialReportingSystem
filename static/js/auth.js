@@ -1,5 +1,5 @@
 /**
- * SADPMR Financial Reporting System - Authentication Module
+ * Varydian Financial Reporting System - Authentication Module
  * Handles login functionality, form validation, and user authentication
  */
 

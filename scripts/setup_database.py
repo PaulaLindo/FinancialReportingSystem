@@ -69,7 +69,7 @@ def execute_sql_file(sql_file_path: str) -> bool:
 
 def setup_database():
     """Complete database setup process"""
-    print("🗄️ Setting up SADPMR Financial Reporting Database")
+    print("🗄️ Setting up Varydian Financial Reporting Database")
     print("=" * 60)
     
     # Step 1: Check environment
@@ -132,7 +132,7 @@ def setup_database():
 
 def show_usage():
     """Show usage instructions"""
-    print("🗄️ SADPMR Database Setup")
+    print("🗄️ Varydian Database Setup")
     print("=" * 30)
     print("\nUsage:")
     print("  python scripts/setup_database.py")

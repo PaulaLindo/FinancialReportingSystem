@@ -701,7 +701,7 @@ class GRAPMappingInterface {
             // Get mapped data for submission
             const mappedData = this.getMappedDataForSubmission();
             
-            const response = await fetch('/api/submit-for-review', {
+            const response = await fetch('/api/submit-mapping', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -918,7 +918,7 @@ class GRAPMappingInterface {
             // Get mapped data
             const mappedData = this.getMappedDataForSubmission();
             
-            const response = await fetch('/api/submit-for-review', {
+            const response = await fetch('/api/submit-mapping', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

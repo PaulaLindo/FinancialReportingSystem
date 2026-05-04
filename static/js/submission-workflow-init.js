@@ -1,5 +1,5 @@
 /**
- * SADPMR Financial Reporting System - Submission Workflow Initialization
+ * Varydian Financial Reporting System - Submission Workflow Initialization
  * Passes data to JavaScript for submission workflow page
  */
 

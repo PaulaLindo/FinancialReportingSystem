@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Cleanup Service
+Varydian Financial Reporting System - Cleanup Service
 Service for cleaning up failed/unbalanced balance sheets from the database
 """
 
@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List
 
 from models.balance_sheet_models import balance_sheet_model
+from models.budget_report_models import budget_report_model
+from models.income_statement_models import income_statement_model
 
 logger = logging.getLogger(__name__)
 
@@ -168,15 +170,34 @@ class CleanupService:
         try:
             self.logger.info(f"Starting cleanup of specific session: {session_id}")
             
-            # Get the session
-            session = balance_sheet_model.get_session(session_id)
+            # Try to find the session in all document models
+            models_to_try = [
+                ('balance_sheet', balance_sheet_model),
+                ('budget_report', budget_report_model),
+                ('income_statement', income_statement_model)
+            ]
+            
+            session = None
+            found_model = None
+            
+            for model_name, model in models_to_try:
+                try:
+                    session = model.get_session(session_id)
+                    if session:
+                        found_model = model
+                        self.logger.info(f"Found session {session_id} in {model_name} model")
+                        break
+                except Exception as e:
+                    self.logger.debug(f"Error checking {model_name} model: {str(e)}")
+                    continue
+            
             if not session:
                 return {
                     'success': False,
-                    'error': f'Session {session_id} not found'
+                    'error': f'Session {session_id} not found in any document model'
                 }
             
-            if self._delete_session(session_id):
+            if self._delete_session_from_model(found_model, session_id):
                 self.logger.info(f"Successfully cleaned up session: {session_id}")
                 return {
                     'success': True,
@@ -195,26 +216,56 @@ class CleanupService:
                 'error': f'An unexpected error occurred during cleanup: {str(e)}'
             }
     
-    def _delete_session(self, session_id: str) -> bool:
-        """Delete a session and all its related data"""
+    def _delete_session_from_model(self, model, session_id: str) -> bool:
+        """Delete a session and all its related data from a specific model"""
         try:
-            # Delete balance sheet data rows first
-            data_rows = balance_sheet_model.client.table('balance_sheet_data').select('*').eq('session_id', session_id).execute().data
-            if data_rows:
-                for row in data_rows:
-                    balance_sheet_model.client.table('balance_sheet_data').delete().eq('id', row['id']).execute()
-            
-            # Delete column definitions
-            balance_sheet_model.client.table('balance_sheet_columns').delete().eq('session_id', session_id).execute()
-            
-            # Delete the session itself
-            balance_sheet_model.client.table('balance_sheet_sessions').delete().eq('id', session_id).execute()
-            
-            return True
+            # Get table names from the model
+            if hasattr(model, 'client'):
+                client = model.client
+                
+                # Determine table names based on model type
+                if model == balance_sheet_model:
+                    data_table = 'balance_sheet_data'
+                    columns_table = 'balance_sheet_columns'
+                    sessions_table = 'balance_sheet_sessions'
+                elif model == budget_report_model:
+                    data_table = 'budget_report_data_rows'
+                    columns_table = 'budget_report_columns'
+                    sessions_table = 'budget_report_sessions'
+                elif model == income_statement_model:
+                    data_table = 'income_statement_data_rows'
+                    columns_table = 'income_statement_columns'
+                    sessions_table = 'income_statement_sessions'
+                else:
+                    # Default to balance sheet tables
+                    data_table = 'balance_sheet_data'
+                    columns_table = 'balance_sheet_columns'
+                    sessions_table = 'balance_sheet_sessions'
+                
+                # Delete data rows first
+                data_rows = client.table(data_table).select('*').eq('session_id', session_id).execute().data
+                if data_rows:
+                    for row in data_rows:
+                        client.table(data_table).delete().eq('id', row['id']).execute()
+                
+                # Delete column definitions
+                client.table(columns_table).delete().eq('session_id', session_id).execute()
+                
+                # Delete the session itself
+                client.table(sessions_table).delete().eq('id', session_id).execute()
+                
+                return True
+            else:
+                self.logger.error(f"Model {model} does not have client attribute")
+                return False
             
         except Exception as e:
-            self.logger.error(f"Error deleting session {session_id}: {str(e)}")
+            self.logger.error(f"Error deleting session {session_id} from model: {str(e)}")
             return False
+    
+    def _delete_session(self, session_id: str) -> bool:
+        """Delete a session and all its related data (legacy method for backward compatibility)"""
+        return self._delete_session_from_model(balance_sheet_model, session_id)
     
     def _get_unbalanced_sessions(self, cutoff_time: datetime) -> List:
         """Get unbalanced balance sheet sessions older than cutoff time"""

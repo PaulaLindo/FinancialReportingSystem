@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Application Runner
+Varydian Financial Reporting System - Application Runner
 Development server startup script
 """
 

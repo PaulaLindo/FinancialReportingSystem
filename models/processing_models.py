@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Processing State Models
+Varydian Financial Reporting System - Processing State Models
 Tracks Balance Sheet processing phases and formula visibility states
 """
 

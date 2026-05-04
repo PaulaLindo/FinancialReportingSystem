@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/document-type-selector.css') }}">
 <!-- Upload styles are included in main styles.css -->
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/document-type-selector.js') }}"></script>
 <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
 <script src="{{ url_for('static', filename='js/real-time-validation.js') }}"></script>
 <script src="{{ url_for('static', filename='js/upload-page-init.js') }}"></script>
@@ -18,13 +20,52 @@
 
         <div class="container-content">
 
-            <!-- Requirements Section - Moved to top for better mobile UX -->
+            <!-- Document Type Selection -->
+            <div class="document-type-section">
+                <h2 class="section-title">Select Document Type</h2>
+                <div class="document-type-grid">
+                    <div class="document-type-card" data-type="balance_sheet">
+                        <div class="card-icon">📊</div>
+                        <h3>Balance Sheet</h3>
+                        <p>Financial position statement with assets, liabilities, and equity</p>
+                        <div class="card-indicator">
+                            <span class="indicator-dot"></span>
+                            <span class="indicator-text">Most Common</span>
+                        </div>
+                    </div>
+                    <div class="document-type-card" data-type="income_statement">
+                        <div class="card-icon">📈</div>
+                        <h3>Income Statement</h3>
+                        <p>Revenue and expenses for a specific period</p>
+                        <div class="card-indicator">
+                            <span class="indicator-dot indicator--high-demand"></span>
+                            <span class="indicator-text">High Demand</span>
+                        </div>
+                    </div>
+                    <div class="document-type-card" data-type="budget_report">
+                        <div class="card-icon">💰</div>
+                        <h3>Budget Report</h3>
+                        <p>Budget vs actual comparison and variance analysis</p>
+                        <div class="card-indicator">
+                            <span class="indicator-dot indicator--medium-demand"></span>
+                            <span class="indicator-text">Medium Demand</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
+            <!-- Current Selection Indicator -->
+            <div class="current-selection-indicator">
+                <h3>Currently Selected: <span id="currentDocumentType">Balance Sheet</span></h3>
+                <p class="selection-hint">Click a card above to change document type</p>
+            </div>
+
+            <!-- Requirements Section - Dynamic based on document type -->
             <div class="requirements-section requirements-section--top">
 
-                <h3>Balance Sheet Requirements</h3>
+                <h3 id="requirementsTitle">Balance Sheet Requirements</h3>
 
-                <ul>
+                <ul id="requirementsList">
 
                     <li>Must contain columns: Account Code, Account Description, Debit Balance, Credit Balance</li>
 
@@ -40,9 +81,9 @@
 
 
 
-            <h1 class="page-title">Upload Balance Sheet</h1>
+            <h1 class="page-title" id="pageTitle">Upload Balance Sheet</h1>
 
-            <p class="page-subtitle">Import your Balance Sheet from Pastel or Excel to generate GRAP-compliant financial statements</p>
+            <p class="page-subtitle" id="pageSubtitle">Import your Balance Sheet from Pastel or Excel to generate GRAP-compliant financial statements</p>
 
            
             <div class="upload-container">
@@ -87,15 +128,15 @@
                         </div>
                         <div class="balance-info">
                             <div class="balance-row">
-                                <span class="balance-label">Total Debits:</span>
+                                <span class="balance-label" id="debitsLabel">Total Debits:</span>
                                 <span class="balance-value" id="totalDebits">R 0.00</span>
                             </div>
                             <div class="balance-row">
-                                <span class="balance-label">Total Credits:</span>
+                                <span class="balance-label" id="creditsLabel">Total Credits:</span>
                                 <span class="balance-value" id="totalCredits">R 0.00</span>
                             </div>
                             <div class="balance-row balance-difference-row">
-                                <span class="balance-label">Difference:</span>
+                                <span class="balance-label" id="differenceLabel">Difference:</span>
                                 <span class="balance-value" id="balanceDifference">R 0.00</span>
                             </div>
                         </div>

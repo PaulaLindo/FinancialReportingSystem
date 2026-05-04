@@ -1,5 +1,5 @@
 /**
- * SADPMR Financial Reporting System - Line Item Comment System
+ * Varydian Financial Reporting System - Line Item Comment System
  * Allows Finance Manager to add comments on specific financial statement line items
  */
 
@@ -483,7 +483,7 @@ class LineItemCommentSystem {
     }
 
     formatDate(dateString) {
-        return SADPMRUtils.formatDate(dateString);
+        return VarydianUtils.formatDate(dateString);
     }
 
     showSuccess(message) {

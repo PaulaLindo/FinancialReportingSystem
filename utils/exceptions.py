@@ -1,11 +1,11 @@
 """
-SADPMR Financial Reporting System - Custom Exceptions
+Varydian Financial Reporting System - Custom Exceptions
 Centralized exception handling for better error management
 """
 
 
-class SADPMRException(Exception):
-    """Base exception for SADPMR application"""
+class VarydianException(Exception):
+    """Base exception for Varydian application"""
     
     def __init__(self, message, error_code=None, status_code=500):
         super().__init__(message)
@@ -14,7 +14,7 @@ class SADPMRException(Exception):
         self.status_code = status_code
 
 
-class ValidationError(SADPMRException):
+class ValidationError(VarydianException):
     """Raised when data validation fails"""
     
     def __init__(self, message, field=None):
@@ -22,7 +22,7 @@ class ValidationError(SADPMRException):
         self.field = field
 
 
-class FileProcessingError(SADPMRException):
+class FileProcessingError(VarydianException):
     """Raised when file processing fails"""
     
     def __init__(self, message, filename=None):
@@ -30,7 +30,7 @@ class FileProcessingError(SADPMRException):
         self.filename = filename
 
 
-class MappingError(SADPMRException):
+class MappingError(VarydianException):
     """Raised when GRAP mapping fails"""
     
     def __init__(self, message, account_code=None):
@@ -38,7 +38,7 @@ class MappingError(SADPMRException):
         self.account_code = account_code
 
 
-class ReportGenerationError(SADPMRException):
+class ReportGenerationError(VarydianException):
     """Raised when PDF report generation fails"""
     
     def __init__(self, message, report_type=None):
@@ -46,7 +46,7 @@ class ReportGenerationError(SADPMRException):
         self.report_type = report_type
 
 
-class ConfigurationError(SADPMRException):
+class ConfigurationError(VarydianException):
     """Raised when configuration is invalid"""
     
     def __init__(self, message, config_key=None):

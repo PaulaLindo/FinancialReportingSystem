@@ -1,0 +1,22 @@
+Account Code,Account Description,Department,Budget Amount,Actual Amount,Variance,Variance %
+DEPT-001,Salaries - Finance,Finance,500000,480000,-20000,-4.0%
+DEPT-002,Office Supplies,Finance,25000,26000,1000,4.0%
+DEPT-003,Software Licenses,Finance,75000,75000,0,0.0%
+DEPT-004,Training & Development,Finance,30000,28000,-2000,-6.7%
+DEPT-005,Travel Expenses,Finance,40000,42000,2000,5.0%
+DEPT-006,Marketing Campaigns,Marketing,150000,160000,10000,6.7%
+DEPT-007,Advertising,Marketing,80000,75000,-5000,-6.3%
+DEPT-008,Events & Sponsorships,Marketing,45000,48000,3000,6.7%
+DEPT-009,Equipment Maintenance,Operations,60000,55000,-5000,-8.3%
+DEPT-010,Utilities,Operations,35000,36000,1000,2.9%
+DEPT-011,Rent & Lease,Operations,120000,120000,0,0.0%
+DEPT-012,Insurance,Operations,45000,45000,0,0.0%
+DEPT-013,Professional Services,Admin,30000,32000,2000,6.7%
+DEPT-014,Legal Fees,Admin,20000,18000,-2000,-10.0%
+DEPT-015,Consulting Services,Admin,40000,42000,2000,5.0%
+DEPT-016,IT Infrastructure,IT,80000,85000,5000,6.3%
+DEPT-017,Cybersecurity,IT,35000,35000,0,0.0%
+DEPT-018,Data Backup & Recovery,IT,15000,14000,-1000,-6.7%
+DEPT-019,Research & Development,R&D,200000,190000,-10000,-5.0%
+DEPT-020,Prototype Development,R&D,80000,85000,5000,6.3%
+TOTAL,All Departments,ALL,1500000,1485000,-15000,-1.0%

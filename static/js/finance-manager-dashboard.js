@@ -1,5 +1,5 @@
 /**
- * SADPMR Financial Reporting System - Finance Manager Dashboard
+ * Varydian Financial Reporting System - Finance Manager Dashboard
  * Enhanced approvals queue and financial statement review functionality
  */
 

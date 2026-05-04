@@ -1,5 +1,5 @@
 /**
- * SADPMR Financial Reporting System - Finance Clerk Workflow Manager
+ * Varydian Financial Reporting System - Finance Clerk Workflow Manager
  * Handles finance clerk workflow navigation and state management
  */
 

@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Helper Functions
+Varydian Financial Reporting System - Helper Functions
 Utility functions for formatting and calculations
 """
 

@@ -1,17 +1,41 @@
 {% extends "base_auth.html" %}
 
-{% block title %}Login - SADPMR Financial Reporting System{% endblock %}
+{% block title %}Login - Varydian{% endblock %}
 
 {% block extra_css %}
 {% endblock %}
 
 {% block content %}
     <div class="login-page">
+        <!-- Left Panel - Branding (Desktop Only) -->
+        <div class="login-branding">
+            <div class="login-branding-logo">
+                🔐
+            </div>
+            <h1>Varydian</h1>
+            <p>Financial Reporting System</p>
+            <div class="login-features">
+                <div class="login-feature">
+                    <span class="login-feature-icon">📊</span>
+                    <span>Advanced Financial Analytics</span>
+                </div>
+                <div class="login-feature">
+                    <span class="login-feature-icon">🔒</span>
+                    <span>Secure & Compliant</span>
+                </div>
+                <div class="login-feature">
+                    <span class="login-feature-icon">⚡</span>
+                    <span>Real-time Processing</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Login Form -->
         <div class="login-box">
             <div class="login-header">
-                <div class="login-logo">🔐</div>
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Varydian Logo" class="login-logo-img">
                 <h1>Welcome Back</h1>
-                <p>SADPMR Financial Reporting System</p>
+                <p>Varydian Financial Reporting System</p>
             </div>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -55,8 +79,8 @@
 
             <div class="demo-credentials">
                 <h3>Demo Accounts</h3>
-                <div class="demo-account">
-                    <div>
+                <div class="demo-accounts-grid">
+                    <div class="demo-account">
                         <div class="demo-role">
                             <span class="role-badge role-cfo">CFO</span>
                             Full Access
@@ -64,9 +88,7 @@
                         <p class="demo-email">cfo@sadpmr.gov.za</p>
                         <p class="demo-password">Password: demo123</p>
                     </div>
-                </div>
-                <div class="demo-account">
-                    <div>
+                    <div class="demo-account">
                         <div class="demo-role">
                             <span class="role-badge role-finance-manager">Finance Manager</span>
                             Review & Approve
@@ -74,9 +96,7 @@
                         <p class="demo-email">finance.manager@sadpmr.gov.za</p>
                         <p class="demo-password">Password: demo123</p>
                     </div>
-                </div>
-                <div class="demo-account">
-                    <div>
+                    <div class="demo-account">
                         <div class="demo-role">
                             <span class="role-badge role-finance-clerk">Finance Clerk</span>
                             Upload & Map
@@ -84,9 +104,7 @@
                         <p class="demo-email">finance.clerk@sadpmr.gov.za</p>
                         <p class="demo-password">Password: finance123</p>
                     </div>
-                </div>
-                <div class="demo-account">
-                    <div>
+                    <div class="demo-account">
                         <div class="demo-role">
                             <span class="role-badge role-asset-manager">Asset Manager</span>
                             Asset Management
@@ -94,9 +112,7 @@
                         <p class="demo-email">asset.manager@sadpmr.gov.za</p>
                         <p class="demo-password">Password: demo123</p>
                     </div>
-                </div>
-                <div class="demo-account">
-                    <div>
+                    <div class="demo-account">
                         <div class="demo-role">
                             <span class="role-badge role-auditor">Auditor</span>
                             View Only

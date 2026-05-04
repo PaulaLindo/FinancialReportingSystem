@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Calculation Transparency Models
+Varydian Financial Reporting System - Calculation Transparency Models
 Formula transparency and calculation disclosure system for GRAP compliance
 """
 

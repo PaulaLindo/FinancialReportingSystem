@@ -1,5 +1,5 @@
 /**
- * SADPMR Financial Reporting System - PDF Preview Module
+ * Varydian Financial Reporting System - PDF Preview Module
  * Handles PDF preview, download, and fullscreen functionality
  */
 

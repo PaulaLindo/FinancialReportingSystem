@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Budget Management Service
+Varydian Financial Reporting System - Budget Management Service
 GRAP 24 compliant budget vs actual comparison service
 """
 

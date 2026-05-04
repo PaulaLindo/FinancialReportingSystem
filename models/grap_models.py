@@ -1,5 +1,5 @@
 """
-SADPMR GRAP Mapping Engine
+Varydian GRAP Mapping Engine
 Phase 2: Enhanced Financial Statement Generation with PDF Export
 """
 

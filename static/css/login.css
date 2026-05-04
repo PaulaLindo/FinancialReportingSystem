@@ -58,6 +58,13 @@ body .login-container .login-box {
     margin: 0 auto clamp(16px, 2vw, 24px);
 }
 
+.login-logo-img {
+    height: clamp(90px, 20vw, 140px);
+    width: auto;
+    margin: 0 auto clamp(20px, 3vw, 32px);
+    display: block;
+}
+
 .login-logo:hover {
     transform: scale(1.05);
     box-shadow: 0 12px 35px rgba(212, 165, 116, 0.35);
@@ -339,34 +346,151 @@ body .login-container .login-box {
 }
 
 /* ======================================== */
-/* DESKTOP ENHANCEMENTS */
+/* DESKTOP SPLIT-SCREEN LAYOUT */
 /* ======================================== */
 @media (min-width: 1024px) {
-    body .login-container {
+    body .login-page {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        min-height: 100vh;
+        background: var(--white);
+        position: relative;
+    }
+    
+    /* Left Panel - Branding */
+    body .login-page::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 50%;
+        bottom: 0;
+        background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-700) 50%, var(--primary-800) 100%);
+        z-index: 1;
+    }
+    
+    body .login-page::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 50%;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(212, 165, 116, 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(66, 153, 225, 0.15) 0%, transparent 50%);
+        z-index: 2;
+        pointer-events: none;
+    }
+    
+    /* Left Content */
+    body .login-page > .login-branding {
+        position: relative;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
         padding: clamp(40px, 6vw, 80px);
+        text-align: center;
+        color: var(--white);
     }
     
-    body .login-container .login-box {
-        max-width: 520px;
-        padding: clamp(40px, 6vw, 64px);
-        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
+    .login-branding-logo {
+        background: linear-gradient(135deg, var(--accent-taupe) 0%, var(--accent-taupe-dark) 100%);
+        border-radius: 50%;
+        width: clamp(120px, 15vw, 160px);
+        height: clamp(120px, 15vw, 160px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(3rem, 6vw, 4rem);
+        box-shadow: 0 20px 40px rgba(212, 165, 116, 0.3);
+        margin-bottom: clamp(32px, 4vw, 48px);
+        animation: float 6s ease-in-out infinite;
     }
     
-    .login-logo {
-        width: clamp(80px, 10vw, 100px);
-        height: clamp(80px, 10vw, 100px);
-        font-size: clamp(2.5rem, 5vw, 3rem);
-        margin-bottom: clamp(24px, 3vw, 32px);
+    .login-branding h1 {
+        font-family: var(--font-display);
+        font-size: clamp(2.5rem, 5vw, 3.5rem);
+        font-weight: var(--font-bold);
+        margin-bottom: clamp(16px, 2vw, 24px);
+        line-height: 1.2;
+    }
+    
+    .login-branding p {
+        font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+        opacity: 0.9;
+        margin-bottom: clamp(32px, 4vw, 48px);
+        max-width: 400px;
+        line-height: 1.6;
+    }
+    
+    .login-features {
+        display: flex;
+        flex-direction: column;
+        gap: clamp(16px, 2vw, 24px);
+        max-width: 400px;
+    }
+    
+    .login-feature {
+        display: flex;
+        align-items: center;
+        gap: clamp(12px, 1.5vw, 16px);
+        font-size: clamp(1rem, 2vw, 1.125rem);
+        opacity: 0.95;
+    }
+    
+    .login-feature-icon {
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--accent-taupe);
+        flex-shrink: 0;
+    }
+    
+    /* Right Panel - Login Form */
+    body .login-box {
+        position: relative;
+        z-index: 4;
+        background: var(--white);
+        max-width: none;
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+        padding: clamp(60px, 8vw, 100px) clamp(40px, 6vw, 80px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 100vh;
+        animation: slideInRight 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .login-header {
+        text-align: left;
+        margin-bottom: clamp(40px, 6vw, 60px);
+    }
+    
+    .login-logo-img {
+        height: clamp(80px, 10vw, 120px);
+        margin: 0 0 clamp(24px, 3vw, 32px) 0;
+        display: block;
     }
     
     .login-header h1 {
-        font-size: clamp(1.75rem, 3vw, 2.25rem);
-        margin-bottom: clamp(8px, 1.5vw, 12px);
+        font-size: clamp(2rem, 4vw, 2.5rem);
+        margin-bottom: clamp(12px, 1.5vw, 16px);
+        color: var(--primary-900);
     }
     
     .login-header p {
-        font-size: clamp(1rem, 2vw, 1.125rem);
-        margin-bottom: clamp(24px, 3vw, 32px);
+        font-size: clamp(1.125rem, 2vw, 1.25rem);
+        color: var(--gray-600);
+        margin-bottom: 0;
+    }
+    
+    .login-form {
+        max-width: 480px;
+        margin: 0;
     }
     
     .form-group {
@@ -375,60 +499,123 @@ body .login-container .login-box {
     
     .form-label {
         font-size: clamp(14px, 2vw, 16px);
-        margin-bottom: clamp(8px, 1.5vw, 12px);
+        margin-bottom: clamp(8px, 1vw, 12px);
+        color: var(--gray-800);
+        font-weight: 600;
     }
     
     .form-input {
-        padding: clamp(16px, 2.5vw, 20px);
-        font-size: clamp(16px, 2.5vw, 18px);
-        border-radius: var(--radius-xl);
+        padding: clamp(16px, 2vw, 20px);
+        font-size: clamp(16px, 2vw, 18px);
+        border-radius: var(--radius-lg);
+        border: 2px solid var(--gray-300);
+        transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .form-input:focus {
+        border-color: var(--primary-600);
+        box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
     }
     
     .login-button {
-        padding: clamp(16px, 2.5vw, 20px) clamp(32px, 4vw, 40px);
-        font-size: clamp(16px, 2.5vw, 18px);
-        border-radius: var(--radius-xl);
-        min-height: 52px;
+        padding: clamp(16px, 2vw, 20px) clamp(32px, 4vw, 48px);
+        font-size: clamp(16px, 2vw, 18px);
+        border-radius: var(--radius-lg);
+        min-height: 56px;
+        margin-top: clamp(16px, 2vw, 24px);
     }
     
     .demo-credentials {
-        padding: clamp(24px, 3.5vw, 36px);
-        margin-top: clamp(24px, 3.5vw, 36px);
+        background: linear-gradient(135deg, var(--gray-50) 0%, rgba(212, 165, 116, 0.05) 100%);
+        border-left: 4px solid var(--accent-taupe);
+        border-radius: var(--radius-lg);
+        padding: clamp(24px, 3vw, 32px);
+        margin-top: clamp(40px, 5vw, 60px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     }
     
     .demo-credentials h3 {
-        font-size: clamp(16px, 2.5vw, 18px);
-        margin-bottom: clamp(20px, 3vw, 24px);
+        font-size: clamp(16px, 2vw, 18px);
+        margin-bottom: clamp(20px, 2.5vw, 28px);
+        text-align: left;
+    }
+    
+    .demo-accounts-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: clamp(12px, 1.5vw, 16px);
+        margin-bottom: clamp(20px, 2.5vw, 28px);
     }
     
     .demo-account {
-        padding: clamp(12px, 2vw, 16px) 0;
+        padding: clamp(12px, 1.5vw, 16px);
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(212, 165, 116, 0.1);
+        background: var(--white);
+        transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .demo-account:hover {
+        background: rgba(212, 165, 116, 0.05);
+        border-color: var(--accent-taupe);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(212, 165, 116, 0.15);
     }
     
     .demo-role {
-        font-size: clamp(15px, 2.5vw, 17px);
-        gap: clamp(8px, 1.5vw, 12px);
-        margin-bottom: clamp(8px, 1.5vw, 12px);
+        font-size: clamp(13px, 1.5vw, 14px);
+        gap: clamp(6px, 1vw, 8px);
+        margin-bottom: clamp(6px, 1vw, 8px);
+        align-items: center;
     }
     
     .demo-email {
-        font-size: clamp(14px, 2.5vw, 15px);
+        font-size: clamp(12px, 1.5vw, 13px);
+        margin-bottom: clamp(4px, 0.8vw, 6px);
+    }
+    
+    .demo-password {
+        font-size: clamp(11px, 1.2vw, 12px);
     }
     
     .role-badge {
-        padding: clamp(6px, 1vw, 8px) clamp(10px, 1.5vw, 14px);
-        font-size: clamp(12px, 2vw, 13px);
+        padding: clamp(4px, 0.8vw, 6px) clamp(8px, 1.2vw, 10px);
+        font-size: clamp(10px, 1.2vw, 11px);
     }
     
     .quick-login {
-        margin-top: clamp(20px, 3vw, 24px);
-        gap: clamp(12px, 2vw, 16px);
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: clamp(8px, 1.2vw, 12px);
+        margin-top: clamp(16px, 2vw, 24px);
     }
     
     .quick-login-btn {
-        padding: clamp(12px, 2vw, 16px) clamp(16px, 2.5vw, 20px);
-        font-size: clamp(14px, 2.5vw, 15px);
-        min-height: 48px;
+        padding: clamp(10px, 1.5vw, 14px) clamp(12px, 2vw, 16px);
+        font-size: clamp(12px, 1.5vw, 13px);
+        min-height: 44px;
+    }
+    
+    .alert {
+        margin-bottom: clamp(24px, 3vw, 32px);
+        border-radius: var(--radius-lg);
+    }
+    
+    /* Animations */
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
     }
 }
 
@@ -436,107 +623,253 @@ body .login-container .login-box {
 /* LARGE DESKTOP ENHANCEMENTS */
 /* ======================================== */
 @media (min-width: 1440px) {
-    body .login-container .login-box {
-        max-width: 560px;
-        padding: clamp(48px, 7vw, 72px);
+    .login-branding-logo {
+        width: clamp(140px, 18vw, 180px);
+        height: clamp(140px, 18vw, 180px);
+        font-size: clamp(3.5rem, 7vw, 4.5rem);
     }
     
-    .login-logo {
-        width: clamp(100px, 12vw, 120px);
-        height: clamp(100px, 12vw, 120px);
-        font-size: clamp(3rem, 6vw, 3.5rem);
+    .login-branding h1 {
+        font-size: clamp(3rem, 6vw, 4rem);
     }
     
-    .login-header h1 {
+    .login-branding p {
+        font-size: clamp(1.5rem, 3vw, 1.75rem);
+        max-width: 500px;
+    }
+    
+    .login-features {
+        max-width: 500px;
+    }
+    
+    .login-feature {
+        font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+    }
+    
+    .login-feature-icon {
         font-size: clamp(2rem, 4vw, 2.5rem);
     }
     
+    body .login-box {
+        padding: clamp(80px, 10vw, 120px) clamp(60px, 8vw, 100px);
+    }
+    
+    .login-logo-img {
+        height: clamp(100px, 12vw, 140px);
+    }
+    
+    .login-header h1 {
+        font-size: clamp(2.5rem, 5vw, 3rem);
+    }
+    
     .login-header p {
-        font-size: clamp(1.125rem, 2.5vw, 1.25rem);
+        font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+    }
+    
+    .demo-credentials {
+        padding: clamp(32px, 4vw, 48px);
+        margin-top: clamp(48px, 6vw, 80px);
+    }
+    
+    .demo-credentials h3 {
+        font-size: clamp(18px, 2.5vw, 20px);
+        margin-bottom: clamp(24px, 3vw, 32px);
+    }
+    
+    .demo-accounts-grid {
+        gap: clamp(16px, 2vw, 20px);
+    }
+    
+    .demo-account {
+        padding: clamp(16px, 2vw, 20px);
+    }
+    
+    .quick-login {
+        grid-template-columns: repeat(4, 1fr);
+        gap: clamp(12px, 1.5vw, 16px);
     }
 }
 
 /* ======================================== */
 /* MOBILE OPTIMIZATIONS */
 /* ======================================== */
-@media (max-width: 767px) {
-    body .login-container {
-        padding: clamp(16px, 4vw, 24px);
+@media (max-width: 1023px) {
+    /* Hide left branding panel on mobile/tablet */
+    body .login-page {
+        display: block;
+        background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-700) 50%, var(--primary-800) 100%);
+        position: relative;
     }
     
-    body .login-container .login-box {
-        max-width: min(95vw, 400px);
+    body .login-page::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(212, 165, 116, 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(66, 153, 225, 0.15) 0%, transparent 50%);
+        pointer-events: none;
+    }
+    
+    .login-branding {
+        display: none;
+    }
+    
+    body .login-box {
+        position: relative;
+        z-index: 1;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: var(--radius-2xl);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        max-width: min(95vw, 480px);
+        width: 100%;
+        margin: 0 auto;
         padding: clamp(24px, 5vw, 32px);
+        display: block;
+        min-height: auto;
+        animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
     
-    .login-logo {
-        width: clamp(50px, 12vw, 60px);
-        height: clamp(50px, 12vw, 60px);
-        font-size: clamp(1.5rem, 6vw, 2rem);
-        margin-bottom: clamp(12px, 3vw, 16px);
+    .login-header {
+        text-align: center;
+        margin-bottom: clamp(20px, 4vw, 28px);
+    }
+    
+    .login-logo-img {
+        height: clamp(80px, 15vw, 100px);
+        margin: 0 auto clamp(16px, 3vw, 24px) auto;
+        display: block;
     }
     
     .login-header h1 {
-        font-size: clamp(1.25rem, 4vw, 1.5rem);
+        font-size: clamp(1.5rem, 4vw, 2rem);
+        margin-bottom: clamp(8px, 2vw, 12px);
+        text-align: center;
     }
     
     .login-header p {
-        font-size: clamp(0.875rem, 3vw, 1rem);
-        margin-bottom: clamp(16px, 4vw, 20px);
+        font-size: clamp(1rem, 3vw, 1.125rem);
+        margin-bottom: 0;
+        text-align: center;
+        color: var(--gray-700);
+    }
+    
+    .login-form {
+        max-width: none;
+        margin: 0;
     }
     
     .form-group {
-        margin-bottom: clamp(16px, 4vw, 20px);
+        margin-bottom: clamp(20px, 4vw, 28px);
+    }
+    
+    .form-label {
+        font-size: clamp(14px, 3vw, 16px);
+        margin-bottom: clamp(6px, 1.5vw, 8px);
+        text-align: left;
     }
     
     .form-input {
-        padding: clamp(10px, 3vw, 14px);
-        font-size: clamp(14px, 3.5vw, 16px);
+        padding: clamp(12px, 3vw, 16px);
+        font-size: clamp(16px, 3.5vw, 18px);
     }
     
     .login-button {
-        padding: clamp(10px, 3vw, 14px) clamp(20px, 5vw, 24px);
-        font-size: clamp(14px, 3.5vw, 16px);
-        min-height: 44px;
+        padding: clamp(12px, 3vw, 16px) clamp(24px, 5vw, 32px);
+        font-size: clamp(16px, 3.5vw, 18px);
+        min-height: 48px;
+        margin-top: clamp(12px, 3vw, 16px);
     }
     
     .demo-credentials {
-        padding: clamp(16px, 4vw, 20px);
-        margin-top: clamp(16px, 4vw, 20px);
+        padding: clamp(20px, 4vw, 28px);
+        margin-top: clamp(20px, 4vw, 28px);
     }
     
     .demo-credentials h3 {
-        font-size: clamp(12px, 3.5vw, 14px);
-        margin-bottom: clamp(12px, 3vw, 16px);
+        font-size: clamp(14px, 3.5vw, 16px);
+        margin-bottom: clamp(16px, 3vw, 20px);
+        text-align: center;
+    }
+    
+    .demo-accounts-grid {
+        display: block;
+        margin-bottom: clamp(16px, 3vw, 20px);
     }
     
     .demo-account {
-        padding: clamp(6px, 2vw, 8px) 0;
+        padding: clamp(8px, 2vw, 12px) 0;
+        border-radius: 0;
+        border: none;
+        border-bottom: 1px solid rgba(212, 165, 116, 0.1);
+        background: transparent;
+    }
+    
+    .demo-account:last-child {
+        border-bottom: none;
+    }
+    
+    .demo-account:hover {
+        background: rgba(212, 165, 116, 0.05);
+        border-radius: var(--radius-md);
+        padding: clamp(8px, 2vw, 12px);
+        margin: 0 calc(-1 * clamp(8px, 2vw, 12px));
+        border-bottom: 1px solid rgba(212, 165, 116, 0.1);
     }
     
     .demo-role {
-        font-size: clamp(12px, 3.5vw, 14px);
-        gap: clamp(4px, 1.5vw, 6px);
-        margin-bottom: clamp(4px, 1.5vw, 6px);
+        font-size: clamp(13px, 3.5vw, 15px);
+        gap: clamp(6px, 1.5vw, 8px);
+        margin-bottom: clamp(6px, 1.5vw, 8px);
+        align-items: center;
     }
     
     .demo-email {
-        font-size: clamp(11px, 3vw, 12px);
+        font-size: clamp(12px, 3vw, 14px);
+        margin-bottom: clamp(4px, 1vw, 6px);
+    }
+    
+    .demo-password {
+        font-size: clamp(11px, 2.5vw, 12px);
     }
     
     .role-badge {
-        padding: clamp(3px, 1vw, 4px) clamp(6px, 1.5vw, 8px);
-        font-size: clamp(9px, 2.5vw, 10px);
+        padding: clamp(4px, 1vw, 6px) clamp(8px, 1.5vw, 10px);
+        font-size: clamp(10px, 2.5vw, 11px);
     }
     
     .quick-login {
-        margin-top: clamp(12px, 3vw, 16px);
-        gap: clamp(6px, 2vw, 8px);
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: clamp(8px, 2vw, 12px);
+        margin-top: clamp(16px, 3vw, 20px);
     }
     
     .quick-login-btn {
-        padding: clamp(6px, 2vw, 8px) clamp(10px, 3vw, 12px);
-        font-size: clamp(11px, 3vw, 12px);
-        min-height: 40px;
+        padding: clamp(10px, 2vw, 14px) clamp(12px, 3vw, 16px);
+        font-size: clamp(12px, 3vw, 13px);
+        min-height: 44px;
+    }
+    
+    .alert {
+        margin-bottom: clamp(20px, 4vw, 28px);
+        border-radius: var(--radius-lg);
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 }

@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Asset Lifecycle Models
+Varydian Financial Reporting System - Asset Lifecycle Models
 GRAP 17 compliant asset management and depreciation system
 """
 

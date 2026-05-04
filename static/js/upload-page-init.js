@@ -1,5 +1,5 @@
 /**
- * SADPMR Financial Reporting System - Upload Page Initialization
+ * Varydian Financial Reporting System - Upload Page Initialization
  * Handles upload page-specific initialization and debug console functions
  */
 

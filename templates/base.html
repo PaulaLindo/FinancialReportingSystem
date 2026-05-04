@@ -7,8 +7,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="SADPMR FRS">
-    <title>{% block title %}SADPMR Financial Reporting System{% endblock %}</title>
+    <meta name="apple-mobile-web-app-title" content="Varydian">
+    <title>{% block title %}Varydian{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
@@ -17,8 +17,11 @@
         <div class="container-content">
             <div class="nav-header">
                 <div class="nav-brand">
-                    <h2>SADPMR</h2>
-                    <span class="tagline">Financial Reporting System</span>
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Varydian Logo" class="nav-logo">
+                    <div class="nav-brand-text">
+                        <h2>Varydian</h2>
+                        <span class="tagline">Financial Reporting System</span>
+                    </div>
                 </div>
                 
                 <!-- Mobile Menu Toggle -->
@@ -148,7 +151,7 @@
     
     <footer>
         <div class="container-content">
-            <p>&copy; 2025 SADPMR Financial Reporting System | Developed for Schedule 3A PFMA Compliance</p>
+            <p>&copy; 2026 Varydian | Financial Reporting System</p>
             {% if current_user and current_user.can_export_audit() %}
             <!-- Formula Transparency Modal Component -->
             {% include 'components/formula-modal.html' %}

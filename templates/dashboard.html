@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - SADPMR Financial Reporting System{% endblock %}
+{% block title %}Dashboard - Varydian{% endblock %}
 
 {% block extra_css %}
 <!-- Dashboard styles are included in main styles.css -->
@@ -14,7 +14,7 @@
             <p class="hero-subtitle">{{ get_role_description(current_user.role) }}</p>
             {% if current_user.can_upload() %}
             <div class="hero-actions">
-                <a href="/upload" class="btn btn-primary">Upload Balance Sheet</a>
+                <a href="/upload" class="btn btn-primary">Upload Financial Document</a>
                 <a href="/reports" class="btn btn-secondary">View Reports</a>
             </div>
             {% else %}
@@ -344,7 +344,7 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <p>Learn more about the SADPMR Financial Reporting System features and capabilities</p>
+                        <p>Learn more about the Varydian Financial Reporting System features and capabilities</p>
                         <a href="/about" class="btn btn-secondary">Learn More</a>
                     </div>
                 </div>

@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Supabase Approval Models
+Varydian Financial Reporting System - Supabase Approval Models
 Four-Eyes approval workflow using Supabase database
 """
 

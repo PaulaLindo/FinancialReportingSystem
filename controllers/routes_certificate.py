@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Manager's Certificate Routes
+Varydian Financial Reporting System - Manager's Certificate Routes
 API endpoints for generating Manager's Certificates with digital signatures
 """
 
@@ -205,7 +205,7 @@ def generate_certificate_pdf(transaction, user, approval):
     
     # Certification text
     certification_text = f"""
-    I, {user['full_name']}, in my capacity as Finance Manager of the SADPMR Financial Reporting System,
+    I, {user['full_name']}, in my capacity as Finance Manager of the Varydian Financial Reporting System,
     hereby certify that I have thoroughly reviewed the above-referenced transaction and verify the following:
     
     1. The underlying calculations are mathematically correct and properly documented
@@ -248,7 +248,7 @@ def generate_certificate_pdf(transaction, user, approval):
     story.append(Paragraph("_____________________________", normal_style))
     story.append(Paragraph(f"{user['full_name']}", normal_style))
     story.append(Paragraph("Finance Manager", normal_style))
-    story.append(Paragraph("SADPMR Financial Reporting System", normal_style))
+    story.append(Paragraph("Varydian Financial Reporting System", normal_style))
     
     # Footer
     story.append(Spacer(1, 40))

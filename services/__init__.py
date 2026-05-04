@@ -1,4 +1,4 @@
 """
-SADPMR Financial Reporting System - Services Layer
+Varydian Financial Reporting System - Services Layer
 Business logic and service implementations
 """

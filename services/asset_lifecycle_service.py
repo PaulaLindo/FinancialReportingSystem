@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Asset Lifecycle Service
+Varydian Financial Reporting System - Asset Lifecycle Service
 Service for GRAP 17 compliant asset management and depreciation
 """
 

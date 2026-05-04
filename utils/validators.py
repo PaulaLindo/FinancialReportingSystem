@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Validators
+Varydian Financial Reporting System - Validators
 Data validation functions for balance sheets and file formats
 """
 

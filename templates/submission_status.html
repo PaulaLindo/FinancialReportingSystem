@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Submission Status - SADPMR Financial Reporting System{% endblock %}
+{% block title %}Submission Status - Varydian{% endblock %}
 
 {% block extra_css %}
 <!-- Submission status styles are included in main styles.css -->
@@ -18,7 +18,7 @@
             {{ submission.status|title }}
         </div>
         <h1>Submission Status</h1>
-        <p>Your balance sheet submission has been received and is being processed.</p>
+        <p>Your {{ submission.document_type|replace('_', ' ')|title }} submission has been received and is being processed.</p>
     </div>
 
     {% if submission.locked %}
@@ -60,6 +60,190 @@
         </div>
     </div>
 
+    <!-- Balance Check Section for All Document Types -->
+    <div class="balance-check-section">
+        <h3>🔍 Balance Check</h3>
+        
+        {% if submission.document_type == 'balance_sheet' %}
+        <div class="balance-info">
+            <div class="balance-row">
+                <span class="balance-label">Total Debits:</span>
+                <span class="balance-value">R {{ "%.2f"|format(submission.total_debits or 0) }}</span>
+            </div>
+            <div class="balance-row">
+                <span class="balance-label">Total Credits:</span>
+                <span class="balance-value">R {{ "%.2f"|format(submission.total_credits or 0) }}</span>
+            </div>
+            <div class="balance-row balance-difference-row">
+                <span class="balance-label">Difference:</span>
+                <span class="balance-value">R {{ "%.2f"|format((submission.total_debits or 0) - (submission.total_credits or 0)) }}</span>
+            </div>
+        </div>
+        <div class="balance-status">
+            <div class="status-message">
+                <span class="status-icon">
+                    {% if (submission.total_debits or 0) == (submission.total_credits or 0) %}✅{% else %}⚠️{% endif %}
+                </span>
+                <span class="status-text">
+                    {% if (submission.total_debits or 0) == (submission.total_credits or 0) %}
+                        Balance sheet is balanced
+                    {% else %}
+                        Balance difference detected
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        
+        {% elif submission.document_type == 'income_statement' %}
+        <div class="balance-info">
+            <div class="balance-row">
+                <span class="balance-label">Total Revenue:</span>
+                <span class="balance-value">R {{ "%.2f"|format(submission.total_revenue or 0) }}</span>
+            </div>
+            <div class="balance-row">
+                <span class="balance-label">Total Expenses:</span>
+                <span class="balance-value">R {{ "%.2f"|format(submission.total_expenses or 0) }}</span>
+            </div>
+            <div class="balance-row balance-difference-row">
+                <span class="balance-label">Net Income:</span>
+                <span class="balance-value">R {{ "%.2f"|format((submission.total_revenue or 0) - (submission.total_expenses or 0)) }}</span>
+            </div>
+        </div>
+        <div class="balance-status">
+            <div class="status-message">
+                <span class="status-icon">✅</span>
+                <span class="status-text">
+                    Income statement validated
+                </span>
+            </div>
+        </div>
+        
+        {% elif submission.document_type == 'budget_report' %}
+        <div class="balance-info">
+            <div class="balance-row">
+                <span class="balance-label">Total Budget:</span>
+                <span class="balance-value">R {{ "%.2f"|format(submission.total_budget or 0) }}</span>
+            </div>
+            <div class="balance-row">
+                <span class="balance-label">Total Actual:</span>
+                <span class="balance-value">R {{ "%.2f"|format(submission.total_actual or 0) }}</span>
+            </div>
+            <div class="balance-row balance-difference-row">
+                <span class="balance-label">Variance:</span>
+                <span class="balance-value">R {{ "%.2f"|format((submission.total_budget or 0) - (submission.total_actual or 0)) }}</span>
+            </div>
+        </div>
+        <div class="balance-status">
+            <div class="status-message">
+                <span class="status-icon">
+                    {% if ((submission.total_budget or 0) - (submission.total_actual or 0)) | abs < 0.01 %}✅{% else %}⚠️{% endif %}
+                </span>
+                <span class="status-text">
+                    {% if ((submission.total_budget or 0) - (submission.total_actual or 0)) | abs < 0.01 %}
+                        Budget report is balanced
+                    {% else %}
+                        Budget variance detected
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        
+        {% else %}
+        <div class="balance-info">
+            <div class="balance-row">
+                <span class="balance-label">Document Type:</span>
+                <span class="balance-value">{{ submission.document_type or 'Unknown' | title }}</span>
+            </div>
+            <div class="balance-row">
+                <span class="balance-label">Status:</span>
+                <span class="balance-value">Validated</span>
+            </div>
+        </div>
+        <div class="balance-status">
+            <div class="status-message">
+                <span class="status-icon">✅</span>
+                <span class="status-text">
+                    Document validated
+                </span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Income Statement Specific: Performance Summary -->
+    {% if submission.document_type == 'income_statement' %}
+    <div class="performance-summary">
+        <h3>📈 Performance Summary</h3>
+        <div class="performance-info">
+            <div class="performance-row">
+                <span class="performance-label">Total Revenue:</span>
+                <span class="performance-value">R {{ "%.2f"|format(submission.total_revenue or 0) }}</span>
+            </div>
+            <div class="performance-row">
+                <span class="performance-label">Total Expenses:</span>
+                <span class="performance-value">R {{ "%.2f"|format(submission.total_expenses or 0) }}</span>
+            </div>
+            <div class="performance-row performance-result-row">
+                <span class="performance-label">Net Income:</span>
+                <span class="performance-value">R {{ "%.2f"|format((submission.total_revenue or 0) - (submission.total_expenses or 0)) }}</span>
+            </div>
+        </div>
+        <div class="performance-status">
+            <div class="status-message">
+                <span class="status-icon">
+                    {% if (submission.total_revenue or 0) > (submission.total_expenses or 0) %}📈{% else %}📉{% endif %}
+                </span>
+                <span class="status-text">
+                    {% if (submission.total_revenue or 0) > (submission.total_expenses or 0) %}
+                        Profitable period
+                    {% else %}
+                        Loss period
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Budget Report Specific: Budget Analysis -->
+    {% if submission.document_type == 'budget_report' %}
+    <div class="budget-analysis">
+        <h3>💰 Budget Analysis</h3>
+        <div class="budget-info">
+            <div class="budget-row">
+                <span class="budget-label">Total Budget:</span>
+                <span class="budget-value">R {{ "%.2f"|format(submission.total_budget or 0) }}</span>
+            </div>
+            <div class="budget-row">
+                <span class="budget-label">Total Actual:</span>
+                <span class="budget-value">R {{ "%.2f"|format(submission.total_actual or 0) }}</span>
+            </div>
+            <div class="budget-row budget-variance-row">
+                <span class="budget-label">Variance:</span>
+                <span class="budget-value">R {{ "%.2f"|format((submission.total_actual or 0) - (submission.total_budget or 0)) }}</span>
+            </div>
+        </div>
+        <div class="budget-status">
+            <div class="status-message">
+                <span class="status-icon">
+                    {% set variance = (submission.total_actual or 0) - (submission.total_budget or 0) %}
+                    {% if variance == 0 %}✅{% elif variance > 0 %}⬆️{% else %}⬇️{% endif %}
+                </span>
+                <span class="status-text">
+                    {% set variance = (submission.total_actual or 0) - (submission.total_budget or 0) %}
+                    {% if variance == 0 %}
+                        On budget
+                    {% elif variance > 0 %}
+                        Over budget by {{ "%.1f"|format((variance / (submission.total_budget or 1)) * 100) }}%
+                    {% else %}
+                        Under budget by {{ "%.1f"|format((abs(variance) / (submission.total_budget or 1)) * 100) }}%
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     {% if submission.next_steps %}
     <div class="next-steps">
         <h3>Next Steps</h3>
@@ -86,10 +270,96 @@
             <span>📊</span>
             View All Submissions
         </a>
+        
+                
+        {% if submission.status == 'pending_review' %}
+            <!-- Submit/Close options for pending submissions -->
+            {% if submission.document_type == 'balance_sheet' %}
+            <button class="btn btn-success" onclick="submitForApproval()">
+                <span>✅</span>
+                Submit for Approval
+            </button>
+            {% elif submission.document_type == 'income_statement' %}
+            <button class="btn btn-success" onclick="submitForApproval()">
+                <span>✅</span>
+                Submit for Approval
+            </button>
+            {% elif submission.document_type == 'budget_report' %}
+            <button class="btn btn-success" onclick="submitForApproval()">
+                <span>✅</span>
+                Submit for Approval
+            </button>
+            {% endif %}
+            
+            <button class="btn btn-warning" onclick="closeSubmission()">
+                <span>🔒</span>
+                Close Submission
+            </button>
+        {% endif %}
+        
         <a href="/upload" class="btn btn-primary">
             <span>📤</span>
-            Upload New Balance Sheet
+            Upload New {{ submission.document_type|replace('_', ' ')|title }}
         </a>
     </div>
+    
+    <script>
+    function submitForApproval() {
+        var documentType = '{{ submission.document_type|replace('_', ' ') }}';
+        var submissionId = '{{ submission_id }}';
+        var documentTitle = '{{ submission.document_type|replace('_', ' ')|title }}';
+        
+        if (confirm('Are you sure you want to submit this ' + documentType + ' for approval?')) {
+            fetch('/api/submission/' + submissionId + '/approve', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'submit_for_approval'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(documentTitle + ' submitted for approval successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error submitting for approval: ' + error.message);
+            });
+        }
+    }
+    
+    function closeSubmission() {
+        var documentType = '{{ submission.document_type|replace('_', ' ') }}';
+        var submissionId = '{{ submission_id }}';
+        var documentTitle = '{{ submission.document_type|replace('_', ' ')|title }}';
+        
+        fetch('/api/submission/' + submissionId + '/close', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'close_submission'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/dashboard';
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error closing submission: ' + error.message);
+        });
+    }
+    </script>
 </div>
 {% endblock %}

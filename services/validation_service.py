@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Validation Service
+Varydian Financial Reporting System - Validation Service
 Unified validation for balance sheets and data integrity
 """
 

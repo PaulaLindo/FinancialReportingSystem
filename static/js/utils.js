@@ -1,9 +1,9 @@
 /**
- * SADPMR Financial Reporting System - Shared Utilities
+ * Varydian Financial Reporting System - Shared Utilities
  * Common utility functions used across the application
  */
 
-class SADPMRUtils {
+class VarydianUtils {
     // Configuration constants
     static CONFIG = {
         // Base URL for API requests - helps identify routing issues
@@ -312,7 +312,7 @@ class SADPMRUtils {
      * Show branding information
      */
     static showBranding() {
-        console.log('🏛️ SADPMR Financial Reporting System');
+        console.log('🏛️ Varydian Financial Reporting System');
         console.log('📊 GRAP-Compliant Financial Statement Automation');
         console.log('🔐 Secure, Efficient, User-Friendly');
     }
@@ -320,4 +320,4 @@ class SADPMRUtils {
     }
 
 // Export for global use
-window.SADPMRUtils = SADPMRUtils;
+window.VarydianUtils = VarydianUtils;

@@ -1,19 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Submission History - SADPMR Financial Reporting System{% endblock %}
+{% block title %}Submission History - Varydian{% endblock %}
 
 {% block content %}
 <div class="submission-history-page">
     <div class="container-content">
         <div class="submission-history-header">
             <h1>📋 My Submission History</h1>
-            <p>View the status of your balance sheet submissions</p>
+            <p>View the status of your financial document submissions (Balance Sheets, Income Statements, Budget Reports)</p>
             
             <!-- Summary Stats -->
             <div class="submission-stats-summary" id="submissionStatsSummary">
                 <div class="stat-card">
                     <div class="stat-number" id="totalSubmissionsCount">0</div>
                     <div class="stat-label">Total Submissions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ stats.submitted_today or 0 }}</div>
+                    <div class="stat-label">Submitted Today</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number" id="pendingSubmissionsCount">0</div>
@@ -47,7 +51,7 @@
                     <option value="rejected">Rejected</option>
                     <option value="archived">Archived</option>
                     <option value="draft">Draft</option>
-                    <option value="pending">Pending Review</option>
+                    <option value="pending_review">Pending Review</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -71,8 +75,8 @@
         <div id="emptyState" class="empty-state element--hidden">
             <div class="empty-icon">📄</div>
             <h3>No Submissions Found</h3>
-            <p>You haven't submitted any balance sheets yet.</p>
-            <a href="{{ url_for('upload_page') }}" class="btn btn-primary">Upload Your First Balance Sheet</a>
+            <p>You haven't submitted any financial documents yet.</p>
+            <a href="{{ url_for('upload_page') }}" class="btn btn-primary">Upload Your First Financial Document</a>
         </div>
 
         <!-- Submissions List -->
@@ -124,7 +128,7 @@
             </div>
         </div>
         <div class="submission-details-footer">
-            <button id="modalCloseBtn" class="btn btn-secondary" data-action="close-submission-details-modal">Close</button>
+            <button id="modalCloseFooterBtn" class="btn btn-secondary" data-action="close-submission-details-modal">Close</button>
         </div>
     </div>
 </div>
@@ -134,6 +138,8 @@
     <div class="submission-item" data-submission-id="">
         <div class="submission-icon">
             <div class="icon-balance-sheet element--visible"></div>
+            <div class="icon-income-statement element--hidden"></div>
+            <div class="icon-budget-report element--hidden"></div>
             <div class="icon-pdf-report element--hidden"></div>
         </div>
         <div class="submission-info">

@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Workflow Models
+Varydian Financial Reporting System - Workflow Models
 Period management and submission workflow tracking
 """
 

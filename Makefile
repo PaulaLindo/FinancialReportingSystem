@@ -1,11 +1,11 @@
-# Makefile for SADPMR Financial Reporting System Tests
+# Makefile for Varydian Financial Reporting System Tests
 # Provides convenient commands for running tests and managing test environment
 
 .PHONY: help test test-unit test-rbac test-ui test-api test-formula test-responsive test-all clean install-deps lint
 
 # Default target
 help:
-	@echo "SADPMR Financial Reporting System - Test Suite"
+	@echo "Varydian Financial Reporting System - Test Suite"
 	@echo ""
 	@echo "Available commands:"
 	@echo "  help          - Show this help message"

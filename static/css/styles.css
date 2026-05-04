@@ -1,4 +1,4 @@
-/* SADPMR Financial Reporting System - Main Stylesheet */
+/* Varydian Financial Reporting System - Main Stylesheet */
 /* Fluid scaling system with CSS custom properties */
 
 /* ======================================== */
@@ -41,6 +41,7 @@
 /* ======================================== */
 @import url('login.css');
 @import url('draft-statement-viewer.css');
+@import url('mapping-interface.css');
 
 /* ======================================== */
 /* TRULY FLUID ARCHITECTURE */

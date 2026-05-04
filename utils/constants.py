@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Application Constants
+Varydian Financial Reporting System - Application Constants
 Centralized constants for magic numbers and strings
 """
 
@@ -94,7 +94,7 @@ TABLE_COLUMN_WIDTHS = {
 SESSION_LIFETIME_HOURS = 1
 
 # Security Configuration
-SECRET_KEY_DEFAULT = 'sadpmr-demo-2025-secure-key'
+SECRET_KEY_DEFAULT = 'varydian-demo-2025-secure-key'
 
 # Submission Workflow Constants
 class SubmissionStatus:

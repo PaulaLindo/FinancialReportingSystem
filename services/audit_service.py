@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Audit Trail Service
+Varydian Financial Reporting System - Audit Trail Service
 Non-destructive edit history and change tracking service
 """
 

@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Supabase Session Management
+Varydian Financial Reporting System - Supabase Session Management
 Session handling using Supabase instead of filesystem storage
 """
 

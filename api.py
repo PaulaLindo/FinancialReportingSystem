@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - FastAPI Integration Layer
+Varydian Financial Reporting System - FastAPI Integration Layer
 Easy-to-use API for seamless integration with other applications
 """
 
@@ -21,7 +21,7 @@ from services.supabase_service import get_supabase_service
 from utils.helpers import format_currency, generate_filename
 
 app = FastAPI(
-    title="SADPMR Financial Reporting API",
+    title="Varydian Financial Reporting API",
     description="Easy integration API for financial statement generation",
     version="1.0.0"
 )
@@ -49,7 +49,7 @@ async def root():
     """API health check"""
     return {
         "status": "healthy",
-        "service": "SADPMR Financial Reporting API",
+        "service": "Varydian Financial Reporting API",
         "version": "1.0.0",
         "timestamp": datetime.utcnow().isoformat()
     }
@@ -179,7 +179,7 @@ async def generate_pdf_report(
         
         # Generate PDF
         pdf_service = PDFService()
-        pdf_filename = generate_filename("SADPMR_AFS", "pdf")
+        pdf_filename = generate_filename("Varydian_AFS", "pdf")
         
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
             pdf_path = tmp_file.name

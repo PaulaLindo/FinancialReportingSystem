@@ -1,6 +1,6 @@
 /**
  * Fluid Navigation System - JavaScript Handler
- * SADPMR Financial Reporting System
+ * Varydian Financial Reporting System
  * 
  * Handles mobile menu toggle without relying on hardcoded breakpoints
  * The menu works on any screen size based on available space

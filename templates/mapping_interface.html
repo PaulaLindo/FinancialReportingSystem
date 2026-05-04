@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}GRAP Mapping - SADPMR Financial Reporting System{% endblock %}
+{% block title %}GRAP Mapping - Varydian{% endblock %}
 
 {% block extra_css %}
 <!-- Mapping interface styles are included in main styles.css -->
@@ -72,33 +72,7 @@
             </div>
         </div>
 
-        <!-- Review Status -->
-        <div class="submission-status display-none" id="submissionStatus">
-            <div class="status-card">
-                <div class="status-header">
-                    <h3>Mapping Review Status</h3>
-                    <span class="status-badge" id="statusBadge">Review Required</span>
-                </div>
-                <div class="status-content">
-                    <p id="statusMessage">Please review the auto-mapped accounts and make any necessary corrections before submitting.</p>
-                    <div class="review-warnings" id="reviewWarnings">
-                        <!-- Confidence warnings will be shown here -->
-                    </div>
-                    <div class="status-actions" id="statusActions">
-                        <button id="submitForReviewBtn" class="btn-submit-review" type="button" disabled>
-                            📋 Submit for Manager Review
-                        </button>
-                        <button id="saveMappingBtn" class="btn-secondary" type="button">
-                            💾 Save Mapping Progress
-                        </button>
-                        <button id="editMappingBtn" class="btn-secondary display-none" type="button">
-                            ✏️ Edit Mapping
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+        
         <!-- Action Buttons -->
         <div class="action-buttons">
             <button id="submitMappingBtn" class="btn-mapping" type="button" disabled>
@@ -114,7 +88,7 @@
 <script>
 // Pass data to JavaScript
 window.sessionId = '{{ session_id }}';
+console.log('📋 Session ID set in template:', window.sessionId);
 </script>
-<script src="{{ url_for('static', filename='js/mapping-interface.js') }}"></script>
-<script src="{{ url_for('static', filename='js/mapping-interface-init.js') }}"></script>
+<script src="{{ url_for('static', filename='js/enhanced-mapping-interface.js') }}"></script>
 {% endblock %}

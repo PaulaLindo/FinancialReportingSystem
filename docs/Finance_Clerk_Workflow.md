@@ -2,7 +2,7 @@
 
 ## Overview
 
-The SADPMR Financial Reporting System provides a comprehensive workflow designed specifically for South African finance clerks to process trial balances and generate GRAP-compliant financial statements. This workflow ensures accuracy, compliance, and proper audit trails throughout the financial reporting process.
+The Varydian Financial Reporting System provides a comprehensive workflow designed specifically for South African finance clerks to process trial balances and generate GRAP-compliant financial statements. This workflow ensures accuracy, compliance, and proper audit trails throughout the financial reporting process.
 
 ## Primary User: Finance Clerk (The "Engine Room")
 
@@ -368,7 +368,7 @@ Submit for Review
 
 ## Conclusion
 
-The SADPMR Financial Reporting System provides a complete, professional workflow for South African finance clerks that ensures:
+The Varydian Financial Reporting System provides a complete, professional workflow for South African finance clerks that ensures:
 
 ✅ **Accuracy**: Balance validation and mapping verification  
 ✅ **Compliance**: GRAP standards adherence  
@@ -383,4 +383,4 @@ The workflow transforms the complex process of trial balance processing into a m
 
 *Last Updated: May 2026*  
 *Version: 1.0*  
-*System: SADPMR Financial Reporting System*
+*System: Varydian Financial Reporting System*

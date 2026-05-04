@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Supabase Authentication Models
+Varydian Financial Reporting System - Supabase Authentication Models
 User authentication and role-based access control using Supabase
 """
 

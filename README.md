@@ -1,4 +1,4 @@
-# SADPMR Financial Reporting System
+# Varydian Financial Reporting System
 
 ## GRAP-Compliant Financial Statement Generation & Automation
 
@@ -6,7 +6,7 @@
 
 ## 🎯 Quick Start
 
-Complete financial reporting system for SADPMR with automated GRAP mapping and PDF generation.
+Complete financial reporting system with automated GRAP mapping and PDF generation.
 
 ### Prerequisites
 
@@ -84,7 +84,7 @@ FinancialReportingSystem/
 - **Financial Ratios**: Current ratio, debt-to-equity, operating margin, ROA
 
 ### 📄 **Professional PDF Reports**
-- **SADPMR Branded Templates**: Official formatting and styling
+- **Varydian Branded Templates**: Official formatting and styling
 - **GRAP Standards Compliance**: Proper line item classification
 - **Color-Coded Statements**: Visual distinction between statement sections
 - **Benchmark Comparisons**: Industry standard ratio benchmarks
@@ -102,13 +102,13 @@ FinancialReportingSystem/
 ### **Frontend Stack**
 - **Modern HTML5/CSS3**: Responsive design
 - **Vanilla JavaScript**: Interactive file upload
-- **Professional UI**: SADPMR branding and styling
+- **Professional UI**: Varydian branding and styling
 
 ### **Data Flow**
 1. **Upload**: Trial balance (Excel/CSV) → Server
 2. **Process**: Account mapping → GRAP classification
 3. **Generate**: Financial statements → PDF report
-4. **Download**: Professional GRAP-compliant report
+4. **Download**: Professional Varydian-branded report
 
 ---
 
@@ -131,7 +131,7 @@ FinancialReportingSystem/
 
 ### Step 4: Download Report
 1. Click "Download PDF Report"
-2. Receive professional SADPMR-branded financial statements
+2. Receive professional Varydian-branded financial statements
 3. Ready for submission and review
 
 ---
@@ -148,7 +148,7 @@ FinancialReportingSystem/
 - Audit trail compliance
 
 ### **Professional Output**
-- SADPMR official templates
+- Varydian official templates
 - Color-coded financial statements
 - Industry benchmark comparisons
 
@@ -205,7 +205,7 @@ FinancialReportingSystem/
 
 ## 📄 License & Copyright
 
-© 2026 South African Diamond and Precious Metals Regulator (SADPMR)
+© 2026 Varydian
 All rights reserved.
 
 ---

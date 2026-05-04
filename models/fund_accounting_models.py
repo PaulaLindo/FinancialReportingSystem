@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Fund Accounting Models
+Varydian Financial Reporting System - Fund Accounting Models
 GRAP 18 compliant multi-dimensional fund accounting system
 """
 

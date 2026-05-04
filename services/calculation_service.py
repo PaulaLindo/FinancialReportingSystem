@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Calculation Transparency Service
+Varydian Financial Reporting System - Calculation Transparency Service
 Service for providing formula transparency and calculation disclosure
 """
 

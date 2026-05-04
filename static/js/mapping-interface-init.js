@@ -1,5 +1,5 @@
 /**
- * SADPMR Financial Reporting System - Mapping Interface Initialization
+ * Varydian Financial Reporting System - Mapping Interface Initialization
  * Passes data to JavaScript for mapping interface page
  */
 

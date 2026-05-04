@@ -1,5 +1,5 @@
 /**
- * SADPMR Financial Reporting System - Main Application
+ * Varydian Financial Reporting System - Main Application
  * Refactored main JavaScript with modular architecture
  */
 
@@ -19,7 +19,7 @@ class MainApplication {
         this.setupIntersectionObservers();
         this.setupScrollEffects();
         this.setupAnimations();
-        SADPMRUtils.showBranding();
+        VarydianUtils.showBranding();
     }
 
     /**
@@ -71,7 +71,7 @@ class MainApplication {
                     const targetSection = document.querySelector(targetId);
                     
                     if (targetSection) {
-                        SADPMRUtils.scrollToElement(targetSection);
+                        VarydianUtils.scrollToElement(targetSection);
                         this.updateActiveNavLink(link);
                     }
                 } else if (targetId && !targetId.startsWith('#')) {
@@ -104,10 +104,10 @@ class MainApplication {
      * Setup fade-in animation observer
      */
     setupFadeInObserver() {
-        this.observers.fadeIn = SADPMRUtils.createIntersectionObserver((entries) => {
+        this.observers.fadeIn = VarydianUtils.createIntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    SADPMRUtils.addFadeInAnimation([entry.target]);
+                    VarydianUtils.addFadeInAnimation([entry.target]);
                     this.observers.fadeIn.unobserve(entry.target);
                 }
             });
@@ -153,7 +153,7 @@ class MainApplication {
                     const finalValue = target.textContent;
                     
                     if (!isNaN(parseInt(finalValue))) {
-                        SADPMRUtils.animateCounter(target, finalValue);
+                        VarydianUtils.animateCounter(target, finalValue);
                     }
                     
                     this.observers.stats.unobserve(target);
@@ -212,7 +212,7 @@ class MainApplication {
     setupScrollEffects() {
         let lastScroll = 0;
 
-        window.addEventListener('scroll', SADPMRUtils.throttle(() => {
+        window.addEventListener('scroll', VarydianUtils.throttle(() => {
             this.handleNavbarShadow();
             this.handleParallax();
             lastScroll = window.pageYOffset;

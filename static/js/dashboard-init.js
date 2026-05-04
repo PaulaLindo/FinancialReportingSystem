@@ -1,5 +1,5 @@
 /**
- * SADPMR Financial Reporting System - Dashboard Initialization
+ * Varydian Financial Reporting System - Dashboard Initialization
  * Handles dashboard-specific initialization and task filtering functionality
  */
 

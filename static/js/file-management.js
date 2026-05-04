@@ -1,5 +1,5 @@
 /**
- * SADPMR File Management System
+ * Varydian File Management System
  * Handles file listing, filtering, searching, and operations
  */
 
@@ -115,7 +115,7 @@ class FileManager {
         this.currentPage = page;
         
         try {
-            const response = await SADPMRUtils.safeFetch(`/api/submissions/user?page=${page}&per_page=${this.perPage}`);
+            const response = await VarydianUtils.safeFetch(`/api/submissions/user?page=${page}&per_page=${this.perPage}`);
             
             if (response.success) {
                 // Transform submission data to file format
@@ -301,7 +301,7 @@ class FileManager {
             let downloadUrl;
             
             if (file.type === 'balance_sheet') {
-                const response = await SADPMRUtils.safeFetch(`/api/download-balance-sheet/${file.id}?user_id=demo_user`);
+                const response = await VarydianUtils.safeFetch(`/api/download-balance-sheet/${file.id}?user_id=demo_user`);
                 
                 if (!response.success) {
                     throw new Error(response.error);
@@ -309,7 +309,7 @@ class FileManager {
                 
                 downloadUrl = response.download_url;
             } else if (file.type === 'pdf_report') {
-                const response = await SADPMRUtils.safeFetch(`/api/download-pdf-report/${file.id}?user_id=demo_user`);
+                const response = await VarydianUtils.safeFetch(`/api/download-pdf-report/${file.id}?user_id=demo_user`);
                 
                 if (!response.success) {
                     throw new Error(response.error);
@@ -329,7 +329,7 @@ class FileManager {
             
         } catch (error) {
             alert('Download failed. Please try again.');
-            SADPMRUtils.showError(`Failed to download file: ${error.message}`);
+            VarydianUtils.showError(`Failed to download file: ${error.message}`);
         }
     }
 
@@ -395,25 +395,25 @@ class FileManager {
                 deleteUrl = `/api/delete-pdf-report/${file.id}?user_id=demo_user`;
             }
             
-            const response = await SADPMRUtils.safeFetch(deleteUrl, { method: 'DELETE' });
+            const response = await VarydianUtils.safeFetch(deleteUrl, { method: 'DELETE' });
             
             if (response.success) {
                 // Remove from local array
                 this.files = this.files.filter(f => f.id !== file.id);
                 this.applyFilters();
                 this.closeModal();
-                SADPMRUtils.showSuccess('File deleted successfully');
+                VarydianUtils.showSuccess('File deleted successfully');
             } else {
                 throw new Error(response.error);
             }
         } catch (error) {
-            SADPMRUtils.showError(`Failed to delete file: ${error.message}`);
+            VarydianUtils.showError(`Failed to delete file: ${error.message}`);
         }
     }
 
     async downloadAllFiles() {
         if (this.filteredFiles.length === 0) {
-            SADPMRUtils.showError('No files to download');
+            VarydianUtils.showError('No files to download');
             return;
         }
         
@@ -429,9 +429,9 @@ class FileManager {
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
             
-            SADPMRUtils.showSuccess(`Downloaded ${this.filteredFiles.length} files successfully`);
+            VarydianUtils.showSuccess(`Downloaded ${this.filteredFiles.length} files successfully`);
         } catch (error) {
-            SADPMRUtils.showError(`Failed to download some files: ${error.message}`);
+            VarydianUtils.showError(`Failed to download some files: ${error.message}`);
         }
     }
 
@@ -453,7 +453,7 @@ class FileManager {
     }
 
     formatDate(dateString) {
-        return SADPMRUtils.formatDate(dateString);
+        return VarydianUtils.formatDate(dateString);
     }
 
     formatStatus(status) {
@@ -471,6 +471,8 @@ class FileManager {
     formatFileType(type) {
         const typeMap = {
             'balance_sheet': 'Balance Sheet',
+            'income_statement': 'Income Statement',
+            'budget_report': 'Budget Report',
             'pdf_report': 'PDF Report'
         };
         

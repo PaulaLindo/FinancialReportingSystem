@@ -1,5 +1,5 @@
 /**
- * SADPMR Financial Reporting System - Global User Context
+ * Varydian Financial Reporting System - Global User Context
  * Sets up global user context variables for JavaScript
  */
 

@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Budget Management Models
+Varydian Financial Reporting System - Budget Management Models
 GRAP 24 compliant budget vs actual comparison system
 """
 
@@ -241,7 +241,7 @@ class BudgetModel:
             'statement_type': 'Statement of Comparison of Budget and Actual Amounts',
             'grap_reference': 'GRAP 24 - Budget Reporting',
             'fiscal_year': budget_structure.get('fiscal_year', 2026),
-            'entity_name': 'SADPMR Financial Reporting System',
+            'entity_name': 'Varydian Financial Reporting System',
             'reporting_period': f"Year ended {budget_structure.get('fiscal_year', 2026)}",
             'currency': 'ZAR',
             'amounts_shown_in': 'Thousands of Rand',

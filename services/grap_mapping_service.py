@@ -129,9 +129,9 @@ class GRAPMappingService:
             # EXPENSES
             'EX500': {
                 'name': 'Expenses',
-                'keywords': ['expense', 'cost', 'expenditure', 'operating', 'administrative'],
-                'patterns': [r'expense', r'cost.*account', r'expenditure'],
-                'examples': ['Employee Costs', 'Operating Expenses', 'Depreciation and Amortisation']
+                'keywords': ['expense', 'cost', 'expenditure', 'operating', 'administrative', 'salaries', 'wages', 'office', 'supplies', 'software', 'licenses', 'rent', 'utilities', 'maintenance', 'training', 'travel', 'marketing', 'consulting', 'legal', 'insurance', 'taxes', 'depreciation', 'amortisation'],
+                'patterns': [r'expense', r'cost.*account', r'expenditure', r'salar', r'wage', r'office.*suppl', r'software', r'license', r'rent', r'utilit', r'mainten', r'train', r'travel', r'market', r'consult', r'legal', r'insur', r'tax', r'depreci', r'amortis'],
+                'examples': ['Employee Costs', 'Operating Expenses', 'Depreciation and Amortisation', 'Salaries - Finance', 'Office Supplies', 'Software Licenses', 'Rent Expense', 'Utilities', 'Training Costs', 'Travel Expenses']
             }
         }
     
@@ -151,9 +151,44 @@ class GRAPMappingService:
                 pattern_matches.append((category_code, pattern, category_data['name']))
         return pattern_matches
     
+    def _preprocess_account_description(self, account_name: str) -> str:
+        """Preprocess account description for better matching"""
+        if not account_name:
+            return ""
+        
+        # Convert to lowercase and strip
+        processed = account_name.lower().strip()
+        
+        # Remove common prefixes/suffixes that don't add meaning
+        prefixes_to_remove = ['acct:', 'account:', 'code:', 'dept:', 'department:']
+        suffixes_to_remove = [' - dept', ' - department', ' (dept)', ' (department)']
+        
+        for prefix in prefixes_to_remove:
+            if processed.startswith(prefix):
+                processed = processed[len(prefix):].strip()
+        
+        for suffix in suffixes_to_remove:
+            if processed.endswith(suffix):
+                processed = processed[:-len(suffix)].strip()
+        
+        # Handle department format like "Salaries - Finance" -> "salaries finance"
+        if ' - ' in processed:
+            parts = processed.split(' - ')
+            if len(parts) >= 2:
+                # Keep both parts but reorder for better keyword matching
+                main_desc = parts[0].strip()
+                dept = parts[1].strip()
+                processed = f"{main_desc} {dept}"
+        
+        # Remove extra whitespace
+        processed = ' '.join(processed.split())
+        
+        return processed
+    
     def calculate_match_score(self, account_name: str, account_code: str, category_code: str) -> float:
         """Calculate confidence score for account-category match"""
-        account_name_clean = account_name.lower().strip()
+        # Use preprocessing for better matching
+        account_name_clean = self._preprocess_account_description(account_name)
         account_code_clean = account_code.lower().strip()
         
         score = 0.0
@@ -187,6 +222,20 @@ class GRAPMappingService:
             example_clean = example.lower()
             if code_matcher.ratio() > 0.7:
                 score += 0.25
+        
+        # Bonus for department-specific descriptions (like "Salaries - Finance")
+        if ' - ' in account_name:
+            parts = account_name.split(' - ')
+            if len(parts) >= 2:
+                # Give extra weight if we can match both parts
+                main_desc = parts[0].strip().lower()
+                dept = parts[1].strip().lower()
+                
+                for keyword in category_keywords:
+                    if keyword in main_desc:
+                        score += 0.1  # Bonus for main description match
+                    if keyword in dept:
+                        score += 0.05  # Small bonus for department match
         
         # Normalize score to 0-1 range
         return min(score, 1.0)

@@ -7,7 +7,7 @@
 const StatusMessages = {
     get_message: function(status) {
         const messages = {
-            'uploaded': 'Uploaded',           // Balance sheet uploaded
+            'uploaded': 'Pending Review',           // Balance sheet uploaded
             'processing': 'Processing',      // Being processed/mapped
             'mapped': 'Pending Review',      // Accounts mapped - pending finance manager approval
             'approved': 'Approved',          // Approved by finance manager
@@ -46,7 +46,8 @@ class SubmissionHistoryManager {
             nextPageBtn: document.getElementById('nextPageBtn'),
             pageInfo: document.getElementById('pageInfo'),
             modal: document.getElementById('submissionDetailsModal'),
-            modalCloseBtn: document.getElementById('modalCloseBtn')
+            modalCloseBtn: document.getElementById('modalCloseBtn'),
+            modalCloseFooterBtn: document.getElementById('modalCloseFooterBtn')
         };
         
         this.init();
@@ -85,6 +86,10 @@ class SubmissionHistoryManager {
             this.elements.modalCloseBtn.addEventListener('click', () => this.closeModal());
         }
         
+        if (this.elements.modalCloseFooterBtn) {
+            this.elements.modalCloseFooterBtn.addEventListener('click', () => this.closeModal());
+        }
+        
         // Close modal when clicking on overlay
         const overlay = this.elements.modal?.querySelector('.submission-details-overlay');
         if (overlay) {
@@ -118,7 +123,7 @@ class SubmissionHistoryManager {
             const url = `/api/submissions/user?page=${page}&per_page=${this.perPage}`;
             console.log('🔍 Debug - Fetching URL:', url);
             
-            const response = await SADPMRUtils.safeFetch(url);
+            const response = await VarydianUtils.safeFetch(url);
             
             console.log('🔍 Debug - API Response:', response);
             
@@ -165,6 +170,9 @@ class SubmissionHistoryManager {
     }
     
     updateSubmissionStats() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Set to start of day
+        
         const stats = {
             total: this.submissions.length,
             pending: this.submissions.filter(s => s.status === 'pending').length,
@@ -172,7 +180,12 @@ class SubmissionHistoryManager {
             processing: this.submissions.filter(s => s.status === 'processing').length,
             uploaded: this.submissions.filter(s => s.status === 'uploaded').length,
             approved: this.submissions.filter(s => s.status === 'approved').length,
-            rejected: this.submissions.filter(s => s.status === 'rejected').length
+            rejected: this.submissions.filter(s => s.status === 'rejected').length,
+            submittedToday: this.submissions.filter(s => {
+                const submissionDate = new Date(s.submission_timestamp);
+                submissionDate.setHours(0, 0, 0, 0); // Set to start of day
+                return submissionDate.getTime() === today.getTime();
+            }).length
         };
         
         // Update DOM
@@ -180,11 +193,13 @@ class SubmissionHistoryManager {
         const pendingEl = document.getElementById('pendingSubmissionsCount');
         const approvedEl = document.getElementById('approvedSubmissionsCount');
         const rejectedEl = document.getElementById('rejectedSubmissionsCount');
+        const submittedTodayEl = document.getElementById('submittedTodayCount');
         
         if (totalEl) totalEl.textContent = stats.total;
         if (pendingEl) pendingEl.textContent = stats.pending + stats.mapped + stats.processing + stats.uploaded; // All submissions needing attention
         if (approvedEl) approvedEl.textContent = stats.approved;
         if (rejectedEl) rejectedEl.textContent = stats.rejected;
+        if (submittedTodayEl) submittedTodayEl.textContent = stats.submittedToday;
     }
     
     applyFilters() {
@@ -269,14 +284,39 @@ class SubmissionHistoryManager {
         const submissionItem = clone.querySelector('.submission-item');
         submissionItem.dataset.submissionId = submission.session_id;
         
-        // Set icon (always balance sheet for submissions)
+        // Set icon based on document type
         const balanceSheetIcon = clone.querySelector('.icon-balance-sheet');
+        const incomeStatementIcon = clone.querySelector('.icon-income-statement');
+        const budgetReportIcon = clone.querySelector('.icon-budget-report');
         const pdfReportIcon = clone.querySelector('.icon-pdf-report');
         
-        balanceSheetIcon.classList.remove('element--hidden');
-        balanceSheetIcon.classList.add('element--visible');
+        // Hide all icons first
+        balanceSheetIcon.classList.add('element--hidden');
+        balanceSheetIcon.classList.remove('element--visible');
+        incomeStatementIcon.classList.add('element--hidden');
+        incomeStatementIcon.classList.remove('element--visible');
+        budgetReportIcon.classList.add('element--hidden');
+        budgetReportIcon.classList.remove('element--visible');
         pdfReportIcon.classList.add('element--hidden');
         pdfReportIcon.classList.remove('element--visible');
+        
+        // Show appropriate icon based on document type
+        const documentType = submission.document_type || 'balance_sheet';
+        switch (documentType) {
+            case 'income_statement':
+                incomeStatementIcon.classList.remove('element--hidden');
+                incomeStatementIcon.classList.add('element--visible');
+                break;
+            case 'budget_report':
+                budgetReportIcon.classList.remove('element--hidden');
+                budgetReportIcon.classList.add('element--visible');
+                break;
+            case 'balance_sheet':
+            default:
+                balanceSheetIcon.classList.remove('element--hidden');
+                balanceSheetIcon.classList.add('element--visible');
+                break;
+        }
         
         // Set submission info
         const submissionName = clone.querySelector('.submission-name');
@@ -290,7 +330,11 @@ class SubmissionHistoryManager {
         
         submissionDate.textContent = this.formatDate(submission.submission_timestamp);
         submissionStatus.textContent = this.formatStatus(submission.status);
-        submissionAccounts.textContent = `${submission.mapped_accounts_count || 0} accounts mapped`;
+        // Ensure mapped_accounts_count is a number
+        const mappedCount = typeof submission.mapped_accounts_count === 'number' ? 
+            submission.mapped_accounts_count : 
+            (Array.isArray(submission.mapped_accounts_count) ? submission.mapped_accounts_count.length : 0);
+        submissionAccounts.textContent = `${mappedCount} accounts mapped`;
         
         // Set status class
         submissionStatus.className = `submission-status status-${submission.status}`;
@@ -310,7 +354,11 @@ class SubmissionHistoryManager {
         document.getElementById('detailFilename').textContent = filename;
         document.getElementById('detailStatus').textContent = this.formatStatus(submission.status);
         document.getElementById('detailSubmissionDate').textContent = this.formatDate(submission.submission_timestamp);
-        document.getElementById('detailMappedAccounts').textContent = submission.mapped_accounts_count || 0;
+        // Ensure mapped_accounts_count is a number for modal view
+        const modalMappedCount = typeof submission.mapped_accounts_count === 'number' ? 
+            submission.mapped_accounts_count : 
+            (Array.isArray(submission.mapped_accounts_count) ? submission.mapped_accounts_count.length : 0);
+        document.getElementById('detailMappedAccounts').textContent = modalMappedCount;
         document.getElementById('detailReviewNotes').textContent = submission.review_notes || 'No review notes';
         
         // Use the correct field name: 'locked' (not 'is_locked')
@@ -401,8 +449,8 @@ class SubmissionHistoryManager {
     
     showError(message) {
         this.state.error = message;
-        if (typeof SADPMRUtils !== 'undefined') {
-            SADPMRUtils.showError(message);
+        if (typeof VarydianUtils !== 'undefined') {
+            VarydianUtils.showError(message);
         }
     }
     
@@ -427,7 +475,7 @@ class SubmissionHistoryManager {
     
     // Utility Functions
     formatDate(dateString) {
-        return SADPMRUtils.formatDate(dateString);
+        return VarydianUtils.formatDate(dateString);
     }
     
     formatStatus(status) {

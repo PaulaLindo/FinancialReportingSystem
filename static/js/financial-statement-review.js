@@ -1,5 +1,5 @@
 /**
- * SADPMR Financial Reporting System - Financial Statement Review
+ * Varydian Financial Reporting System - Financial Statement Review
  * Integration with formula modal for Finance Manager review workflow
  */
 
@@ -553,7 +553,7 @@ class FinancialStatementReview {
     }
 
     formatDate(dateString) {
-        return SADPMRUtils.formatDate(dateString);
+        return VarydianUtils.formatDate(dateString);
     }
 
     showSuccess(message) {

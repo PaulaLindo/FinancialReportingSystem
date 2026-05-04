@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Secure Supabase Service
+Varydian Financial Reporting System - Secure Supabase Service
 Private storage bucket with signed URLs for maximum security
 """
 

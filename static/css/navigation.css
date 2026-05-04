@@ -1,5 +1,5 @@
 /* Fluid Navigation System - No Breakpoints */
-/* SADPMR Financial Reporting System */
+/* Varydian Financial Reporting System */
 
 /* ======================================== */
 /* CONTAINER CLASSES */
@@ -50,10 +50,22 @@
 /* ======================================== */
 
 .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--fluid-space-sm);
+    flex-shrink: 0;
+    min-width: clamp(180px, 20vw, 280px);
+}
+
+.nav-logo {
+    height: clamp(32px, 4vw, 48px);
+    width: auto;
+    flex-shrink: 0;
+}
+
+.nav-brand-text {
     display: grid;
-    gap: var(--fluid-space-4xs); /* Ultra reduced gap */
-    flex-shrink: 0; /* Prevent brand from shrinking */
-    min-width: clamp(140px, 16vw, 200px); /* Maximum reduction for brand */
+    gap: var(--fluid-space-4xs);
 }
 
 .nav-brand h2 {

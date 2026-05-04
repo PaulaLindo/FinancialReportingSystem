@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Four-Eyes Approval Workflow Models
+Varydian Financial Reporting System - Four-Eyes Approval Workflow Models
 Transaction approval system implementing Segregation of Duties
 """
 
