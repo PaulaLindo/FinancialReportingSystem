@@ -14,24 +14,55 @@ class SupabaseAuthModel:
     
     def __init__(self):
         """Initialize Supabase client with anon key only"""
+        self.supabase_url = None
+        self.supabase_anon_key = None
+        self.client = None
+        self._initialized = False
+    
+    def _ensure_initialized(self):
+        """Lazy initialization of Supabase client"""
+        if self._initialized:
+            return
+        
         # Load environment variables if not already loaded
-        from dotenv import load_dotenv
-        load_dotenv()
+        try:
+            from dotenv import load_dotenv
+            load_dotenv()
+        except ImportError:
+            pass  # dotenv not available in production
         
         self.supabase_url = os.environ.get('SUPABASE_URL')
         self.supabase_anon_key = os.environ.get('SUPABASE_ANON_KEY')
         
         if not self.supabase_url or not self.supabase_anon_key:
-            raise ValueError("Supabase credentials not found. Check SUPABASE_URL and SUPABASE_ANON_KEY in .env file")
+            raise ValueError("Supabase credentials not found. Check SUPABASE_URL and SUPABASE_ANON_KEY in environment variables")
         
         try:
-            self.client = create_client(self.supabase_url, self.supabase_anon_key)
+            # Create client without proxy argument for Vercel compatibility
+            self.client = create_client(
+                self.supabase_url, 
+                self.supabase_anon_key,
+                options={
+                    'headers': {
+                        'apikey': self.supabase_anon_key,
+                        'Authorization': f'Bearer {self.supabase_anon_key}'
+                    }
+                }
+            )
+            self._initialized = True
             print("✅ Supabase auth model initialized with anon key (secure, RLS-compliant)")
         except Exception as e:
-            raise ValueError(f"Supabase authentication unavailable: {e}")
+            # Fallback to simple client creation
+            try:
+                self.client = create_client(self.supabase_url, self.supabase_anon_key)
+                self._initialized = True
+                print("✅ Supabase auth model initialized with fallback method")
+            except Exception as fallback_error:
+                raise ValueError(f"Supabase authentication unavailable: {e} (fallback: {fallback_error})")
     
     def get_user_by_username(self, username: str) -> Optional[Dict[str, Any]]:
         """Get user by username"""
+        self._ensure_initialized()
         try:
             result = self.client.table('users').select('*').eq('username', username).execute()
             return result.data[0] if result.data else None
@@ -40,6 +71,7 @@ class SupabaseAuthModel:
     
     def get_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
         """Get user by email"""
+        self._ensure_initialized()
         try:
             result = self.client.table('users').select('*').eq('email', email).execute()
             return result.data[0] if result.data else None
@@ -75,6 +107,7 @@ class SupabaseAuthModel:
                 'updated_at': datetime.now().isoformat()
             }
             
+            self._ensure_initialized()
             result = self.client.table('users').insert(user_data).execute()
             
             if result.data:
@@ -100,6 +133,7 @@ class SupabaseAuthModel:
         try:
             updates['updated_at'] = datetime.now().isoformat()
             
+            self._ensure_initialized()
             result = self.client.table('users').update(updates).eq('id', user_id).execute()
             
             if result.data:
@@ -126,6 +160,7 @@ class SupabaseAuthModel:
     
     def get_all_users(self) -> List[Dict[str, Any]]:
         """Get all users"""
+        self._ensure_initialized()
         try:
             result = self.client.table('users').select('*').order('created_at', desc=True).execute()
             return result.data if result.data else []
@@ -134,6 +169,7 @@ class SupabaseAuthModel:
     
     def get_users_by_role(self, role: str) -> List[Dict[str, Any]]:
         """Get users by role"""
+        self._ensure_initialized()
         try:
             result = self.client.table('users').select('*').eq('role', role).execute()
             return result.data if result.data else []
@@ -142,6 +178,7 @@ class SupabaseAuthModel:
     
     def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Get user by ID"""
+        self._ensure_initialized()
         try:
             result = self.client.table('users').select('*').eq('id', user_id).execute()
             return result.data[0] if result.data else None
@@ -232,8 +269,15 @@ class SupabaseUser:
     def can_export(self):
         return self.has_permission('export')
 
-# Initialize Supabase auth model
-supabase_auth = SupabaseAuthModel()
+# Lazy initialization of Supabase auth model
+supabase_auth = None
+
+def get_supabase_auth():
+    """Get or create Supabase auth model instance"""
+    global supabase_auth
+    if supabase_auth is None:
+        supabase_auth = SupabaseAuthModel()
+    return supabase_auth
 
 # Legacy compatibility functions
 def get_role_description(role):
@@ -274,7 +318,8 @@ def get_current_user():
     if 'user_id' not in session:
         return None
     
-    user_data = supabase_auth.get_user_by_id(session['user_id'])
+    auth = get_supabase_auth()
+    user_data = auth.get_user_by_id(session['user_id'])
     if not user_data:
         return None
     
@@ -282,4 +327,4 @@ def get_current_user():
 
 # For backward compatibility with existing code
 User = SupabaseUser
-db = supabase_auth
+db = get_supabase_auth()
