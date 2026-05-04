@@ -38,25 +38,20 @@ class SupabaseAuthModel:
             raise ValueError("Supabase credentials not found. Check SUPABASE_URL and SUPABASE_ANON_KEY in environment variables")
         
         try:
-            # Create client without proxy argument for Vercel compatibility
-            self.client = create_client(
-                self.supabase_url, 
-                self.supabase_anon_key,
-                options={
-                    'headers': {
-                        'apikey': self.supabase_anon_key,
-                        'Authorization': f'Bearer {self.supabase_anon_key}'
-                    }
-                }
-            )
+            # Create client with minimal options for Vercel compatibility
+            self.client = create_client(self.supabase_url, self.supabase_anon_key)
             self._initialized = True
             print("✅ Supabase auth model initialized with anon key (secure, RLS-compliant)")
         except Exception as e:
-            # Fallback to simple client creation
+            # Try with explicit options dict if needed
             try:
-                self.client = create_client(self.supabase_url, self.supabase_anon_key)
+                self.client = create_client(
+                    self.supabase_url, 
+                    self.supabase_anon_key,
+                    {}
+                )
                 self._initialized = True
-                print("✅ Supabase auth model initialized with fallback method")
+                print("✅ Supabase auth model initialized with empty options")
             except Exception as fallback_error:
                 raise ValueError(f"Supabase authentication unavailable: {e} (fallback: {fallback_error})")
     
