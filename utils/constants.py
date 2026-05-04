@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Application Constants
+Varydian Financial Reporting System - Application Constants
 Centralized constants for magic numbers and strings
 """
 
@@ -47,8 +47,8 @@ COLUMN_MAPPINGS = {
 # Required Columns
 REQUIRED_COLUMNS = ['Account Code', 'Account Description']
 
-# Trial Balance Validation Thresholds
-TRIAL_BALANCE_TOLERANCE = 0.01
+# Balance Sheet Validation Thresholds
+BALANCE_SHEET_TOLERANCE = 0.01
 
 # HTTP Status Messages
 ERROR_MESSAGES = {
@@ -94,4 +94,54 @@ TABLE_COLUMN_WIDTHS = {
 SESSION_LIFETIME_HOURS = 1
 
 # Security Configuration
-SECRET_KEY_DEFAULT = 'sadpmr-demo-2025-secure-key'
+SECRET_KEY_DEFAULT = 'varydian-demo-2025-secure-key'
+
+# Submission Workflow Constants
+class SubmissionStatus:
+    """Submission status enumeration"""
+    UPLOADED = "uploaded"
+    PROCESSING = "processing"
+    MAPPED = "mapped"
+    SUBMITTED = "submitted"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    VALIDATED = "validated"
+    DRAFT = "draft"
+    PENDING = "pending"
+
+class StatusMessages:
+    """User-facing status messages"""
+    MESSAGES = {
+        SubmissionStatus.UPLOADED: "Pending Review",      # Balance sheet uploaded, waiting for mapping
+        SubmissionStatus.PROCESSING: "Processing",        # Being processed/mapped
+        SubmissionStatus.MAPPED: "Mapped",              # Accounts mapped, waiting for review
+        SubmissionStatus.SUBMITTED: "Pending Review",    # Submitted for approval
+        SubmissionStatus.APPROVED: "Approved",          # Approved by finance clerk
+        SubmissionStatus.REJECTED: "Rejected",          # Rejected by finance clerk
+        SubmissionStatus.VALIDATED: "Validated",        # Validated and ready
+        SubmissionStatus.DRAFT: "Draft",
+        SubmissionStatus.PENDING: "Pending Review"
+    }
+    
+    @classmethod
+    def get_message(cls, status: str) -> str:
+        """Get user-facing message for status"""
+        return cls.MESSAGES.get(status, status)
+
+class WorkflowErrorMessages:
+    """Workflow error messages"""
+    SUBMISSION_ID_REQUIRED = "Submission ID required"
+    PERMISSION_DENIED_UPLOAD = "Permission denied. You do not have upload privileges."
+    SUBMISSION_NOT_FOUND = "Submission not found"
+    APPROVE_ERROR = "Error approving submission"
+    REJECT_ERROR = "Error rejecting submission"
+    SESSION_NOT_FOUND = "Session not found"
+    INVALID_DATE = "Invalid Date"
+
+class WorkflowLogMessages:
+    """Workflow log messages"""
+    WORKFLOW_ENTRY_CREATED = "Created submission workflow entry for session {session_id}"
+    WORKFLOW_ENTRY_ERROR = "Error creating submission workflow entry: {error}"
+    PENDING_SUBMISSIONS_ERROR = "Error getting pending submissions: {error}"
+    SESSION_SUMMARY_ERROR = "Error getting session summary: {error}"
+    UPDATE_SESSION_ERROR = "Error updating session metadata: {error}"

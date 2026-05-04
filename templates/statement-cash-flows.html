@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Statement of Cash Flows - SADPMR Financial Reporting System{% endblock %}
+{% block title %}Statement of Cash Flows - Varydian{% endblock %}
 
 {% block content %}
 
     <div class="container-content financial-statement-container">
-        <h1 class="text-center">Statement of Cash Flows</h1>
+        <h1>Statement of Cash Flows</h1>
         <p class="page-subtitle">For the year ended {{ current_date or 'December 31, 2025' }}</p>
 
-        <div class="table-fluid-wrapper">
-            <table class="table-fluid cash-flow-table">
+        <div class="table-container">
+            <table class="financial-table cash-flow-table">
                 <caption>Statement of Cash Flows - {{ entity_name or 'Sample Entity' }}</caption>
                 <thead>
                     <tr>
@@ -194,8 +194,12 @@
 
         <div class="statement-footer grid-container">
             <div class="footer-actions">
+                {% if current_user and current_user.can_generate_pdf() %}
                 <button class="btn btn-primary">Download PDF</button>
+                {% endif %}
+                {% if current_user and current_user.can_export() %}
                 <button class="btn btn-secondary">Export to Excel</button>
+                {% endif %}
                 <button class="btn btn-secondary">Print Statement</button>
             </div>
         </div>

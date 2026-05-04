@@ -1,87 +1,107 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - SADPMR Financial Reporting System{% endblock %}
+{% block title %}Varydian - Automated GRAP Compliance{% endblock %}
 
 {% block content %}
 
     <div class="hero">
-        <div class="container-content">
-            {% if current_user %}
-            <h1 class="text-center">Welcome back, {{ current_user.full_name }}!</h1>
-            <p class="hero-subtitle text-center">{{ get_role_description(current_user.role) }}</p>
-            {% if current_user.can_upload() %}
-            <div class="hero-buttons">
-                <a href="/upload" class="btn btn-primary">Upload Trial Balance</a>
-                <a href="/about" class="btn btn-secondary">Learn More</a>
-            </div>
-            {% else %}
-            <div class="hero-buttons">
-                <a href="/about" class="btn btn-secondary">Learn More</a>
-            </div>
-            {% endif %}
-            {% else %}
-            <h1 class="text-center">Automated Financial Reporting for Schedule 3A Entities</h1>
-            <p class="hero-subtitle text-center">Transform your Trial Balance into GRAP-compliant Financial Statements in under 30 seconds</p>
-            <div class="hero-buttons">
-                {% if current_user %}
-                <a href="/about" class="btn btn-primary">View Dashboard</a>
-                {% else %}
+        <div class="hero-content fade-in-up">
+            <h1 class="hero-title">Automated Financial Reporting for Schedule 3A Entities</h1>
+            <p class="hero-subtitle">Transform your Financial Documents into GRAP-compliant Financial Statements in under 30 seconds</p>
+            <div class="hero-actions">
                 <a href="/login" class="btn btn-primary">Login to Get Started</a>
-                {% endif %}
                 <a href="/about" class="btn btn-secondary">Learn More</a>
             </div>
-            {% endif %}
         </div>
     </div>
 
-    <div class="features-section container-content">
-        <h2 class="section-title text-center">Key Features</h2>
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">📊</div>
-                <h3>Automated Mapping</h3>
-                <p>Intelligent mapping of Trial Balance accounts to GRAP line items with zero manual intervention</p>
-            </div>
-            
-            <div class="feature-card">
-                <div class="feature-icon">✅</div>
-                <h3>GRAP Compliance</h3>
-                <p>100% compliant with Generally Recognised Accounting Practice standards approved by ASB</p>
-            </div>
-            
-            <div class="feature-card">
-                <div class="feature-icon">🔍</div>
-                <h3>Audit Trail</h3>
-                <p>Complete audit trail for AGSA compliance - every change logged with timestamps and user IDs</p>
-            </div>
-            
-            <div class="feature-card">
-                <div class="feature-icon">📄</div>
-                <h3>Instant PDF Export</h3>
-                <p>Generate pixel-perfect PDFs matching SADPMR official formats with one click</p>
-            </div>
-            
-            <div class="feature-card">
-                <div class="feature-icon">💹</div>
-                <h3>Cash Flow Automation</h3>
-                <p>Automated Cash Flow Statement generation using Indirect Method - no manual calculations</p>
-            </div>
-            
-            <div class="feature-card">
-                <div class="feature-icon">📈</div>
-                <h3>Ratio Analysis</h3>
-                <p>Automatic calculation of key financial ratios: liquidity, solvency, efficiency, profitability</p>
+    <div class="section">
+        <div class="container-content">
+            <h2 class="section-title">Key Features</h2>
+            <div class="grid-auto-fit">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">📊</div>
+                            Automated Mapping
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Intelligent mapping of Financial Document accounts to GRAP line items with zero manual intervention</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">✅</div>
+                            GRAP Compliance
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>100% compliant with Generally Recognised Accounting Practice standards approved by ASB</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">⚡</div>
+                            Lightning Fast
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Generate complete financial statements in under 30 seconds from your Financial Document file</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">📄</div>
+                            Professional Reports
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Export professional PDF reports ready for audit submission and stakeholder presentation</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">🔒</div>
+                            Secure & Private
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Your financial data remains secure with enterprise-grade encryption and privacy controls</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">📱</div>
+                            Mobile Friendly
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Access and manage your financial reports from any device with our responsive interface</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="demo-section container-content">
-        <h2 class="section-title text-center">How It Works</h2>
-        <div class="steps-grid">
+    <div class="section">
+        <div class="container-content">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps-grid">
                 <div class="step">
                     <div class="step-number">1</div>
-                    <h3>Upload Trial Balance</h3>
-                    <p>Import your Trial Balance from Pastel or Excel (CSV, XLSX supported)</p>
+                    <h3>Upload Financial Document</h3>
+                    <p>Import your Financial Document from Pastel or Excel (CSV, XLSX supported)</p>
                 </div>
                 <div class="step-arrow">→</div>
                 <div class="step">
@@ -102,21 +122,14 @@
                     <p>Receive GRAP-compliant PDF ready for AGSA submission</p>
                 </div>
             </div>
+        </div>
     </div>
 
-            <div class="cta-section">
+    <div class="section">
         <div class="container-content text-center">
             <h2>Ready to Streamline Your Financial Reporting?</h2>
-            <p>Upload your Trial Balance now and see the magic happen</p>
-            {% if current_user %}
-                {% if current_user.can_upload() %}
-                <a href="/upload" class="btn btn-lg">Get Started</a>
-                {% else %}
-                <a href="/about" class="btn btn-lg">View Features</a>
-                {% endif %}
-            {% else %}
-            <a href="/login" class="btn btn-lg">Get Started</a>
-            {% endif %}
+            <p>Upload your Financial Document now and see the magic happen</p>
+            <a href="/login" class="btn btn-primary btn-lg">Get Started</a>
         </div>
     </div>
 

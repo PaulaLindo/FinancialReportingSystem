@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Controllers
+Varydian Financial Reporting System - Controllers
 Route handlers and API endpoints
 """
 

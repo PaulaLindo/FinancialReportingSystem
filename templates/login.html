@@ -1,18 +1,41 @@
 {% extends "base_auth.html" %}
 
-{% block title %}Login - SADPMR Financial Reporting System{% endblock %}
+{% block title %}Login - Varydian{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
 {% endblock %}
 
 {% block content %}
-    <div class="login-container">
+    <div class="login-page">
+        <!-- Left Panel - Branding (Desktop Only) -->
+        <div class="login-branding">
+            <div class="login-branding-logo">
+                🔐
+            </div>
+            <h1>Varydian</h1>
+            <p>Financial Reporting System</p>
+            <div class="login-features">
+                <div class="login-feature">
+                    <span class="login-feature-icon">📊</span>
+                    <span>Advanced Financial Analytics</span>
+                </div>
+                <div class="login-feature">
+                    <span class="login-feature-icon">🔒</span>
+                    <span>Secure & Compliant</span>
+                </div>
+                <div class="login-feature">
+                    <span class="login-feature-icon">⚡</span>
+                    <span>Real-time Processing</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Login Form -->
         <div class="login-box">
             <div class="login-header">
-                <div class="login-logo">🔐</div>
-                <h1 class="text-center">Welcome Back</h1>
-                <p>SADPMR Financial Reporting System</p>
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Varydian Logo" class="login-logo-img">
+                <h1>Welcome Back</h1>
+                <p>Varydian Financial Reporting System</p>
             </div>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -25,7 +48,7 @@
                 {% endif %}
             {% endwith %}
 
-            <form method="POST" action="{{ url_for('login') }}" id="loginForm" novalidate>
+            <form method="POST" action="{{ url_for('login') }}" id="loginForm" class="login-form" novalidate>
                 <div class="form-group">
                     <label for="username" class="form-label">Email Address</label>
                     <input 
@@ -55,40 +78,47 @@
             </form>
 
             <div class="demo-credentials">
-                <div class="demo-account">
-                    <div>
+                <h3>Demo Accounts</h3>
+                <div class="demo-accounts-grid">
+                    <div class="demo-account">
                         <div class="demo-role">
                             <span class="role-badge role-cfo">CFO</span>
                             Full Access
                         </div>
-                        <div class="demo-email">cfo@sadpmr.gov.za / demo123</div>
+                        <p class="demo-email">cfo@sadpmr.gov.za</p>
+                        <p class="demo-password">Password: demo123</p>
                     </div>
-                </div>
-                <div class="demo-account">
-                    <div>
+                    <div class="demo-account">
                         <div class="demo-role">
-                            <span class="role-badge role-accountant">Accountant</span>
-                            Process & Reports
+                            <span class="role-badge role-finance-manager">Finance Manager</span>
+                            Review & Approve
                         </div>
-                        <div class="demo-email">accountant@sadpmr.gov.za / demo123</div>
+                        <p class="demo-email">finance.manager@sadpmr.gov.za</p>
+                        <p class="demo-password">Password: demo123</p>
                     </div>
-                </div>
-                <div class="demo-account">
-                    <div>
+                    <div class="demo-account">
                         <div class="demo-role">
-                            <span class="role-badge role-clerk">Clerk</span>
-                            Upload Only
+                            <span class="role-badge role-finance-clerk">Finance Clerk</span>
+                            Upload & Map
                         </div>
-                        <div class="demo-email">clerk@sadpmr.gov.za / demo123</div>
+                        <p class="demo-email">finance.clerk@sadpmr.gov.za</p>
+                        <p class="demo-password">Password: finance123</p>
                     </div>
-                </div>
-                <div class="demo-account">
-                    <div>
+                    <div class="demo-account">
+                        <div class="demo-role">
+                            <span class="role-badge role-asset-manager">Asset Manager</span>
+                            Asset Management
+                        </div>
+                        <p class="demo-email">asset.manager@sadpmr.gov.za</p>
+                        <p class="demo-password">Password: demo123</p>
+                    </div>
+                    <div class="demo-account">
                         <div class="demo-role">
                             <span class="role-badge role-auditor">Auditor</span>
                             View Only
                         </div>
-                        <div class="demo-email">auditor@agsa.gov.za / demo123</div>
+                        <p class="demo-email">auditor@agsa.gov.za</p>
+                        <p class="demo-password">Password: demo123</p>
                     </div>
                 </div>
 
@@ -96,11 +126,14 @@
                     <button type="button" class="quick-login-btn" data-username="cfo@sadpmr.gov.za">
                         Quick Login: CFO
                     </button>
-                    <button type="button" class="quick-login-btn" data-username="accountant@sadpmr.gov.za">
-                        Quick Login: Accountant
+                    <button type="button" class="quick-login-btn" data-username="finance.manager@sadpmr.gov.za">
+                        Quick Login: Finance Manager
                     </button>
-                    <button type="button" class="quick-login-btn" data-username="clerk@sadpmr.gov.za">
-                        Quick Login: Clerk
+                    <button type="button" class="quick-login-btn" data-username="finance.clerk@sadpmr.gov.za">
+                        Quick Login: Finance Clerk
+                    </button>
+                    <button type="button" class="quick-login-btn" data-username="asset.manager@sadpmr.gov.za">
+                        Quick Login: Asset Manager
                     </button>
                     <button type="button" class="quick-login-btn" data-username="auditor@agsa.gov.za">
                         Quick Login: Auditor

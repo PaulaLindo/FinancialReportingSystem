@@ -1,5 +1,5 @@
 /**
- * SADPMR Financial Reporting System - Financial Statements Module
+ * Varydian Financial Reporting System - Financial Statements Module
  * Handles financial statement table functionality and mobile card view
  */
 

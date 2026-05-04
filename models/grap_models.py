@@ -1,5 +1,5 @@
 """
-SADPMR GRAP Mapping Engine
+Varydian GRAP Mapping Engine
 Phase 2: Enhanced Financial Statement Generation with PDF Export
 """
 
@@ -75,8 +75,8 @@ class GRAPMappingEngine:
             'SOFE_EXPENSES': ['EXP-001', 'EXP-002', 'EXP-003', 'EXP-004']
         }
     
-    def import_trial_balance(self, file_path):
-        """Import and validate trial balance from Excel/CSV"""
+    def import_balance_sheet(self, file_path):
+        """Import and validate balance sheet from Excel/CSV"""
         df = pd.read_excel(file_path) if file_path.endswith('.xlsx') else pd.read_csv(file_path)
         
         # Standardize column names
@@ -85,12 +85,12 @@ class GRAPMappingEngine:
         # Debug: Print actual column names
         print(f"Actual columns in file: {list(df.columns)}")
         
-        # Check if this looks like a trial balance file
+        # Check if this looks like a balance sheet file
         required_keywords = ['account', 'debit', 'credit', 'balance']
         column_str = ' '.join(df.columns).lower()
         
         if not any(keyword in column_str for keyword in required_keywords):
-            raise ValueError(f"This doesn't appear to be a trial balance file. Expected columns like 'Account Code', 'Account Description', 'Debit Balance', 'Credit Balance'. Found columns: {list(df.columns)}. Please upload a proper trial balance file.")
+            raise ValueError(f"This doesn't appear to be a balance sheet file. Expected columns like 'Account Code', 'Account Description', 'Debit Balance', 'Credit Balance'. Found columns: {list(df.columns)}. Please upload a proper balance sheet file.")
         
         # Handle column name variations - only rename if source column exists and target doesn't
         for source_col, target_col in COLUMN_MAPPINGS.items():
@@ -109,13 +109,13 @@ class GRAPMappingEngine:
         
         return df
     
-    def map_to_grap(self, trial_balance_df):
-        """Map trial balance accounts to GRAP line items"""
-        trial_balance_df['Account Code'] = trial_balance_df['Account Code'].astype(str)
+    def map_to_grap(self, balance_sheet_df):
+        """Map balance sheet accounts to GRAP line items"""
+        balance_sheet_df['Account Code'] = balance_sheet_df['Account Code'].astype(str)
         self.mapping_schema['index'] = self.mapping_schema['index'].astype(str)
         
         mapped_df = pd.merge(
-            trial_balance_df,
+            balance_sheet_df,
             self.mapping_schema,
             left_on='Account Code',
             right_on='index',

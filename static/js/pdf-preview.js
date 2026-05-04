@@ -1,5 +1,5 @@
 /**
- * SADPMR Financial Reporting System - PDF Preview Module
+ * Varydian Financial Reporting System - PDF Preview Module
  * Handles PDF preview, download, and fullscreen functionality
  */
 
@@ -116,7 +116,6 @@ class PdfPreviewModule {
             };
             
         } catch (error) {
-            console.error('Error loading PDF:', error);
             this.showPdfError();
         }
     }
@@ -145,7 +144,8 @@ class PdfPreviewModule {
         if (!this.elements.pdfPreview) return;
         
         // Ensure the iframe is visible
-        this.elements.pdfPreview.style.display = 'block';
+        this.elements.pdfPreview.classList.remove('element--hidden');
+        this.elements.pdfPreview.classList.add('element--visible');
         
         // Add ready class to container
         const container = this.elements.pdfPreview.parentElement;
@@ -203,8 +203,10 @@ class PdfPreviewModule {
     handleFullscreen() {
         const fullscreenContainer = document.getElementById('pdfFullscreen');
         if (fullscreenContainer) {
-            fullscreenContainer.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
+            fullscreenContainer.classList.remove('element--hidden');
+            fullscreenContainer.classList.add('element--visible');
+            document.body.classList.add('body--overflow-hidden');
+            document.body.classList.remove('body--overflow-auto');
             
             // Load PDF in fullscreen if not already loaded
             const fullscreenPdf = document.getElementById('fullscreenPdf');
@@ -220,8 +222,10 @@ class PdfPreviewModule {
     closeFullscreen() {
         const fullscreenContainer = document.getElementById('pdfFullscreen');
         if (fullscreenContainer) {
-            fullscreenContainer.style.display = 'none';
-            document.body.style.overflow = '';
+            fullscreenContainer.classList.add('element--hidden');
+            fullscreenContainer.classList.remove('element--visible');
+            document.body.classList.remove('body--overflow-hidden');
+            document.body.classList.add('body--overflow-auto');
         }
     }
 

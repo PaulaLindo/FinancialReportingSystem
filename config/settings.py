@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - Configuration Settings
+Varydian Financial Reporting System - Configuration Settings
 Application configuration for different environments
 """
 

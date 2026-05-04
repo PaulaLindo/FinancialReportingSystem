@@ -1,4 +1,4 @@
-/* Base CSS - SADPMR Financial Reporting System */
+/* Base CSS - Varydian Financial Reporting System */
 /* CSS resets, root variables, and global styles */
 
 /* ======================================== */
@@ -67,7 +67,7 @@ footer, header, hgroup, main, menu, nav, section {
     --fluid-text-6xl: clamp(3rem, 8.5vw, 4.8rem);
 
     /* ======================================== */
-    /* HEADING TYPOGRAPHY SCALE */
+    /* HEADING TYPOGRAPHY SCALE - DESKTOP OPTIMIZED */
     /* ======================================== */
     --heading-3xs: clamp(0.875rem, 2.25vw, 1rem);
     --heading-xs: clamp(1rem, 2.5vw, 1.25rem);
@@ -91,6 +91,8 @@ footer, header, hgroup, main, menu, nav, section {
     --container-3xl: clamp(1344px, 40vw, 1536px);
     --container-4xl: clamp(1536px, 30vw, 1728px);
     --container-5xl: clamp(1728px, 20vw, 1920px);
+    --container-6xl: clamp(1920px, 15vw, 2048px);
+    --container-7xl: clamp(2048px, 10vw, 2304px);
 
     /* ======================================== */
     /* BORDER RADIUS */
@@ -144,6 +146,9 @@ footer, header, hgroup, main, menu, nav, section {
     --accent-gold: #f59e0b;
     --accent-gold-light: #fbbf24;
     --accent-gold-dark: #d97706;
+    --accent-purple: #8b5cf6;
+    --accent-purple-light: #a78bfa;
+    --accent-purple-dark: #7c3aed;
 
     /* Semantic Colors */
     --success: #10b981;

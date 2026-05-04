@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - PDF Service
+Varydian Financial Reporting System - PDF Service
 Refactored PDF generation with smaller, focused methods
 """
 

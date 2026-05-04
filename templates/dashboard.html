@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Varydian{% endblock %}
+
+{% block extra_css %}
+<!-- Dashboard styles are included in main styles.css -->
+{% endblock %}
+
+{% block content %}
+
+    <div class="hero">
+        <div class="hero-content fade-in-up">
+            <h1 class="hero-title">Welcome back, {{ current_user.full_name }}!</h1>
+            <p class="hero-subtitle">{{ get_role_description(current_user.role) }}</p>
+            {% if current_user.can_upload() %}
+            <div class="hero-actions">
+                <a href="/upload" class="btn btn-primary">Upload Financial Document</a>
+                <a href="/reports" class="btn btn-secondary">View Reports</a>
+            </div>
+            {% else %}
+            <div class="hero-actions">
+                <a href="/reports" class="btn btn-primary">View Reports</a>
+                <a href="/about" class="btn btn-secondary">Learn More</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if current_user.role == 'FINANCE_MANAGER' %}
+    <!-- Finance Manager Approvals Queue -->
+    <div class="section approvals-queue-section">
+        <div class="container-content">
+            <div class="section-header">
+                <h2 class="section-title">Approvals Queue - Clerk Submissions</h2>
+            </div>
+
+            <!-- Queue Statistics -->
+            <div class="queue-stats">
+                <span class="stat-item">
+                    <span class="stat-value" id="pendingCount">0</span>
+                    <span class="stat-label">Pending</span>
+                </span>
+                <span class="stat-item">
+                    <span class="stat-value" id="highPriorityCount">0</span>
+                    <span class="stat-label">High Priority</span>
+                </span>
+                <span class="stat-item">
+                    <span class="stat-value" id="todayCount">0</span>
+                    <span class="stat-label">Today</span>
+                </span>
+            </div>
+
+            <!-- Queue Filters -->
+            <div class="queue-filters">
+                <div class="filter-group">
+                    <label for="queueSearchInput" class="filter-label">Search:</label>
+                    <input type="text" id="queueSearchInput" class="search-input" placeholder="Search by ID, creator, reason..." data-action="search-queue">
+                </div>
+                <div class="filter-group">
+                    <label for="submissionTypeFilter" class="filter-label">Submission Type:</label>
+                    <select id="submissionTypeFilter" class="filter-select" data-filter="submissionType">
+                        <option value="all">All Submissions</option>
+                        <option value="financial_statements">Financial Statements</option>
+                        <option value="journal_entries">Journal Entries</option>
+                        <option value="asset_impairment">Asset Impairment</option>
+                        <option value="budget_adjustment">Budget Adjustment</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="priorityFilter" class="filter-label">Priority:</label>
+                    <select id="priorityFilter" class="filter-select" data-filter="priority">
+                        <option value="all">All Priority</option>
+                        <option value="high">High Priority</option>
+                        <option value="normal">Normal Priority</option>
+                        <option value="low">Low Priority</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="dateFilter" class="filter-label">Date Range:</label>
+                    <select id="dateFilter" class="filter-select" data-filter="dateRange">
+                        <option value="all">All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button class="btn btn-secondary btn-sm" data-action="refresh-queue">
+                        🔄 Refresh
+                    </button>
+                    <a href="/approvals" class="btn btn-primary btn-sm">
+                        📋 View All Approvals
+                    </a>
+                </div>
+            </div>
+
+            <!-- Queue Items -->
+            <div class="queue-items" id="approvalsQueue">
+                <div class="queue-loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading Clerk submissions...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if current_user.role == 'FINANCE_CLERK' %}
+    <!-- Finance Clerk Dashboard Content -->
+    <div class="dashboard-content">
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.open_periods or 0 }}</div>
+                <div class="stat-label">Open Periods</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.pending_uploads or 0 }}</div>
+                <div class="stat-label">Pending Uploads</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.submitted_today or 0 }}</div>
+                <div class="stat-label">Submitted Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.approved_this_month or 0 }}</div>
+                <div class="stat-label">Approved This Month</div>
+            </div>
+        </div>
+
+        <!-- Task List Section -->
+        <div class="task-list-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="section-icon">📋</span>
+                    Task List - Open Periods
+                </h2>
+                <div class="task-summary">
+                    <span class="summary-item">
+                        <span class="summary-number">{{ periods|length }}</span>
+                        <span class="summary-label">Periods</span>
+                    </span>
+                    <span class="summary-item">
+                        <span class="summary-number">{{ stats.open_periods or 0 }}</span>
+                        <span class="summary-label">Open</span>
+                    </span>
+                </div>
+            </div>
+            
+            {% if periods %}
+                <div class="task-filters">
+                    <div class="filter-group">
+                        <label for="periodFilter" class="filter-label">Filter by Status:</label>
+                        <select id="periodFilter" class="filter-select">
+                            <option value="all">All Periods</option>
+                            <option value="open">Open Only</option>
+                            <option value="closed">Closed Only</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="urgencyFilter" class="filter-label">Urgency:</label>
+                        <select id="urgencyFilter" class="filter-select">
+                            <option value="all">All</option>
+                            <option value="urgent">Urgent (Due Soon)</option>
+                            <option value="normal">Normal</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="task-grid" id="taskGrid">
+                    {% for period in periods %}
+                    <div class="task-card status-{{ period.status }} {% if period.is_urgent %}urgent{% endif %}" 
+                         data-status="{{ period.status }}" 
+                         data-urgency="{% if period.is_urgent %}urgent{% else %}normal{% endif %}">
+                        <div class="task-header">
+                            <div class="task-period">{{ period.name }}</div>
+                            <div class="task-badges">
+                                <div class="task-status status-{{ period.status }}">
+                                    {{ period.status.title() }}
+                                </div>
+                                {% if period.is_urgent %}
+                                <div class="task-urgency urgent">
+                                    <span>⚡</span>
+                                    Urgent
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="task-details">
+                            <div class="task-info">
+                                <div class="task-info-item">
+                                    <span class="task-info-icon">📅</span>
+                                    <span>{{ period.start_date }} - {{ period.end_date }}</span>
+                                </div>
+                                <div class="task-info-item">
+                                    <span class="task-info-icon">📊</span>
+                                    <span>{{ period.uploaded_count or 0 }}/{{ period.required_count or 1 }} files uploaded</span>
+                                </div>
+                                <div class="task-info-item {% if period.is_urgent %}urgent-deadline{% endif %}">
+                                    <span class="task-info-icon">⏰</span>
+                                    <span>Due: {{ period.due_date }}</span>
+                                </div>
+                                {% if period.last_upload %}
+                                <div class="task-info-item">
+                                    <span class="task-info-icon">🕐</span>
+                                    <span>Last upload: {{ period.last_upload }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="task-progress">
+                            {% set uploaded = period.uploaded_count or 0 %}
+                            {% set required = period.required_count or 1 %}
+                            {% set progress = (uploaded / required) * 100 %}
+                            <div class="progress-bar">
+                                <div class="progress-fill">{{ progress }}%</div>
+                            </div>
+                            <span class="progress-text">{{ progress|int }}% Complete</span>
+                        </div>
+                        
+                        <div class="task-actions">
+                            {% if period.status == 'open' %}
+                                <a href="/upload?period={{ period.id }}" class="btn-upload">
+                                    <span>📤</span>
+                                    Upload Balance Sheet
+                                </a>
+                            {% else %}
+                                <button class="btn-upload" disabled>
+                                    <span>🔒</span>
+                                    Period Closed
+                                </button>
+                            {% endif %}
+                            
+                            {% if (period.uploaded_count or 0) > 0 %}
+                                <a href="/reports?period={{ period.id }}" class="btn-view">
+                                    <span>👁️</span>
+                                    View Reports
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <h3 class="empty-title">No Open Periods</h3>
+                    <p class="empty-description">
+                        There are currently no open periods for balance sheet uploads. 
+                        Please check back later or contact your administrator.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <div class="container-content">
+            <h2 class="section-title">Quick Actions</h2>
+            <div class="grid-auto-fit">
+                {% if current_user.can_upload() %}
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">📊</div>
+                            Upload Balance Sheet
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Import your Balance Sheet from Pastel or Excel to generate GRAP-compliant financial statements</p>
+                        <a href="/upload" class="btn btn-primary">Upload Now</a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if current_user.can_view_all() %}
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">📁</div>
+                            File Management
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>View and manage your uploaded balance sheets and generated financial reports</p>
+                        <a href="/reports" class="btn btn-secondary">View Files</a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if current_user.can_review() %}
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">✅</div>
+                            Pending Approvals
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Review and approve pending transactions requiring your attention</p>
+                        <a href="/approvals" class="btn btn-warning">Review Approvals</a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if current_user.can_export() %}
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">📤</div>
+                            Export Center
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Export financial data and generate compliance reports for audit purposes</p>
+                        <a href="/export" class="btn btn-info">Export Data</a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if current_user.can_manage_users() %}
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">👥</div>
+                            User Administration
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Manage user accounts, roles, and system permissions</p>
+                        <a href="/admin" class="btn btn-danger">Admin Panel</a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">ℹ️</div>
+                            System Information
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Learn more about the Varydian Financial Reporting System features and capabilities</p>
+                        <a href="/about" class="btn btn-secondary">Learn More</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if current_user.can_upload() %}
+    <div class="section">
+        <div class="container-content">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Upload Balance Sheet</h3>
+                    <p>Import your Balance Sheet from Pastel or Excel (CSV, XLSX supported)</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Automatic Mapping</h3>
+                    <p>System intelligently maps accounts to GRAP categories</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Generate Reports</h3>
+                    <p>Click one button to generate complete financial statements</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Download PDF</h3>
+                    <p>Receive GRAP-compliant PDF ready for AGSA submission</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+{% block extra_js %}
+{% if current_user.role == 'FINANCE_CLERK' %}
+<script>
+// Pass data to JavaScript
+{% if periods is defined and periods %}
+window.periodsData = {{ periods|tojson|safe }};
+{% else %}
+window.periodsData = [];
+{% endif %}
+
+{% if stats is defined and stats %}
+window.statsData = {{ stats|tojson|safe }};
+{% else %}
+window.statsData = {};
+{% endif %}
+</script>
+{% endif %}
+{% if current_user.role == 'FINANCE_MANAGER' %}
+<script>
+// Pass user role to JavaScript
+window.currentUserRole = '{{ current_user.role }}';
+</script>
+{% endif %}
+<script src="{{ url_for('static', filename='js/dashboard-init.js') }}"></script>
+{% endblock %}
+{% endblock %}

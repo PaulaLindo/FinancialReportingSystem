@@ -1,54 +1,200 @@
 {% extends "base.html" %}
 
-{% block title %}Reports - SADPMR Financial Reporting System{% endblock %}
+{% block title %}File Management - Varydian{% endblock %}
 
 {% block content %}
-
-    <div class="container-content reports-container">
-        <h1 class="text-center">Financial Reports</h1>
-        <p class="page-subtitle">View and manage generated financial statements</p>
-
-        <div class="reports-section grid-auto-fit">
-            <div class="report-card">
-                <h3 class="text-center">📊 Statement of Financial Position</h3>
-                <p>Balance sheet showing assets, liabilities, and net assets</p>
-                <a href="/statement-financial-position" class="btn btn-primary" type="button">View Report</a>
-            </div>
+<div class="reports-page">
+    <div class="container-content">
+        <div class="reports-header">
+            <h1>📁 File Management</h1>
+            <p>Manage your uploaded balance sheets and generated financial reports</p>
             
-            <div class="report-card">
-                <h3 class="text-center">📈 Statement of Financial Performance</h3>
-                <p>Income statement showing revenue and expenses</p>
-                <a href="/statement-financial-performance" class="btn btn-primary" type="button">View Report</a>
-            </div>
-            
-            <div class="report-card">
-                <h3 class="text-center">💰 Statement of Cash Flows</h3>
-                <p>Cash movements and liquidity analysis</p>
-                <a href="/statement-cash-flows" class="btn btn-primary" type="button">View Report</a>
-            </div>
-            
-            <div class="report-card">
-                <h3 class="text-center">📋 Notes to Financial Statements</h3>
-                <p>Detailed notes and disclosures</p>
-                <button class="btn btn-primary" type="button">View Report</button>
-            </div>
-        </div>
-
-        <div class="recent-reports grid-container">
-            <h2 class="text-center">Recently Generated Reports</h2>
-            <div class="report-list grid-auto-fit">
-                <div class="report-item">
-                    <div class="report-info">
-                        <h4>Annual Financial Statements 2025</h4>
-                        <p>Generated on January 29, 2026 at 14:30</p>
-                    </div>
-                    <div class="report-actions grid-auto-fit">
-                        <button class="btn btn-secondary" type="button">View</button>
-                        <button class="btn btn-download" type="button">Download PDF</button>
-                    </div>
+            <!-- Summary Stats -->
+            <div class="file-stats-summary" id="fileStatsSummary">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalFilesCount">0</div>
+                    <div class="stat-label">Total Files</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="balanceSheetsCount">0</div>
+                    <div class="stat-label">Balance Sheets</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="pdfReportsCount">0</div>
+                    <div class="stat-label">PDF Reports</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="storageUsed">0 MB</div>
+                    <div class="stat-label">Storage Used</div>
                 </div>
             </div>
         </div>
-    </div>
 
+        <!-- Filters and Search -->
+        <div class="queue-filters">
+            <div class="filter-group">
+                <label for="searchInput" class="filter-label">Search:</label>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search by filename..." data-action="search-files">
+            </div>
+            <div class="filter-group">
+                <label for="fileTypeFilter" class="filter-label">File Type:</label>
+                <select id="fileTypeFilter" class="filter-select" data-filter="fileType">
+                    <option value="all">All Files</option>
+                    <option value="balance_sheet">Balance Sheets</option>
+                    <option value="pdf_report">PDF Reports</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="dateFilter" class="filter-label">Date Range:</label>
+                <select id="dateFilter" class="filter-select" data-filter="dateRange">
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="year">This Year</option>
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-secondary btn-sm" data-action="refresh-files">
+                    🔄 Refresh
+                </button>
+                <button class="btn btn-primary btn-sm" data-action="download-all">
+                    📦 Download All
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="filesLoading" class="loading-state element--hidden">
+            <div class="spinner"></div>
+            <p>Loading your files...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="filesError" class="error-state element--hidden">
+            <div class="error-icon">⚠️</div>
+            <h3>Error Loading Files</h3>
+            <p id="errorMessage">Unable to load your files. Please try again.</p>
+            <button id="retryLoadBtn" class="btn btn-secondary">Retry</button>
+        </div>
+
+        <!-- Files List -->
+        <div id="filesList" class="files-list">
+            <!-- Files will be dynamically loaded here -->
+        </div>
+
+        <!-- Pagination Controls -->
+        <div id="paginationControls" class="pagination-controls element--hidden">
+            <div class="pagination-info">
+                <span id="paginationInfo">Showing 1-10 of 93 files</span>
+            </div>
+            <div class="pagination-buttons">
+                <button id="prevPageBtn" class="btn btn-secondary" disabled>
+                    <span class="btn-icon">←</span>
+                    <span class="btn-text">Previous</span>
+                </button>
+                <span id="pageNumbers" class="page-numbers">
+                    <!-- Page numbers will be dynamically generated -->
+                </span>
+                <button id="nextPageBtn" class="btn btn-secondary">
+                    <span class="btn-text">Next</span>
+                    <span class="btn-icon">→</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state element--hidden">
+            <div class="empty-icon">📂</div>
+            <h3>No Files Found</h3>
+            <p>You haven't uploaded any balance sheets or generated reports yet.</p>
+            <a href="/upload" class="btn btn-primary">Upload Your First File</a>
+        </div>
+    </div>
+</div>
+
+<!-- File Item Template (hidden) -->
+<template id="fileItemTemplate">
+    <div class="file-item" data-file-id="" data-file-type="">
+        <div class="file-icon">
+            <span class="icon-balance-sheet">📊</span>
+            <span class="icon-pdf-report">�</span>
+        </div>
+        
+        <div class="file-info">
+            <div class="file-name" title=""></div>
+            <div class="file-meta">
+                <span class="file-size"></span>
+                <span class="file-date"></span>
+                <span class="file-status"></span>
+            </div>
+        </div>
+        
+        <div class="file-actions">
+            <button class="btn-download-file btn btn-primary" title="Download file">
+                <span class="btn-icon">⬇</span>
+                <span class="btn-text">Download</span>
+            </button>
+            <button class="btn-view-details btn btn-secondary" title="View file details">
+                <span class="btn-icon">👁</span>
+                <span class="btn-text">Details</span>
+            </button>
+            <button class="btn-delete-file btn btn-danger" title="Delete file">
+                <span class="btn-icon">🗑</span>
+                <span class="btn-text">Delete</span>
+            </button>
+        </div>
+    </div>
+</template>
+
+<!-- File Details Modal -->
+<div id="fileDetailsModal" class="file-details-modal element--hidden">
+    <div class="file-details-overlay" data-action="close-file-details-modal"></div>
+    <div class="file-details-content">
+        <div class="file-details-header">
+            <h3>File Details</h3>
+            <button class="file-details-close" data-action="close-file-details-modal">✕</button>
+        </div>
+        <div class="file-details-body">
+            <div class="detail-row">
+                <label>Filename:</label>
+                <span id="detailFilename"></span>
+            </div>
+            <div class="detail-row">
+                <label>Original Filename:</label>
+                <span id="detailOriginalFilename"></span>
+            </div>
+            <div class="detail-row">
+                <label>File Type:</label>
+                <span id="detailFileType"></span>
+            </div>
+            <div class="detail-row">
+                <label>File Size:</label>
+                <span id="detailFileSize"></span>
+            </div>
+            <div class="detail-row">
+                <label>Upload Date:</label>
+                <span id="detailUploadDate"></span>
+            </div>
+            <div class="detail-row">
+                <label>Status:</label>
+                <span id="detailStatus"></span>
+            </div>
+            <div class="detail-row" id="detailBalanceSheetRow">
+                <label>Associated Balance Sheet:</label>
+                <span id="detailBalanceSheet"></span>
+            </div>
+        </div>
+        <div class="file-details-footer">
+            <button id="modalDownloadBtn" class="btn btn-primary">Download File</button>
+            <button id="modalDeleteBtn" class="btn btn-danger">Delete File</button>
+            <button class="btn btn-secondary" data-action="close-file-details-modal">Close</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/file-management.js') }}"></script>
 {% endblock %}

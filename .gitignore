@@ -42,13 +42,20 @@ instance/
 # Uploads and outputs (keep structure but ignore content)
 uploads/*
 !uploads/.gitkeep
+!uploads/*_test.*
+!uploads/demo_*
+!uploads/sample_*
+!uploads/test_*
 outputs/*
 !outputs/.gitkeep
+!outputs/*_test.*
+!outputs/demo_*
+!outputs/sample_*
+!outputs/test_*
 
 # Logs
 *.log
 
 # Environment variables
-.env
 .env.local
 .env.production

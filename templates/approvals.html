@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction Approvals - Varydian{% endblock %}
+
+{% block content %}
+<div class="approval-page">
+    <div class="approval-header">
+        <div class="container-content">
+            <h1>Transaction Approvals</h1>
+            <p>Review and approve financial transactions following Four-Eyes Principle</p>
+        </div>
+    </div>
+
+    <div class="approval-content">
+        <div class="container-content">
+            {% if current_user.role == 'FINANCE_MANAGER' and request.args.get('review') == 'statement' %}
+            <!-- Financial Statement Review Mode -->
+            <div class="statement-review-mode">
+                <div class="review-header">
+                    <div class="review-breadcrumb">
+                        <a href="/approvals" class="breadcrumb-link">← Back to Approvals</a>
+                        <span class="breadcrumb-separator">/</span>
+                        <span class="breadcrumb-current">Financial Statement Review</span>
+                    </div>
+                    <h1>Financial Statement Review</h1>
+                    <p>Verify calculations and mappings before approval</p>
+                </div>
+
+                <div class="review-content" id="statementReviewContent">
+                    <div class="review-loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading financial statement for review...</p>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <!-- Approval Statistics -->
+            <div class="approval-stats">
+                <div class="approval-stat-card">
+                    <div class="approval-stat-icon">📋</div>
+                    <div class="approval-stat-value" id="pendingCount">0</div>
+                    <div class="approval-stat-label">Pending</div>
+                </div>
+                <div class="approval-stat-card">
+                    <div class="approval-stat-icon">✅</div>
+                    <div class="approval-stat-value" id="approvedCount">0</div>
+                    <div class="approval-stat-label">Approved Today</div>
+                </div>
+                <div class="approval-stat-card">
+                    <div class="approval-stat-icon">⚡</div>
+                    <div class="approval-stat-value" id="finalizedCount">0</div>
+                    <div class="approval-stat-label">Finalized</div>
+                </div>
+                <div class="approval-stat-card">
+                    <div class="approval-stat-icon">📊</div>
+                    <div class="approval-stat-value" id="complianceRate">100%</div>
+                    <div class="approval-stat-label">Compliance Rate</div>
+                </div>
+            </div>
+
+            <!-- Create New Transaction -->
+            {% if current_user and current_user.can_upload() %}
+            <div class="approval-section">
+                <h2>Create New Transaction</h2>
+                <div class="approval-form-card">
+                    <form id="createTransactionForm" class="approval-form">
+                        <div class="form-group">
+                            <label for="transaction_type" class="form-label">Transaction Type</label>
+                            <select id="transaction_type" name="transaction_type" class="form-select" required>
+                                <option value="">Select transaction type...</option>
+                                <option value="journal_entry">Journal Entry</option>
+                                <option value="asset_impairment">Asset Impairment</option>
+                                <option value="budget_adjustment">Budget Adjustment</option>
+                                <option value="asset_disposal">Asset Disposal</option>
+                            </select>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="account_code" class="form-label">Account Code</label>
+                                <input type="text" id="account_code" name="account_code" class="form-input" required placeholder="e.g., 1001">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="account_description" class="form-label">Description</label>
+                                <input type="text" id="account_description" name="account_description" class="form-input" required placeholder="Account description">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="amount" class="form-label">Amount</label>
+                                <input type="number" id="amount" name="amount" class="form-input" required step="0.01" placeholder="0.00">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="debit_credit" class="form-label">Debit/Credit</label>
+                                <select id="debit_credit" name="debit_credit" class="form-select" required>
+                                    <option value="">Select...</option>
+                                    <option value="debit">Debit</option>
+                                    <option value="credit">Credit</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="reason" class="form-label">Reason</label>
+                            <textarea id="reason" name="reason" class="form-textarea" rows="3" placeholder="Reason for this transaction..." required></textarea>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Create Transaction</button>
+                            <button type="reset" class="btn btn-secondary">Clear Form</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Pending Transactions -->
+            <div class="approval-section">
+                <h2>Pending Transactions</h2>
+                <div id="pendingTransactionsContainer" class="approval-transactions">
+                    <!-- Transactions will be loaded here -->
+                    <div class="approval-empty-state">
+                        <div class="approval-empty-icon">📋</div>
+                        <h3>Loading...</h3>
+                        <p>Loading pending transactions...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction History -->
+            <div class="approval-section">
+                <h2>Transaction History</h2>
+                <div class="approval-filters">
+                    <div class="filter-group">
+                        <label for="statusFilter" class="form-label">Filter by Status:</label>
+                        <select id="statusFilter" class="form-select" data-action="load-transaction-history" data-filter="status">
+                            <option value="">All Status</option>
+                            <option value="pending_approval">Pending Approval</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="finalized">Finalized</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="userFilter" class="form-label">Filter by User:</label>
+                        <select id="userFilter" class="form-select" data-action="load-transaction-history" data-filter="user">
+                            <option value="">All Users</option>
+                            <!-- User options will be populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+                <div id="transactionHistoryContainer" class="approval-transactions">
+                    <!-- Transaction history will be loaded here -->
+                    <div class="approval-empty-state">
+                        <div class="approval-empty-icon">📚</div>
+                        <h3>Loading...</h3>
+                        <p>Loading transaction history...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compliance Report -->
+            {% if current_user and current_user.can_export_audit() %}
+            <div class="approval-section">
+                <h2>Four-Eyes Compliance Report</h2>
+                <div class="compliance-actions">
+                    <button class="btn btn-primary" data-action="load-compliance-report">
+                        📊 Generate Report
+                    </button>
+                    <button class="btn btn-secondary" data-action="export-compliance-report">
+                        📥 Export Report
+                    </button>
+                </div>
+                <div id="complianceReportContainer" class="compliance-report">
+                    <!-- Compliance report will be loaded here -->
+                    <div class="approval-empty-state">
+                        <div class="approval-empty-icon">📊</div>
+                        <h3>Compliance Report</h3>
+                        <p>Click "Generate Report" to view Four-Eyes compliance metrics</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Approval Chain Modal -->
+<div id="approvalChainModal" class="modal element--hidden">
+    <div class="modal-overlay" data-action="close-approval-chain-modal"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Approval Chain</h3>
+            <button class="modal-close" data-action="close-approval-chain-modal">✕</button>
+        </div>
+        <div class="modal-body" id="approvalChainContent">
+            <!-- Approval chain content will be loaded here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- JavaScript functionality moved to external files -->
+{% endblock %}

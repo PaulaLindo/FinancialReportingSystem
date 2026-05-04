@@ -1,0 +1,148 @@
+<!-- Line Item Comment Modal Component -->
+<!-- For Finance Manager to add comments on specific financial statement line items -->
+<div id="lineItemCommentModal" class="modal visibility--hidden">
+    <div class="modal-overlay" data-action="close-comment-modal"></div>
+    <div class="modal-content comment-modal-content">
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <div class="modal-title-section">
+                <h3 class="modal-title">Add Line Item Comment</h3>
+                <div class="modal-subtitle">
+                    <span id="commentAccountInfo" class="account-info">Account: Loading...</span>
+                </div>
+            </div>
+            <button type="button" class="modal-close" data-action="close-comment-modal" aria-label="Close modal">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body">
+            <!-- Account Information -->
+            <div class="account-details-section">
+                <div class="account-info-grid">
+                    <div class="info-item">
+                        <label class="info-label">Account Code:</label>
+                        <span id="accountCode" class="info-value">-</span>
+                    </div>
+                    <div class="info-item">
+                        <label class="info-label">Account Description:</label>
+                        <span id="accountDescription" class="info-value">-</span>
+                    </div>
+                    <div class="info-item">
+                        <label class="info-label">GRAP Code:</label>
+                        <span id="grapCode" class="info-value">-</span>
+                    </div>
+                    <div class="info-item">
+                        <label class="info-label">Amount:</label>
+                        <span id="accountAmount" class="info-value amount-value">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comment Types -->
+            <div class="comment-type-section">
+                <h4 class="section-title">Comment Type</h4>
+                <div class="comment-type-options">
+                    <label class="comment-type-option">
+                        <input type="radio" name="commentType" value="calculation" class="comment-type-radio" checked>
+                        <span class="comment-type-label">
+                            <span class="type-icon">🧮</span>
+                            <span class="type-text">Calculation Issue</span>
+                        </span>
+                        <span class="type-description">Problem with formula or calculation logic</span>
+                    </label>
+                    
+                    <label class="comment-type-option">
+                        <input type="radio" name="commentType" value="mapping" class="comment-type-radio">
+                        <span class="comment-type-label">
+                            <span class="type-icon">📍</span>
+                            <span class="type-text">Mapping Issue</span>
+                        </span>
+                        <span class="type-description">Incorrect GRAP category mapping</span>
+                    </label>
+                    
+                    <label class="comment-type-option">
+                        <input type="radio" name="commentType" value="data" class="comment-type-radio">
+                        <span class="comment-type-label">
+                            <span class="type-icon">📊</span>
+                            <span class="type-text">Data Issue</span>
+                        </span>
+                        <span class="type-description">Source data problem or discrepancy</span>
+                    </label>
+                    
+                    <label class="comment-type-option">
+                        <input type="radio" name="commentType" value="general" class="comment-type-radio">
+                        <span class="comment-type-label">
+                            <span class="type-icon">💬</span>
+                            <span class="type-text">General Comment</span>
+                        </span>
+                        <span class="type-description">Other observations or notes</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Comment Input -->
+            <div class="comment-input-section">
+                <h4 class="section-title">Comment Details</h4>
+                <div class="comment-form">
+                    <div class="form-group">
+                        <label for="commentSubject" class="form-label">Subject</label>
+                        <input type="text" id="commentSubject" class="form-input" placeholder="Brief subject for the comment">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="commentText" class="form-label">Comment</label>
+                        <textarea id="commentText" class="form-textarea" rows="4" placeholder="Detailed comment explaining the issue or observation..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="correctionSuggestion" class="form-label">Suggested Correction (Optional)</label>
+                        <textarea id="correctionSuggestion" class="form-textarea" rows="3" placeholder="Suggest how this should be corrected..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="urgencyLevel" class="form-label">Urgency Level</label>
+                        <select id="urgencyLevel" class="form-select">
+                            <option value="low">Low - Minor issue, can be addressed later</option>
+                            <option value="medium" selected>Medium - Should be addressed before final approval</option>
+                            <option value="high">High - Critical issue, must be addressed immediately</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Previous Comments -->
+            <div class="previous-comments-section" id="previousCommentsSection">
+                <h4 class="section-title">Previous Comments</h4>
+                <div class="comments-list" id="previousCommentsList">
+                    <!-- Previous comments will be loaded here -->
+                    <div class="no-comments">
+                        <p>No previous comments for this line item.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" data-action="close-comment-modal">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-warning" data-action="save-comment-only">
+                    💾 Save Comment
+                </button>
+                <button type="button" class="btn btn-danger" data-action="reject-with-comment">
+                    ✗ Reject with Comment
+                </button>
+                <button type="button" class="btn btn-success" data-action="approve-with-comment">
+                    ✓ Approve with Comment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

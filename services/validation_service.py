@@ -1,19 +1,19 @@
 """
-SADPMR Financial Reporting System - Validation Service
-Unified validation for trial balances and data integrity
+Varydian Financial Reporting System - Validation Service
+Unified validation for balance sheets and data integrity
 """
 
 import pandas as pd
 from utils.exceptions import ValidationError, MappingError
-from utils.constants import TRIAL_BALANCE_TOLERANCE, ASSET_CODES, LIABILITY_CODES, EQUITY_CODES, REVENUE_CODES, EXPENSE_CODES
+from utils.constants import BALANCE_SHEET_TOLERANCE, ASSET_CODES, LIABILITY_CODES, EQUITY_CODES, REVENUE_CODES, EXPENSE_CODES
 
 
 class ValidationService:
     """Service for data validation operations"""
     
     @staticmethod
-    def validate_trial_balance_integrity(df):
-        """Validate trial balance data integrity"""
+    def validate_balance_sheet_integrity(df):
+        """Validate balance sheet data integrity"""
         errors = []
         warnings = []
         
@@ -132,7 +132,7 @@ class ValidationService:
     
     @staticmethod
     def _check_balance_calculations(df):
-        """Check trial balance calculations"""
+        """Check balance sheet calculations"""
         warnings = []
         
         if 'Debit Balance' not in df.columns or 'Credit Balance' not in df.columns:
@@ -143,13 +143,13 @@ class ValidationService:
         if not both_values.empty:
             warnings.append(f"Found {len(both_values)} accounts with both debit and credit balances.")
         
-        # Check if trial balance balances
+        # Check if balance sheet balances
         total_debit = df['Debit Balance'].sum()
         total_credit = df['Credit Balance'].sum()
         
-        if abs(total_debit - total_credit) > TRIAL_BALANCE_TOLERANCE:
+        if abs(total_debit - total_credit) > BALANCE_SHEET_TOLERANCE:
             warnings.append(
-                f"Trial balance doesn't balance: Debit R{total_debit:,.2f} vs Credit R{total_credit:,.2f}"
+                f"Balance sheet doesn't balance: Debit R{total_debit:,.2f} vs Credit R{total_credit:,.2f}"
             )
         
         return warnings

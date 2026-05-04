@@ -1,6 +1,81 @@
-/* Component Utilities - SADPMR Financial Reporting System */
+/* Component Utilities - Varydian Financial Reporting System */
 /* BEM methodology for extracted inline styles and text alignment utilities */
 /* Organized by component with clear template identification */
+
+/* ======================================== */
+/* DISPLAY UTILITIES */
+/* ======================================== */
+/* Display control utilities extracted from inline JavaScript styles */
+
+.display-none {
+    display: none;
+}
+
+.display-block {
+    display: block;
+}
+
+.display-inline {
+    display: inline;
+}
+
+.display-inline-block {
+    display: inline-block;
+}
+
+.display-inline-flex {
+    display: inline-flex;
+}
+
+.display-flex {
+    display: flex;
+}
+
+.display-grid {
+    display: grid;
+}
+
+/* ======================================== */
+/* CURSOR UTILITIES */
+/* ======================================== */
+/* Cursor control utilities extracted from inline JavaScript styles */
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.cursor-default {
+    cursor: default;
+}
+
+.cursor-not-allowed {
+    cursor: not-allowed;
+}
+
+.cursor-wait {
+    cursor: wait;
+}
+
+/* ======================================== */
+/* OVERFLOW UTILITIES */
+/* ======================================== */
+/* Overflow control utilities extracted from inline JavaScript styles */
+
+.overflow-hidden {
+    overflow: hidden;
+}
+
+.overflow-visible {
+    overflow: visible;
+}
+
+.overflow-scroll {
+    overflow: scroll;
+}
+
+.overflow-auto {
+    overflow: auto;
+}
 
 /* ======================================== */
 /* TEXT ALIGNMENT UTILITIES */
@@ -119,6 +194,93 @@ h4.text-center {
 }
 
 /* ======================================== */
+/* NOTIFICATION UTILITIES */
+/* ======================================== */
+
+/* Fixed positioning for notifications */
+.notification-fixed {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--primary);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    z-index: 9999;
+    font-weight: 500;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+}
+
+.notification-success.notification-fixed {
+    background: var(--success);
+}
+
+.notification-show {
+    transform: translateX(0);
+}
+
+.notification-hide {
+    transform: translateX(100%);
+}
+
+/* ======================================== */
+/* DEBUG LOG UTILITIES */
+/* ======================================== */
+
+/* Debug log entry styling */
+.debug-log-entry {
+    margin-bottom: var(--fluid-space-2);
+    padding: var(--fluid-space-2);
+    border-radius: var(--radius-sm);
+    background: var(--gray-50);
+}
+
+.debug-log-info {
+    color: var(--info);
+    border-left: 3px solid var(--info);
+}
+
+.debug-log-success {
+    color: var(--success);
+    border-left: 3px solid var(--success);
+}
+
+.debug-log-warning {
+    color: var(--warning);
+    border-left: 3px solid var(--warning);
+}
+
+.debug-log-error {
+    color: var(--error);
+    border-left: 3px solid var(--error);
+}
+
+.debug-log-lock {
+    color: var(--warning-dark);
+    border-left: 3px solid var(--warning-dark);
+}
+
+.debug-log-permission {
+    color: var(--primary);
+    border-left: 3px solid var(--primary);
+}
+
+.debug-log-timestamp {
+    color: var(--text-secondary);
+    font-size: var(--fluid-text-xs);
+    margin-right: var(--fluid-space-2);
+}
+
+.debug-log-cleared {
+    color: var(--info);
+    padding: var(--fluid-space-3);
+    text-align: center;
+    font-style: italic;
+}
+
+/* ======================================== */
 /* TABLE-SPECIFIC ALIGNMENT UTILITIES */
 /* ======================================== */
 
@@ -158,31 +320,10 @@ h4.text-center {
 /* ======================================== */
 
 /* ======================================== */
-/* NAVIGATION BAR CONSISTENCY FIXES */
+/* NAVIGATION ROLE STYLES */
 /* ======================================== */
-
-/* Ensure navbar container maintains consistent positioning */
-.navbar {
-    position: relative;
-    background: white;
-    padding: var(--fluid-space-sm) 0;
-    z-index: 1000;
-    box-shadow: var(--shadow-sm);
-    width: 100%;
-}
-
-/* Navigation Grid Container - Consistent Layout */
-.navbar .grid-container {
-    display: grid;
-    grid-template-columns: clamp(200px, 30vw, 400px) 1fr clamp(40px, 6vw, 60px);
-    gap: var(--fluid-space-md);
-    align-items: center;
-    position: relative;
-    width: 100%;
-    max-width: var(--container-2xl);
-    margin: 0 auto;
-}
-
+/* Template: templates/components/navbar.html */
+/* Template: docs/*.html - Documentation templates */
 /* ======================================== */
 /* NAVIGATION BRAND - CONSISTENT PINNING */
 /* ======================================== */
@@ -237,7 +378,7 @@ h4.text-center {
 .login-btn {
     display: grid;
     place-items: center;
-    padding: var(--fluid-space-sm) var(--fluid-space-lg);
+    padding: var(--fluid-space-sm) var(--fluid-space-md);
     background: var(--primary-600);
     color: var(--white);
     text-decoration: none;
@@ -257,93 +398,50 @@ h4.text-center {
 }
 
 /* ======================================== */
-/* RESPONSIVE BEHAVIOR */
+/* USER ROLE STYLES */
 /* ======================================== */
-
-/* Hide on desktop */
-@media (min-width: 1024px) {
-    .nav-wrapper {
-        position: static;
-    }
-}
-
-/* Show on mobile/tablet */
-@media (max-width: 1023px) {
-    .nav-wrapper {
-        position: fixed;
-        top: 0;
-        right: -100%;
-        width: clamp(280px, 80vw, 400px);
-        height: 100vh;
-        background: white;
-        box-shadow: var(--shadow-xl);
-        transition: right 400ms cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 999;
-        overflow-y: auto;
-        padding: var(--fluid-space-lg) 0;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .nav-wrapper.active {
-        right: 0;
-    }
-}
-
-/* Mobile Menu Overlay */
-.mobile-menu-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0);
-    opacity: 0;
-    visibility: hidden;
-    transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 998;
-}
-
-.mobile-menu-overlay.active {
-    opacity: 1;
-    visibility: visible;
-    background: rgba(0, 0, 0, 0.5);
-}
 
 /* User Role Badge Block */
 /* User role colors with proper HTML structure matching */
 
-.navbar .user-info .user-role--admin {
+.navbar .nav-user-info .nav-user-role--admin,
+.navbar .nav-user-info-mobile .nav-user-role--admin {
     background: linear-gradient(135deg, var(--error) 0%, var(--error-dark) 100%);
     color: var(--white);
 }
 
-.navbar .user-info .user-role--accountant {
+.navbar .nav-user-info .nav-user-role--accountant,
+.navbar .nav-user-info-mobile .nav-user-role--accountant {
     background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 100%);
     color: var(--white);
 }
 
-.navbar .user-info .user-role--cfo {
+.navbar .nav-user-info .nav-user-role--cfo,
+.navbar .nav-user-info-mobile .nav-user-role--cfo {
     background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 100%);
     color: var(--white);
 }
 
-.navbar .user-info .user-role--manager {
+.navbar .nav-user-info .nav-user-role--manager,
+.navbar .nav-user-info-mobile .nav-user-role--manager {
     background: linear-gradient(135deg, var(--warning) 0%, var(--warning-dark) 100%);
     color: var(--white);
 }
 
-.navbar .user-info .user-role--user {
+.navbar .nav-user-info .nav-user-role--user,
+.navbar .nav-user-info-mobile .nav-user-role--user {
     background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
     color: var(--white);
 }
 
-.navbar .user-info .user-role--default {
+.navbar .nav-user-info .nav-user-role--default,
+.navbar .nav-user-info-mobile .nav-user-role--default {
     background: linear-gradient(135deg, var(--gray-500) 0%, var(--gray-600) 100%);
     color: var(--white);
 }
 
-.navbar .user-info .user-role--auditor {
+.navbar .nav-user-info .nav-user-role--auditor,
+.navbar .nav-user-info-mobile .nav-user-role--auditor {
     background: linear-gradient(135deg, var(--warning) 0%, var(--warning-dark) 100%);
     color: var(--white);
 }
@@ -381,22 +479,6 @@ h4.text-center {
 
 /* Upload Elements */
 .upload-section .upload__input {
-    display: none;
-}
-
-.upload-section .upload__file-info {
-    display: none;
-}
-
-.upload-section .upload__loader {
-    display: none;
-}
-
-.upload-section .upload__error-message {
-    display: none;
-}
-
-.upload-section .upload__results-section {
     display: none;
 }
 
@@ -440,6 +522,10 @@ h4.text-center {
     display: none;
 }
 
+.file-info--hidden .file-details {
+    display: none;
+}
+
 .file-info--visible {
     display: block;
 }
@@ -474,6 +560,63 @@ h4.text-center {
 
 .pdf-success--visible {
     display: block;
+}
+
+/* Download Button States */
+.btn-download--hidden {
+    display: none;
+}
+
+.btn-download--visible {
+    display: inline-block;
+    opacity: 1;
+    transform: scale(1);
+    transition: all 0.3s ease;
+}
+
+.btn-download--visible:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+/* Save Uploaded File Button */
+.btn-save-file {
+    background: linear-gradient(135deg, var(--info) 0%, var(--info-dark) 100%);
+    border: none;
+    color: white;
+    padding: var(--fluid-space-sm) var(--fluid-space-lg);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-save-file:hover {
+    background: linear-gradient(135deg, var(--info-dark) 0%, var(--info-darker) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+}
+
+.btn-save-file:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
+}
+
+.btn-save-file::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-save-file:hover::before {
+    left: 100%;
 }
 
 /* ======================================== */
@@ -563,6 +706,64 @@ h4.text-center {
 
 .element--visible-flex {
     display: flex;
+}
+
+/* Input Validation States */
+.input-error {
+    border-color: var(--error);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.input-valid {
+    border-color: var(--success);
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+/* Animation States */
+.removing {
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Parallax State */
+.hero--parallax {
+    transform: translateY(var(--parallax-y, 0px));
+}
+
+/* Body States */
+.body--overflow-hidden {
+    overflow: hidden;
+}
+
+.body--overflow-auto {
+    overflow: auto;
+}
+
+/* Demo Video Content */
+.demo-video-content {
+    padding: 2rem;
+    text-align: center;
+}
+
+.demo-video-title {
+    color: var(--primary-900);
+    margin-bottom: 1rem;
+}
+
+.demo-video-text {
+    color: var(--gray-700);
+}
+
+.demo-video-subtext {
+    color: var(--gray-600);
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.demo-video-link {
+    color: var(--primary-600);
+    text-decoration: underline;
 }
 
 /* Visibility Utilities */
@@ -864,22 +1065,6 @@ h4.text-center {
     display: none;
 }
 
-.upload-section .upload__file-info {
-    display: none;
-}
-
-.upload-section .upload__loader {
-    display: none;
-}
-
-.upload-section .upload__error-message {
-    display: none;
-}
-
-.upload-section .upload__results-section {
-    display: none;
-}
-
 .upload-section .upload__pdf-loader {
     display: none;
 }
@@ -1026,8 +1211,287 @@ h4.text-center {
 }
 
 /* ======================================== */
+/* TEST LOADER BUTTON UTILITIES */
+/* ======================================== */
+
+.test-loader-btn-hidden {
+    display: none;
+}
+
+.test-loader-btn-visible {
+    display: inline-block;
+}
+
+/* ======================================== */
+/* UPLOAD VISIBILITY FIXES */
+/* ======================================== */
+
+.upload-section .upload__file-info.file-info--visible {
+    display: block;
+}
+
+.file-info--hidden, .upload__error-message--hidden, .processing-loader--hidden {
+    display: none;
+}
+
+.upload-section .upload__error-message.upload__error-message--hidden {
+    display: none;
+}
+
+
+.upload-section .upload__error-message.error-message--visible {
+    display: block;
+}
+
+.upload-section .upload__results-section.results-section--visible {
+    display: block;
+}
+
+/* ======================================== */
+/* MAPPING INTERFACE UTILITIES */
+/* ======================================== */
+
+/* Account filtering */
+.account-hidden {
+    display: none;
+}
+
+/* Submission status */
+.submission-hidden {
+    display: none;
+}
+
+/* Button visibility states */
+.button-hidden {
+    display: none;
+}
+
+.button-visible {
+    display: inline-block;
+}
+
+/* Mapping locked state */
+.mapping-locked {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* ======================================== */
+/* FINANCE CLERK WORKFLOW UTILITIES */
+/* ======================================== */
+
+/* Frame loading states */
+.frame-loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.frame-container {
+    position: relative;
+}
+
+.frame-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+
+.frame-loading-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--primary);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    z-index: 10;
+}
+
+/* ======================================== */
+/* UPLOAD UTILITIES */
+/* ======================================== */
+
+/* Balance check visibility */
+.balance-check-hidden {
+    display: none;
+}
+
+.balance-check-section.visible {
+    display: block;
+}
+
+/* Options visibility */
+.options-hidden {
+    display: none;
+}
+
+/* Upload locked state */
+.upload-locked {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+/* File info locked state */
+.file-info-locked {
+    opacity: 0.7;
+}
+
+/* ======================================== */
+/* REAL-TIME VALIDATION UTILITIES */
+/* ======================================== */
+
+/* Progress visibility */
+.progress-hidden {
+    display: none;
+}
+
+/* Validation errors */
+.validation-errors {
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--error-light);
+    border: 1px solid var(--error);
+    border-radius: 6px;
+    color: var(--error-dark);
+}
+
+/* Balance errors */
+.balance-errors {
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--error-light);
+    border: 1px solid var(--error);
+    border-radius: 6px;
+    color: var(--error-dark);
+}
+
+/* Error elements */
+.error-title {
+    margin: 0 0 8px 0;
+    color: var(--error-dark);
+}
+
+.error-message {
+    margin: 0;
+    color: var(--error-dark);
+}
+
+/* Balance status classes */
+.balance-status.balanced {
+    color: var(--success);
+}
+
+.balance-status.not-balanced {
+    color: var(--warning);
+}
+
+/* Difference classes */
+.difference-error {
+    color: var(--error);
+}
+
+.difference-success {
+    color: var(--success);
+}
+
+/* ======================================== */
+/* SUBMISSION WORKFLOW UTILITIES */
+/* ======================================== */
+
+/* Modal visibility */
+.modal-visible {
+    display: flex;
+}
+
+/* ======================================== */
+/* APPROVAL WORKFLOW UTILITIES */
+/* ======================================== */
+
+/* Section visibility */
+.section-hidden {
+    display: none;
+}
+
+/* ======================================== */
 /* ACCESSIBILITY UTILITIES */
 /* Cross-component accessibility styles */
 /* ======================================== */
 
 /* Reduced Motion Support handled by navigation-consolidated.css */
+
+/* ======================================== */
+/* DYNAMIC INLINE STYLE REPLACEMENTS */
+/* ======================================== */
+/* Classes to replace inline styles found in JavaScript files */
+
+
+/* Validation Error Styling */
+.validation-error-header {
+    margin: 0 0 8px 0;
+    color: var(--error-dark);
+}
+
+.validation-error-list {
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+}
+
+.validation-error-item {
+    margin-bottom: 4px;
+    color: var(--error-dark);
+}
+
+/* Confidence Bar Styling */
+.confidence-bar-dynamic {
+    transition: width 0.3s ease;
+    width: var(--confidence-width, 0%);
+}
+
+
+/* Approval Restricted Content */
+.approval-restricted-section {
+    text-align: center;
+    padding: 40px;
+}
+
+.approval-restricted-card {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.approval-restricted-icon {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.approval-restricted-message {
+    color: var(--warning-dark);
+    font-weight: 500;
+    margin-bottom: 15px;
+}
+
+.approval-restricted-details {
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+
+.approval-restricted-note {
+    background: var(--warning-light);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid var(--warning);
+}
+
+
+
+

@@ -1,0 +1,771 @@
+/* Fluid Navigation System - No Breakpoints */
+/* Varydian Financial Reporting System */
+
+/* ======================================== */
+/* CONTAINER CLASSES */
+/* ======================================== */
+
+.container-content {
+    max-width: var(--container-2xl);
+    margin: 0 auto;
+    padding: 0 var(--fluid-space-md);
+    position: relative;
+}
+
+/* ======================================== */
+/* NAVIGATION CONTAINER */
+/* ======================================== */
+
+.navbar {
+    background: white;
+    padding: var(--fluid-space-lg) 0;
+    position: relative;
+    z-index: 1000;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Override container constraint for navbar */
+.navbar .container-content {
+    max-width: none; /* Remove max-width constraint */
+    padding: 0 var(--fluid-space-sm); /* Adjust padding */
+}
+
+/* Navigation Header - Flexbox Layout */
+.nav-header {
+    display: flex;
+    align-items: center;
+    gap: var(--fluid-space-sm); /* Reduced gap */
+    width: 100%;
+    min-width: 0; /* Allow flex items to shrink */
+}
+
+/* User section positioned independently in nav-header */
+.navbar .nav-header .nav-user-section {
+    margin-left: auto; /* Push to the far right */
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+/* ======================================== */
+/* NAVIGATION BRAND */
+/* ======================================== */
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--fluid-space-sm);
+    flex-shrink: 0;
+    min-width: clamp(180px, 20vw, 280px);
+}
+
+.nav-logo {
+    height: clamp(32px, 4vw, 48px);
+    width: auto;
+    flex-shrink: 0;
+}
+
+.nav-brand-text {
+    display: grid;
+    gap: var(--fluid-space-4xs);
+}
+
+.nav-brand h2 {
+    font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+    font-weight: var(--font-bold);
+    color: var(--primary-900);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.nav-brand .tagline {
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* ======================================== */
+/* MOBILE MENU TOGGLE */
+/* ======================================== */
+
+.nav-mobile-toggle {
+    display: grid;
+    place-items: center;
+    width: clamp(36px, 5vw, 44px);
+    height: clamp(36px, 5vw, 44px);
+    background: var(--primary-600);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+}
+
+.nav-mobile-toggle:hover {
+    background: var(--primary-700);
+    transform: scale(1.05);
+}
+
+.nav-mobile-toggle:focus {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
+}
+
+/* Hamburger Menu Lines */
+.nav-hamburger {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3px, 0.4vw, 4px);
+    width: clamp(20px, 3.5vw, 24px);
+    height: clamp(16px, 2vw, 20px);
+    justify-content: space-between;
+}
+
+.nav-hamburger span {
+    width: 100%;
+    height: clamp(2px, 0.3vw, 3px);
+    background: var(--white);
+    border-radius: var(--radius-xs);
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    display: block;
+    opacity: 1;
+}
+
+/* Active State - Transform to X */
+.nav-mobile-toggle.active .nav-hamburger span:nth-child(1) {
+    transform: rotate(45deg) translate(6px, 6px);
+}
+
+.nav-mobile-toggle.active .nav-hamburger span:nth-child(2) {
+    opacity: 0;
+}
+
+.nav-mobile-toggle.active .nav-hamburger span:nth-child(3) {
+    transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* ======================================== */
+/* DESKTOP NAVIGATION MENU */
+/* ======================================== */
+
+.nav-desktop-menu {
+    display: flex;
+    align-items: center;
+    gap: var(--fluid-space-md); /* Increased gap */
+    flex: 4; /* Take maximum available space */
+    min-width: 0; /* Allow flex items to shrink */
+    overflow: hidden;
+    justify-content: flex-start; /* Align navigation to the left */
+    margin-left: var(--fluid-space-6xl); /* Push navigation more to the right */
+}
+
+/* ======================================== */
+/* MOBILE NAVIGATION MENU */
+/* ======================================== */
+
+.nav-mobile-menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: clamp(350px, 85vw, 500px);
+    height: 100vh;
+    background: linear-gradient(180deg, var(--white) 0%, var(--gray-50) 100%);
+    box-shadow: 
+        -4px 0 20px rgba(0, 0, 0, 0.1),
+        0 4px 25px rgba(0, 0, 0, 0.08),
+        0 10px 40px rgba(0, 0, 0, 0.06);
+    transition: right 400ms cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+/* Mobile menu header */
+.nav-mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--fluid-space-md) var(--fluid-space-xl);
+    background: var(--white);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.nav-mobile-title {
+    font-size: var(--fluid-text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+}
+
+.nav-mobile-close {
+    display: grid;
+    place-items: center;
+    width: clamp(32px, 4vw, 40px);
+    height: clamp(32px, 4vw, 40px);
+    background: var(--gray-100);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-secondary);
+    font-size: clamp(18px, 2.5vw, 24px);
+    position: relative;
+}
+
+.nav-mobile-close:hover {
+    background: var(--gray-200);
+    color: var(--text-primary);
+    transform: scale(1.05);
+}
+
+.nav-mobile-close:focus {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
+}
+
+.nav-mobile-close::before {
+    content: '×';
+    font-size: clamp(20px, 3vw, 28px);
+    line-height: 1;
+}
+
+/* Mobile menu body */
+.nav-mobile-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--fluid-space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--fluid-space-xl);
+}
+
+/* Active State - Slide In */
+.nav-mobile-menu.active {
+    right: 0;
+}
+
+/* ======================================== */
+/* NAVIGATION MENU - FLUID GRID */
+/* ======================================== */
+
+.nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fluid-space-sm);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Desktop menu styling */
+.nav-desktop-menu .nav-menu {
+    flex-direction: row;
+    align-items: center;
+}
+
+.nav-menu li {
+    position: relative;
+    list-style: none;
+}
+
+.nav-menu a {
+    display: flex;
+    align-items: center;
+    padding: var(--fluid-space-sm) var(--fluid-space-md);
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: var(--fluid-text-xs);
+    font-weight: 500;
+    border-radius: var(--radius-md);
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-menu a:hover {
+    background: var(--primary-50);
+    color: var(--primary-700);
+    transform: translateY(-1px);
+}
+
+.nav-menu a:focus {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
+}
+
+.nav-menu a.active {
+    background: var(--primary-100);
+    color: var(--primary-800);
+    font-weight: 600;
+}
+
+/* ======================================== */
+/* USER SECTION - DESKTOP */
+/* ======================================== */
+
+.nav-user-section {
+    display: flex;
+    align-items: center;
+    gap: var(--fluid-space-sm); /* Increased gap between user info and logout */
+    flex-shrink: 0; /* Prevent user section from shrinking */
+    min-width: clamp(85px, 13vw, 160px); /* Slightly increased width for larger button */
+}
+
+.nav-user-info {
+    display: flex;
+    align-items: center;
+    gap: var(--fluid-space-3xs); /* Ultra reduced gap */
+}
+
+.nav-user-avatar {
+    display: grid;
+    place-items: center;
+    width: clamp(32px, 4.5vw, 40px); /* Larger avatar */
+    height: clamp(32px, 4.5vw, 40px); /* Larger avatar */
+    background: var(--primary-600);
+    color: var(--white);
+    border-radius: 50%;
+    font-size: clamp(11px, 1.3vw, 13px); /* Larger font */
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+}
+
+.nav-user-details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fluid-space-xs); /* Increased gap */
+}
+
+.nav-user-name {
+    font-size: clamp(11px, 1.3vw, 13px); /* Larger font */
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.1; /* Better line height */
+}
+
+.nav-user-role {
+    font-size: clamp(10px, 1.2vw, 12px); /* Larger font */
+    font-weight: 500;
+    padding: var(--fluid-space-xs) var(--fluid-space-sm); /* Larger padding */
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.03em; /* Better letter spacing */
+    line-height: 1.1; /* Better line height */
+}
+
+/* ======================================== */
+/* USER SECTION - MOBILE */
+/* ======================================== */
+
+.nav-mobile-auth {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fluid-space-md);
+    padding: var(--fluid-space-lg);
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
+}
+
+.mobile-login-btn {
+    width: 100%;
+}
+
+.nav-mobile-user {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fluid-space-md);
+    padding: var(--fluid-space-lg);
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
+}
+
+
+.nav-user-info-mobile {
+    display: flex;
+    align-items: center;
+    gap: var(--fluid-space-md);
+    padding: var(--fluid-space-md);
+    background: var(--gray-50);
+    border-radius: var(--radius-md);
+}
+
+.nav-user-info-mobile .nav-user-avatar {
+    width: clamp(44px, 6vw, 52px);
+    height: clamp(44px, 6vw, 52px);
+    font-size: var(--fluid-text-lg);
+}
+
+.nav-user-info-mobile .nav-user-details {
+    flex: 1;
+}
+
+.nav-user-info-mobile .nav-user-name {
+    font-size: var(--fluid-text-base);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.nav-user-info-mobile .nav-user-role {
+    font-size: var(--fluid-text-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.2;
+}
+
+/* Role badge styles handled by component-utilities.css */
+
+/* ======================================== */
+/* LOGOUT BUTTON */
+/* ======================================== */
+
+.logout-btn,
+.login-btn {
+    display: grid;
+    place-items: center;
+    padding: var(--fluid-space-sm) var(--fluid-space-md);
+    background: var(--primary-600);
+    color: var(--white);
+    text-decoration: none;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    font-size: clamp(0.875rem, 1.5vw, 1rem);
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logout-btn:hover,
+.login-btn:hover {
+    background: var(--primary-700);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ======================================== */
+/* MOBILE MENU OVERLAY */
+/* ======================================== */
+
+.nav-mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 998;
+}
+
+.nav-mobile-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* ======================================== */
+/* BODY SCROLL LOCK */
+/* ======================================== */
+
+.body-scroll-locked {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+
+.body-scroll-unlocked {
+    overflow: auto;
+    position: static;
+    width: auto;
+    height: auto;
+}
+
+/* ======================================== */
+/* RESPONSIVE BEHAVIOR */
+/* ======================================== */
+
+/* Mobile menu - Hidden by default, only visible on mobile */
+.nav-mobile-menu {
+    display: none;
+    transform: translateX(100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-mobile-menu.active {
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Mobile menu overlay - Hidden by default */
+.nav-mobile-overlay {
+    display: none;
+    opacity: 0;
+    visibility: hidden;
+    background: rgba(0, 0, 0, 0);
+    transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-mobile-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* Mobile menu toggle - Hidden by default */
+.nav-mobile-toggle {
+    display: none;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Mobile styles */
+@media (max-width: 1023px) {
+    .nav-desktop-menu {
+        display: none;
+    }
+    
+    .nav-mobile-toggle {
+        display: grid;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        margin-left: auto; /* Push hamburger to the right */
+    }
+    
+    .nav-mobile-menu {
+        display: none;
+    }
+    
+    .nav-mobile-menu.active {
+        display: flex;
+    }
+    
+    .nav-mobile-overlay {
+        display: none;
+    }
+    
+    .nav-mobile-overlay.active {
+        display: block;
+    }
+}
+
+/* Emergency breakpoint for very small screens with many tabs */
+@media (max-width: 1200px) {
+    .nav-desktop-menu .nav-menu {
+        gap: var(--fluid-space-4xs); /* Ultra minimal gap */
+    }
+    
+    .nav-desktop-menu .nav-menu a {
+        padding: var(--fluid-space-4xs) var(--fluid-space-3xs); /* Ultra minimal padding */
+        min-height: clamp(24px, 3vw, 28px); /* Even smaller height */
+        min-width: clamp(40px, 5vw, 60px); /* Ultra small minimum */
+        max-width: clamp(60px, 8vw, 90px); /* Ultra small maximum */
+        font-size: clamp(9px, 1vw, 11px); /* Much smaller text */
+        line-height: 1.0; /* Tightest line height */
+    }
+}
+
+/* Ultra emergency breakpoint for extremely crowded navigation */
+@media (max-width: 1000px) {
+    .nav-desktop-menu .nav-menu {
+        gap: var(--fluid-space-4xs); /* Ultra minimal gap */
+    }
+    
+    .nav-desktop-menu .nav-menu a {
+        padding: var(--fluid-space-4xs) var(--fluid-space-3xs); /* Ultra minimal padding */
+        min-height: clamp(22px, 2.5vw, 26px); /* Smallest possible height */
+        min-width: clamp(35px, 4.5vw, 55px); /* Smallest possible width */
+        max-width: clamp(55px, 7vw, 85px); /* Smallest maximum */
+        font-size: clamp(8px, 0.9vw, 10px); /* Smallest readable text */
+        line-height: 1.0; /* Tightest line height */
+        letter-spacing: -0.02em; /* Slightly condensed text */
+    }
+    
+    .nav-user-info-mobile .nav-user-details {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: var(--fluid-space-xs);
+    }
+    
+    /* Center mobile user section and logout button */
+    .nav-mobile-user {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+        
+    /* Center mobile navigation menu */
+    .nav-mobile-body .nav-menu {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: var(--fluid-space-sm);
+    }
+    
+    .nav-mobile-body .nav-menu li {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .nav-mobile-body .nav-menu a {
+        display: block;
+        width: 100%;
+        text-align: center;
+        padding: var(--fluid-space-md) var(--fluid-space-lg);
+    }
+}
+
+/* Desktop styles */
+@media (min-width: 1024px) {
+    .nav-mobile-toggle {
+        display: none;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+    
+    .nav-mobile-menu {
+        display: none;
+    }
+    
+    .nav-mobile-overlay {
+        display: none;
+    }
+    
+    .nav-desktop-menu {
+        display: flex;
+        align-items: center;
+        gap: var(--fluid-space-md); /* Increased gap */
+        flex: 4; /* Take maximum available space */
+        justify-content: flex-start; /* Align navigation to the left */
+        margin-left: var(--fluid-space-6xl); /* Push navigation more to the right */
+    }
+    
+    /* Desktop user info sizing and positioning */
+    .nav-user-avatar {
+        width: clamp(32px, 4.5vw, 40px); /* Larger avatar */
+        height: clamp(32px, 4.5vw, 40px); /* Larger avatar */
+        font-size: clamp(11px, 1.3vw, 13px); /* Larger font */
+    }
+    
+    .nav-user-name {
+        font-size: clamp(11px, 1.3vw, 13px); /* Larger font */
+        line-height: 1.1;
+        margin-bottom: 0; /* Remove extra margin */
+        text-align: center;
+    }
+    
+    .nav-user-role {
+        font-size: clamp(10px, 1.2vw, 12px); /* Larger font */
+        line-height: 1.1;
+        margin-top: 0; /* Remove extra margin */
+        text-align: center;
+    }
+    
+    .nav-user-info {
+        flex-direction: column;
+        gap: var(--fluid-space-xs); /* Increased gap */
+        align-items: center;
+    }
+    
+    .nav-user-details {
+        gap: var(--fluid-space-xs); /* Increased gap */
+        align-items: center;
+        text-align: center;
+    }
+    
+    /* User section positioned on far right - higher specificity */
+    .navbar .nav-header .nav-user-section {
+        margin-left: auto; /* Push to the far right */
+        flex-shrink: 0; /* Prevent shrinking */
+    }
+        
+    /* Desktop navigation button standardization */
+    .nav-menu a {
+        padding: var(--fluid-space-sm) var(--fluid-space-md); /* Increased padding */
+        min-height: clamp(36px, 4.5vw, 42px); /* Increased height */
+        min-width: clamp(65px, 8vw, 95px); /* Increased minimum width */
+        max-width: clamp(100px, 12vw, 140px); /* Increased maximum width */
+        width: auto; /* Allow natural width */
+        flex-shrink: 0; /* Don't allow items to shrink below minimum */
+        white-space: nowrap; /* Prevent text wrapping */
+        overflow: hidden; /* Hide overflow text */
+        text-overflow: ellipsis; /* Show ellipsis for very long text */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(13px, 1.4vw, 15px); /* Increased font size */
+        text-align: center;
+        line-height: 1.2; /* Better line height */
+    }
+    
+        
+    /* Desktop navigation menu layout */
+    .nav-desktop-menu .nav-menu {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: var(--fluid-space-xs); /* Further reduced gap */
+        flex: 1;
+        min-width: 0; /* Allow flex items to shrink */
+        overflow: hidden;
+    }
+}
+
+/* ======================================== */
+/* TOUCH DEVICE OPTIMIZATIONS */
+/* ======================================== */
+
+@media (hover: none) and (pointer: coarse) {
+    .nav-menu a {
+        transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .nav-mobile-toggle {
+        touch-action: manipulation;
+    }
+    
+    .nav-menu a,
+    .nav-mobile-close,
+    .btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
+/* ======================================== */
+/* PRINT STYLES */
+/* ======================================== */
+
+@media print {
+    .nav-mobile-menu,
+    .nav-mobile-overlay {
+        display: none;
+    }
+    
+    .navbar {
+        box-shadow: none;
+        border-bottom: 1px solid #ccc;
+    }
+    
+    .nav-mobile-toggle {
+        display: none;
+    }
+}

@@ -1,5 +1,5 @@
 """
-SADPMR Financial Reporting System - File Service
+Varydian Financial Reporting System - File Service
 Handles file upload, processing, and validation operations
 """
 
@@ -43,11 +43,13 @@ class FileService:
         except Exception as e:
             raise FileProcessingError(f'Failed to save file: {str(e)}', filename)
     
-    def read_trial_balance_file(self, filepath):
-        """Read and parse trial balance file"""
+    def read_balance_sheet_file(self, filepath):
+        """Read and parse balance sheet file"""
         try:
             if filepath.endswith('.xlsx'):
                 df = pd.read_excel(filepath)
+            elif filepath.endswith('.xml'):
+                df = pd.read_xml(filepath)
             else:
                 df = pd.read_csv(filepath)
             

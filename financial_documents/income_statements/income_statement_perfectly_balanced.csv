@@ -1,0 +1,27 @@
+Account Code,Account Description,Category,Amount,Period
+REV-001,Consulting Services Revenue,Revenue,300000,2025-Q1
+REV-002,Training Revenue,Revenue,180000,2025-Q1
+REV-003,Software Licensing Revenue,Revenue,220000,2025-Q1
+REV-004,Maintenance Contracts Revenue,Revenue,150000,2025-Q1
+REV-005,Professional Services Revenue,Revenue,250000,2025-Q1
+REV-006,Support Services Revenue,Revenue,100000,2025-Q1
+REV-007,Product Sales Revenue,Revenue,200000,2025-Q1
+REV-008,Service Contracts Revenue,Revenue,120000,2025-Q1
+EXP-001,Salaries & Wages,Expenses,280000,2025-Q1
+EXP-002,Employee Benefits,Expenses,70000,2025-Q1
+EXP-003,Office Rent,Expenses,80000,2025-Q1
+EXP-004,Utilities,Expenses,20000,2025-Q1
+EXP-005,Software Subscriptions,Expenses,35000,2025-Q1
+EXP-006,Marketing Expenses,Expenses,45000,2025-Q1
+EXP-007,Travel Expenses,Expenses,30000,2025-Q1
+EXP-008,Professional Fees,Expenses,40000,2025-Q1
+EXP-009,Insurance,Expenses,15000,2025-Q1
+EXP-010,Depreciation,Expenses,25000,2025-Q1
+EXP-011,Interest Expense,Expenses,10000,2025-Q1
+EXP-012,Taxes & Licenses,Expenses,20000,2025-Q1
+EXP-013,Equipment Maintenance,Expenses,15000,2025-Q1
+EXP-014,Research & Development,Expenses,55000,2025-Q1
+EXP-015,Legal & Compliance,Expenses,25000,2025-Q1
+TOTAL_REVENUE,Total Revenue,Summary,1520000,2025-Q1
+TOTAL_EXPENSES,Total Expenses,Summary,775000,2025-Q1
+NET_INCOME,Net Income,Summary,745000,2025-Q1

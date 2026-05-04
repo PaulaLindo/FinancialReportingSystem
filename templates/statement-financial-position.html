@@ -1,15 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Statement of Financial Position - SADPMR Financial Reporting System{% endblock %}
+{% block title %}Statement of Financial Position - Varydian{% endblock %}
 
 {% block content %}
 
-    <div class="container-content financial-statement-container">
-        <h1 class="text-center">Statement of Financial Position</h1>
+<div class="section">
+    <div class="container-content">
+        <h1>Statement of Financial Position</h1>
         <p class="page-subtitle">As of {{ current_date or 'December 31, 2025' }}</p>
 
-        <div class="table-fluid-wrapper">
-            <table class="table-fluid balance-sheet-table">
+        <div class="table-container">
+            <table class="financial-table balance-sheet-table">
                 <caption>Statement of Financial Position - {{ entity_name or 'Sample Entity' }}</caption>
                 <thead>
                     <tr>
@@ -164,8 +165,12 @@
 
         <div class="statement-footer grid-container">
             <div class="footer-actions">
+                {% if current_user and current_user.can_generate_pdf() %}
                 <button class="btn btn-primary">Download PDF</button>
+                {% endif %}
+                {% if current_user and current_user.can_export() %}
                 <button class="btn btn-secondary">Export to Excel</button>
+                {% endif %}
                 <button class="btn btn-secondary">Print Statement</button>
             </div>
         </div>

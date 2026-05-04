@@ -1,4 +1,4 @@
-/* Components CSS - SADPMR Financial Reporting System */
+/* Components CSS - Varydian Financial Reporting System */
 /* Reusable UI components like buttons, cards, tables, and forms */
 
 /* ======================================== */
@@ -10,8 +10,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: var(--fluid-space-sm) var(--fluid-space-md);
-    font-size: var(--text-sm);
+    padding: clamp(var(--fluid-space-xs), 1.5vw, var(--fluid-space-sm)) clamp(var(--fluid-space-md), 2vw, var(--fluid-space-lg));
+    font-size: clamp(var(--text-xs), 1.2vw, var(--text-sm));
     font-weight: var(--font-medium);
     line-height: 1.2;
     text-decoration: none;
@@ -30,30 +30,36 @@
 
 /* Button Sizes */
 .btn-xs {
-    padding: var(--fluid-space-xs) var(--fluid-space-sm);
-    font-size: var(--text-xs);
-    min-height: 44px;
-    min-width: 44px;
+    padding: var(--fluid-space-2xs) var(--fluid-space-xs);
+    font-size: var(--text-2xs);
+    min-height: 28px;
+    min-width: 28px;
 }
 
 .btn-sm {
-    padding: var(--fluid-space-sm) var(--fluid-space-md);
-    font-size: var(--text-sm);
-    min-height: 44px;
-    min-width: 44px;
+    padding: var(--fluid-space-xs) var(--fluid-space-sm);
+    font-size: var(--text-xs);
+    min-height: 32px;
+    min-width: 160px;
+}
+
+.btn-primary.btn-sm {
+    min-width: 180px;
+    white-space: nowrap;
 }
 
 .btn-lg {
-    padding: var(--fluid-space-md) var(--fluid-space-xl);
-    font-size: var(--text-lg);
-    min-height: 48px;
+    padding: var(--fluid-space-sm) var(--fluid-space-md);
+    font-size: var(--text-sm);
+    min-height: 40px;
+    min-width: 40px;
 }
 
 .btn-xl {
-    padding: var(--fluid-space-lg) var(--fluid-space-2xl);
-    font-size: var(--text-xl);
-    min-height: clamp(40px, 6vw, 60px);
-    min-width: clamp(40px, 6vw, 60px);
+    padding: var(--fluid-space-md) var(--fluid-space-lg);
+    font-size: var(--text-base);
+    min-height: clamp(36px, 5vw, 48px);
+    min-width: clamp(36px, 5vw, 48px);
 }
 
 /* Button Variants */
@@ -167,6 +173,30 @@
     color: var(--text-primary);
 }
 
+/* Touch Device Optimization - Ensure 44x44px minimum on mobile */
+@media (pointer: coarse) {
+    .btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: var(--fluid-space-sm) var(--fluid-space-md);
+        font-size: var(--text-sm);
+    }
+    
+    .btn-xs {
+        min-height: 36px;
+        min-width: 36px;
+        padding: var(--fluid-space-xs) var(--fluid-space-sm);
+        font-size: var(--text-xs);
+    }
+    
+    .btn-sm {
+        min-height: 40px;
+        min-width: 40px;
+        padding: var(--fluid-space-sm) var(--fluid-space-md);
+        font-size: var(--text-sm);
+    }
+}
+
 /* Button States */
 .btn:disabled {
     opacity: 0.6;
@@ -176,6 +206,19 @@
 }
 
 .btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Balance Disabled State */
+.balance-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.balance-disabled:hover {
     transform: none;
     box-shadow: none;
 }
@@ -219,6 +262,284 @@
     border-bottom-right-radius: var(--radius-md);
 }
 
+/* CONTEXTUAL BUTTON STYLES - Consolidated from other files */
+/* ======================================== */
+
+/* File Info Button */
+.file-info .btn {
+    margin-top: var(--fluid-space-md);
+    min-width: clamp(200px, 25vw, 300px);
+}
+
+/* Modal Footer Buttons */
+.modal-footer .btn {
+    min-width: 100px;
+}
+
+#fileDetailsModal .modal-footer .btn {
+    min-width: 140px;
+    padding: var(--fluid-space-md) var(--fluid-space-lg);
+    font-size: var(--text-base);
+}
+
+/* Enhanced desktop hover states for modal buttons */
+@media (min-width: 1200px) {
+    #fileDetailsModal .modal-footer .btn {
+        min-width: 160px;
+        padding: var(--fluid-space-lg) var(--fluid-space-xl);
+        font-size: var(--text-lg);
+    }
+}
+
+/* Mobile modal buttons */
+@media (max-width: 768px) {
+    #fileDetailsModal .modal-footer .btn {
+        width: 100%;
+        min-width: auto;
+        height: auto;
+    }
+}
+
+/* Action Buttons */
+.action-buttons .btn {
+    min-width: 180px;
+    padding: var(--fluid-space-sm) var(--fluid-space-lg);
+    font-size: var(--text-base);
+    margin-bottom: var(--fluid-space-md);
+}
+
+@media (max-width: 768px) {
+    .action-buttons .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+/* Download Button Variant */
+.btn-download {
+    background: var(--success);
+    color: var(--white);
+    padding: var(--fluid-space-md) var(--fluid-space-xl);
+    transition: all 300ms ease;
+}
+
+.btn-download:hover {
+    background: var(--success-dark);
+    transform: translateY(-1px);
+}
+
+/* Filter Actions Buttons */
+.filter-actions .btn {
+    width: 220px;
+    min-width: 220px;
+    max-width: 220px;
+    margin: 0;
+}
+
+@media (min-width: 1200px) {
+    .filter-actions .btn {
+        width: 250px;
+        min-width: 250px;
+        max-width: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    .filter-actions .btn {
+        width: 160px;
+        min-width: 160px;
+        max-width: 160px;
+    }
+}
+
+@media (max-width: 480px) {
+    .filter-actions .btn {
+        width: 140px;
+        min-width: 140px;
+        max-width: 140px;
+    }
+}
+
+/* Pagination Buttons */
+.pagination-buttons .btn {
+    min-width: 100px;
+    padding: var(--fluid-space-sm) var(--fluid-space-md);
+    font-size: var(--text-sm);
+}
+
+@media (min-width: 768px) {
+    .pagination-buttons .btn {
+        min-width: 120px;
+        padding: var(--fluid-space-md) var(--fluid-space-lg);
+        font-size: var(--text-base);
+    }
+}
+
+@media (min-width: 1024px) {
+    .pagination-buttons .btn {
+        min-width: 140px;
+        padding: var(--fluid-space-lg) var(--fluid-space-xl);
+        font-size: var(--text-lg);
+    }
+}
+
+@media (max-width: 768px) {
+    .pagination-buttons .btn {
+        width: 100%;
+        min-width: auto;
+        padding: var(--fluid-space-xs) var(--fluid-space-sm);
+    }
+}
+
+@media (max-width: 480px) {
+    .pagination-buttons .btn {
+        min-width: 90px;
+        padding: var(--fluid-space-xs) var(--fluid-space-sm);
+        font-size: 0.8rem;
+    }
+    
+    .btn-text {
+        display: none; /* Hide text on very small screens, show only icons */
+    }
+}
+
+/* File Actions Buttons */
+.file-actions .btn {
+    padding: var(--fluid-space-xs) var(--fluid-space-sm);
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+    min-width: clamp(80px, 15vw, 100px);
+    gap: var(--fluid-space-xs);
+}
+
+.btn-icon {
+    font-size: clamp(0.875rem, 2vw, 1rem);
+}
+
+.btn-text {
+    font-weight: 500;
+}
+
+@media (min-width: 768px) {
+    .file-actions .btn {
+        min-width: clamp(100px, 12vw, 120px);
+        padding: var(--fluid-space-sm) var(--fluid-space-lg);
+        font-size: clamp(0.875rem, 1.5vw, 1rem);
+        gap: var(--fluid-space-md);
+    }
+}
+
+@media (min-width: 1024px) {
+    .file-actions .btn {
+        min-width: clamp(120px, 12vw, 140px);
+        padding: var(--fluid-space-md) var(--fluid-space-xl);
+        font-size: clamp(1rem, 1.5vw, 1.125rem);
+        gap: var(--fluid-space-lg);
+    }
+}
+
+@media (max-width: 768px) {
+    .file-actions .btn {
+        min-width: 70px;
+        padding: var(--fluid-space-xs) var(--fluid-space-sm);
+    }
+    
+    .btn-text {
+        display: none; /* Hide text on mobile, show only icons */
+    }
+    
+    .file-actions .btn .btn-icon {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .file-actions .btn {
+        min-width: 60px;
+        padding: 4px 8px;
+        gap: var(--fluid-space-xs);
+    }
+}
+
+/* Report Actions Buttons */
+.report-list .report-actions .btn {
+    width: 100%;
+    min-width: 300px;
+    padding: var(--fluid-space-md) var(--fluid-space-xl);
+}
+
+/* Admin Card Buttons */
+.admin-card .btn {
+    background: var(--primary-600);
+    color: var(--white);
+    padding: var(--fluid-space-sm) var(--fluid-space-lg);
+    flex-grow: 1;
+}
+
+/* Admin Action Card Buttons */
+.admin-action-card .btn {
+    margin: 0 auto;
+    min-width: 140px;
+    padding: var(--fluid-space-md) var(--fluid-space-xl);
+}
+
+@media (min-width: 768px) {
+    .admin-action-card .btn {
+        padding: var(--fluid-space-2xl);
+        min-width: 160px;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-action-card .btn {
+        min-width: auto;
+        width: 100%;
+        padding: var(--fluid-space-sm) var(--fluid-space-lg);
+        margin-bottom: var(--fluid-space-md);
+    }
+}
+
+/* CTA Section Buttons */
+.cta-section-about .btn {
+    background: var(--white);
+    color: var(--primary-600);
+    padding: var(--fluid-space-md) var(--fluid-space-2xl);
+    opacity: 0.9;
+}
+
+/* Navigation Buttons */
+.nav-mobile-user .btn {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.nav-user-section .btn {
+    padding: var(--fluid-space-sm) var(--fluid-space-md);
+    font-size: clamp(12px, 1.3vw, 14px);
+    min-height: clamp(30px, 3.5vw, 34px);
+    line-height: 1.2;
+}
+
+/* Mobile navigation buttons */
+@media (max-width: 768px) {
+    .nav-mobile-user .btn {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        text-align: center;
+    }
+}
+
+/* Touch device navigation optimization */
+@media (pointer: coarse) {
+    .nav-menu a,
+    .nav-mobile-close,
+    .btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
 /* ======================================== */
 /* CARD COMPONENTS */
 /* ======================================== */
@@ -231,6 +552,7 @@
     box-shadow: var(--shadow-sm);
     overflow: hidden;
     transition: all var(--transition-base);
+    margin: var(--fluid-space-sm);
 }
 
 .card:hover {
@@ -254,15 +576,26 @@
 
 .card-body {
     padding: var(--fluid-space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--fluid-space-md);
+}
+
+.card-body .btn {
+    align-self: center;
+    justify-self: center;
+    width: auto;
+    min-width: 140px;
+    margin-top: auto; /* Push button to bottom of card */
 }
 
 .card-footer {
-    padding: var(--fluid-space-md) var(--fluid-space-lg);
+    padding: var(--fluid-space-lg);
     border-top: 1px solid var(--border-primary);
     background: var(--bg-secondary);
     display: flex;
-    justify-content: center;
-    gap: var(--fluid-space-sm);
+    align-items: center;
+    justify-content: space-between;
 }
 
 /* Unified Card Variants */
@@ -290,17 +623,28 @@
     transform: translateY(-2px);
 }
 
-/* Report card styles handled by pages.css */
-
-/* Report card styles handled by pages.css */
-
-/* Admin Card Specifics */
-.admin-card h3 {
-    font-size: var(--heading-lg);
+/* Card Title - Centered for all card types */
+.card-title {
+    font-size: var(--heading-base);
     font-weight: var(--font-semibold);
     color: var(--text-primary);
     margin-bottom: var(--fluid-space-sm);
-    text-align: left;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fluid-space-sm);
+}
+
+/* Admin Card Specifics */
+.admin-card .card-title {
+    font-size: var(--heading-base);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--fluid-space-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--fluid-space-sm);
 }
 
 .admin-card p {
@@ -336,19 +680,6 @@
     font-size: var(--heading-xl);
     font-weight: var(--font-semibold);
     color: var(--text-primary);
-}
-
-.card-body {
-    padding: var(--fluid-space-lg);
-}
-
-.card-footer {
-    padding: var(--fluid-space-lg);
-    border-top: 1px solid var(--border-primary);
-    background: var(--bg-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
 }
 
 /* Card Variants */
@@ -615,17 +946,8 @@
 .form-row-3 {
     grid-template-columns: repeat(3, 1fr);
 }
-
 .form-row-4 {
-    grid-template-columns: repeat(4, 1fr);
-}
-
-@media (max-width: 768px) {
-    .form-row-2,
-    .form-row-3,
-    .form-row-4 {
-        grid-template-columns: 1fr;
-    }
+    grid-template-columns: repeat(auto-fit, minmax(clamp(200px, 25vw, 300px), 1fr));
 }
 
 /* ======================================== */
@@ -741,6 +1063,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    margin: var(--fluid-space-md);
 }
 
 .modal-header {
@@ -1200,48 +1523,17 @@
 /* RESPONSIVE COMPONENTS */
 /* ======================================== */
 
-/* Mobile Components */
-@media (max-width: 768px) {
-    .btn {
-        width: 100%;
-        justify-content: center;
-    }
-    
-    .btn-group {
-        flex-direction: column;
-    }
-    
-    .modal {
-        margin: var(--fluid-space-md);
-        max-height: 95vh;
-    }
-    
-    .table-container {
-        font-size: var(--text-xs);
-    }
-    
-    .form-row-2,
-    .form-row-3,
-    .form-row-4 {
-        grid-template-columns: 1fr;
-    }
+/* Fluid Table Container - Auto-adjust based on viewport */
+.table-container {
+    font-size: clamp(var(--text-xs), 1.2vw, var(--text-sm));
 }
 
-/* Touch Device Components */
-@media (pointer: coarse) {
-    .btn {
-        padding: var(--fluid-space-md) var(--fluid-space-xl);
-        font-size: var(--text-lg);
-    }
-    
-    .form-input {
-        padding: var(--fluid-space-md) var(--fluid-space-lg);
-        font-size: var(--text-lg);
-    }
-    
-    .card {
-        margin: var(--fluid-space-sm);
-    }
+/* Touch Device Components - Fluid touch targets */
+.form-input {
+    padding: var(--fluid-space-md) var(--fluid-space-lg);
+    font-size: var(--text-base);
+    min-height: 44px;
+    touch-action: manipulation;
 }
 
 /* ======================================== */

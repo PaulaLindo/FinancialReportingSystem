@@ -1,0 +1,21 @@
+Account Code,Account Description,Category,Amount,Period
+REV-001,Consulting Services Revenue,Revenue,250000,2025-Q1
+REV-002,Training Revenue,Revenue,150000,2025-Q1
+REV-003,Software Licensing Revenue,Revenue,180000,2025-Q1
+REV-004,Maintenance Contracts Revenue,Revenue,120000,2025-Q1
+REV-005,Professional Services Revenue,Revenue,200000,2025-Q1
+REV-006,Support Services Revenue,Revenue,80000,2025-Q1
+EXP-001,Salaries & Wages,Expenses,180000,2025-Q1
+EXP-002,Employee Benefits,Expenses,45000,2025-Q1
+EXP-003,Office Rent,Expenses,60000,2025-Q1
+EXP-004,Utilities,Expenses,15000,2025-Q1
+EXP-005,Software Subscriptions,Expenses,25000,2025-Q1
+EXP-006,Marketing Expenses,Expenses,35000,2025-Q1
+EXP-007,Travel Expenses,Expenses,20000,2025-Q1
+EXP-008,Professional Fees,Expenses,30000,2025-Q1
+EXP-009,Insurance,Expenses,12000,2025-Q1
+EXP-010,Depreciation,Expenses,18000,2025-Q1
+EXP-011,Interest Expense,Expenses,8000,2025-Q1
+EXP-012,Taxes & Licenses,Expenses,15000,2025-Q1
+TOTAL,Total Operations,Summary,980000,2025-Q1
+NET_INCOME,Net Income,Summary,220000,2025-Q1

@@ -1,0 +1,120 @@
+<!-- Draft Statement Viewer Component -->
+<!-- For viewing draft financial statements during Balance Sheet mapping phase -->
+<div id="draftStatementViewer" class="draft-statement-viewer visibility--hidden">
+    <div class="draft-statement-container">
+        <!-- Viewer Header -->
+        <div class="draft-statement-header">
+            <div class="draft-statement-title-section">
+                <h2 id="draftStatementTitle" class="draft-statement-title">
+                    Draft Statement: Loading...
+                </h2>
+                <div class="draft-statement-subtitle">
+                    <span id="draftStatementPeriod" class="draft-period">FY 2025-2026</span>
+                    <span class="draft-phase-indicator" id="draftPhaseIndicator">
+                        <span class="phase-badge phase-mapping">Mapping Phase</span>
+                        <span class="mapping-progress" id="mappingProgress">0% mapped</span>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="draft-statement-actions">
+                <button type="button" class="draft-btn draft-btn-secondary" data-action="refresh-draft-statement">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0114.85 3.36"/>
+                    </svg>
+                    Refresh
+                </button>
+                
+                <button type="button" class="draft-btn draft-btn-primary" data-action="export-draft-statement">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="7,10 12,15 17,10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Export Draft
+                </button>
+                
+                <button type="button" class="draft-btn draft-btn-close" data-action="close-draft-statement-viewer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    Close
+                </button>
+            </div>
+        </div>
+
+        <!-- Viewer Body -->
+        <div class="draft-statement-body">
+            <!-- Mapping Progress Section -->
+            <div class="mapping-progress-section">
+                <h3 class="mapping-progress-title">Balance Sheet Mapping Progress</h3>
+                <div class="mapping-progress-bar">
+                    <div class="progress-track">
+                        <div class="progress-fill progress-fill--zero" id="mappingProgressFill"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span class="mapped-count" id="mappedCount">0</span>
+                        <span class="mapped-separator">/</span>
+                        <span class="total-count" id="totalCount">0</span>
+                        <span class="mapped-label">accounts mapped</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Draft Statement Content -->
+            <div class="draft-statement-content" id="draftStatementContent">
+                <!-- Statement will be loaded here -->
+                <div class="draft-loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading draft statement...</p>
+                </div>
+            </div>
+
+            <!-- Unmapped Accounts Section -->
+            <div class="unmapped-accounts-section" id="unmappedAccountsSection">
+                <h3 class="unmapped-accounts-title">Unmapped Balance Sheet Accounts</h3>
+                <div class="unmapped-accounts-grid" id="unmappedAccountsGrid">
+                    <!-- Unmapped accounts will be listed here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Viewer Footer -->
+        <div class="draft-statement-footer">
+            <div class="draft-statement-info">
+                <div class="info-item">
+                    <span class="info-label">Balance Sheet:</span>
+                    <span class="info-value" id="balanceSheetName">Not selected</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Last Updated:</span>
+                    <span class="info-value" id="lastUpdated">Never</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Access Mode:</span>
+                    <span class="info-value access-mode-draft" id="draftAccessMode">Draft Mode</span>
+                </div>
+            </div>
+            
+            <div class="draft-statement-legend">
+                <h4>Legend</h4>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <div class="legend-color mapped-color"></div>
+                        <span class="legend-text">Mapped Account</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color unmapped-color"></div>
+                        <span class="legend-text">Unmapped Account</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color formula-color"></div>
+                        <span class="legend-text">Formula Available</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
