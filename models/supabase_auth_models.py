@@ -38,19 +38,12 @@ class SupabaseAuthModel:
             raise ValueError("Supabase credentials not found. Check SUPABASE_URL and SUPABASE_ANON_KEY in environment variables")
         
         try:
-            # Create client with only URL and key - maximum compatibility
+            # Create client with older stable API
             self.client = create_client(self.supabase_url, self.supabase_anon_key)
             self._initialized = True
-            print("✅ Supabase auth model initialized with anon key (secure, RLS-compliant)")
+            print("✅ Supabase auth model initialized with v1.0.3 (stable)")
         except Exception as e:
-            # Try alternative import pattern
-            try:
-                from supabase import Client
-                self.client = Client(self.supabase_url, self.supabase_anon_key)
-                self._initialized = True
-                print("✅ Supabase auth model initialized with Client class")
-            except Exception as fallback_error:
-                raise ValueError(f"Supabase authentication unavailable: {e} (fallback: {fallback_error})")
+            raise ValueError(f"Supabase authentication unavailable: {e}")
     
     def get_user_by_username(self, username: str) -> Optional[Dict[str, Any]]:
         """Get user by username"""
