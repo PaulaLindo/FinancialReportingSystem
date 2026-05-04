@@ -18,10 +18,5 @@
     "SUPABASE_URL": "@supabase_url",
     "SUPABASE_ANON_KEY": "@supabase_anon_key",
     "SECRET_KEY": "@secret_key"
-  },
-  "functions": {
-    "app.py": {
-      "runtime": "python3.12"
-    }
   }
 }
