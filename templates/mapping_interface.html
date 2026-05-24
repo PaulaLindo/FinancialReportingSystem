@@ -24,7 +24,18 @@
             <span class="revision-balance-strip__label" id="revisionBalanceLabel">Trial balance check</span>
             <span class="revision-balance-strip__value" id="revisionBalanceValue">Checking…</span>
         </div>
+
+        <div id="revisionReviewerFeedback" class="revision-reviewer-feedback element--hidden" aria-labelledby="revisionReviewerFeedbackTitle">
+            <h2 class="revision-reviewer-feedback__title" id="revisionReviewerFeedbackTitle">Reviewer feedback</h2>
+            <p class="revision-reviewer-feedback__intro text-muted">
+                Comments and timeline from the Finance Manager or CFO when this submission was returned.
+            </p>
+            <div id="revisionTimelineMount" class="revision-timeline-mount"></div>
+            <div id="revisionLineCommentsMount" class="revision-line-comments-mount"></div>
+        </div>
         
+        <div id="revisionFlaggedAccountsStrip" class="revision-flagged-accounts element--hidden" aria-live="polite"></div>
+
         <!-- Header -->
         <div class="mapping-header">
             <h1 class="mapping-title" id="mappingPageTitle">GRAP Account Mapping</h1>
@@ -102,17 +113,52 @@
 
         <!-- Correction workspace: mandatory note + resubmit -->
         <div id="revisionResubmitPanel" class="revision-resubmit-panel element--hidden">
-            <label for="clerkCorrectionNote" class="revision-resubmit-panel__label">
-                Mandatory clerk response <span class="required">*</span>
-            </label>
-            <p class="revision-resubmit-panel__hint">
-                Explain what you corrected based on the manager's feedback. This is recorded on the audit timeline.
-            </p>
-            <textarea id="clerkCorrectionNote" class="revision-resubmit-panel__input" rows="3"
-                placeholder="e.g. Remapped Account 4015 to GRAP 23 conditional grant liability as requested."></textarea>
-            <div class="revision-resubmit-panel__actions action-buttons">
+            <div class="revision-resubmit-panel__header">
+                <span class="revision-resubmit-panel__icon" aria-hidden="true">📝</span>
+                <div class="revision-resubmit-panel__headings">
+                    <h2 class="revision-resubmit-panel__title">Resubmit for review</h2>
+                    <p class="revision-resubmit-panel__subtitle">
+                        Summarize your corrections — this note is saved on the audit timeline when you resubmit.
+                    </p>
+                </div>
+            </div>
+
+            <ul id="revisionResubmitChecklist" class="revision-resubmit-checklist" aria-label="Resubmit requirements">
+                <li class="revision-resubmit-checklist__item" data-req="note">
+                    <span class="revision-resubmit-checklist__icon" aria-hidden="true">○</span>
+                    <span class="revision-resubmit-checklist__text">Clerk response (min. 10 characters)</span>
+                </li>
+                <li class="revision-resubmit-checklist__item" data-req="mapped">
+                    <span class="revision-resubmit-checklist__icon" aria-hidden="true">○</span>
+                    <span class="revision-resubmit-checklist__text">All accounts mapped</span>
+                </li>
+                <li class="revision-resubmit-checklist__item" data-req="balanced">
+                    <span class="revision-resubmit-checklist__icon" aria-hidden="true">○</span>
+                    <span class="revision-resubmit-checklist__text">Trial balance balanced</span>
+                </li>
+                <li class="revision-resubmit-checklist__item" data-req="grap">
+                    <span class="revision-resubmit-checklist__icon" aria-hidden="true">○</span>
+                    <span class="revision-resubmit-checklist__text">GRAP compliance checks passed</span>
+                </li>
+            </ul>
+
+            <div class="revision-resubmit-panel__field">
+                <label for="clerkCorrectionNote" class="revision-resubmit-panel__label">
+                    Mandatory clerk response <span class="required" aria-label="required">*</span>
+                </label>
+                <p class="revision-resubmit-panel__hint">
+                    Reference specific accounts or GRAP categories you changed based on the manager's feedback.
+                </p>
+                <textarea id="clerkCorrectionNote" class="revision-resubmit-panel__input" rows="4" maxlength="2000"
+                    placeholder="e.g. Remapped Account 4015 to GRAP 23 conditional grant liability as requested; corrected revenue line REV-001 mapping per reviewer comment."></textarea>
+                <div class="revision-resubmit-panel__meta">
+                    <span id="clerkCorrectionNoteCount" class="revision-resubmit-panel__counter">0 characters (10 minimum)</span>
+                </div>
+            </div>
+
+            <div class="revision-resubmit-panel__actions">
                 <a href="/submission-history" class="btn btn-secondary">Cancel</a>
-                <button type="button" id="revisionResubmitBtn" class="btn btn-primary" disabled>
+                <button type="button" id="revisionResubmitBtn" class="btn btn-primary btn-lg" disabled>
                     Resubmit for review
                 </button>
             </div>

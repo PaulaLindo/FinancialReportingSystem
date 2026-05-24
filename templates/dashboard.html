@@ -254,6 +254,52 @@
         </div>
     </div>
     {% elif current_user.role == 'CFO' %}
+    <!-- CFO strategic KPI strip -->
+    {% if cfo_kpis %}
+    <div class="dashboard-content dashboard-cfo container-content">
+        <div class="quick-stats dashboard-quick-stats" aria-label="CFO overview">
+            <div class="stat-card">
+                <div class="stat-number">{{ cfo_kpis.pending_finalization_count or 0 }}</div>
+                <div class="stat-label">Awaiting finalization</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number stat-number--currency">
+                    {% if cfo_kpis.surplus_deficit_total is not none %}
+                    R {{ "{:,.2f}".format(cfo_kpis.surplus_deficit_total) }}
+                    {% else %}
+                    —
+                    {% endif %}
+                </div>
+                <div class="stat-label">
+                    Surplus / (deficit)
+                    {% if cfo_kpis.surplus_deficit_submission_count %}
+                    <span class="stat-sublabel">({{ cfo_kpis.surplus_deficit_submission_count }} submission{{ 's' if cfo_kpis.surplus_deficit_submission_count != 1 else '' }})</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number stat-number--currency">
+                    {% if cfo_kpis.budget_variance_total is not none %}
+                    R {{ "{:,.2f}".format(cfo_kpis.budget_variance_total) }}
+                    {% else %}
+                    —
+                    {% endif %}
+                </div>
+                <div class="stat-label">
+                    Budget variance (actual − budget)
+                    {% if cfo_kpis.budget_variance_submission_count %}
+                    <span class="stat-sublabel">({{ cfo_kpis.budget_variance_submission_count }} report{{ 's' if cfo_kpis.budget_variance_submission_count != 1 else '' }})</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="stat-card stat-card--action">
+                <a href="/finance-manager/review-queue" class="btn btn-primary btn-sm">Open review queue</a>
+                <div class="stat-label" style="margin-top: 0.5rem;">Final review &amp; period lock</div>
+            </div>
+        </div>
+        <p class="dashboard-cfo-kpi-note text-muted">Totals reflect submissions currently in the CFO queue (pending CFO / approved by manager).</p>
+    </div>
+    {% endif %}
     <div class="section">
         <div class="container-content">
             <h2 class="section-title">How It Works</h2>

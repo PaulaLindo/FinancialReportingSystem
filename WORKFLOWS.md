@@ -67,13 +67,13 @@ The service allows submission from typical **draft / staging** statuses (for exa
 
 ### After rejection
 
-When a manager or CFO rejects with reason, the clerk updates data/mappings as needed and **submits for review** again via the same path, subject to status rules above.
+When a manager or CFO rejects with reason, the clerk updates data/mappings as needed and **submits for review** again via the same path, subject to status rules above. **View statement** on submission history opens a read-only statement review (same layout as FM/CFO history) without approve/finalize actions.
 
 ### Clerk-only navigation (reference)
 
 | Nav / page | Role |
 |------------|------|
-| **History** (`/submission-history`) | Finance Clerk — own submission trail |
+| **History** (`/submission-history`) | Finance Clerk — own submission trail; **View statement** for read-only review |
 | **Upload** | Users with upload permission |
 
 Managers/CFOs use **`/finance-manager/history`** for cross-cutting settled submissions, not the clerk submission-history page.
@@ -99,6 +99,10 @@ This file is the **single workflow reference** for clerks, managers, and CFOs.
 4. **Reject:** **`POST /api/universal/reject`** with a **mandatory reason** — typically **`rejected_by_manager`** so the clerk can fix and resubmit.
 5. **History:** Settled items appear under **`/finance-manager/history`** with filters as implemented.
 6. **Approval signatures:** Shown in statement review when `metadata.approval_signatures` is present.
+7. **Line-item comments:** During active review (`pending_review`), use the **💬** button on statement rows to add per-account notes (calculation, mapping, data, or general). Comments are stored on `metadata.line_item_comments`, preserved on approve/reject, and visible in:
+   - **Statement review** — audit panel grouped by account; **View** (💬) on flagged rows when read-only or settled
+   - **FM/CFO History** — open **View Details** → statement review with `returnTo=/finance-manager/history` (read-only)
+   - **Clerk submission history** — **View statement** opens read-only review with grouped line-item comments and rejection context
 
 ---
 
@@ -110,6 +114,7 @@ This file is the **single workflow reference** for clerks, managers, and CFOs.
 4. **Reject:** **`POST /api/universal/reject`** with reason — returns feedback toward submitter/workflow per backend rules.
 5. **History:** Same **`/finance-manager/history`** page. On approved cards, **Finalized export** opens an in-app notice (does not navigate away) so you can keep final-approving other documents; open **Export Center** from the nav when ready to generate PDFs for all finalized submissions.
 6. **Approval signatures:** Shown in statement review when prior approvers are recorded.
+7. **Line-item comments:** View comments from FM review in statement review and **History** (read-only). CFO may add comments while finalizing; all comments remain on the audit trail after approval.
 
 ### CFO batch finalization and export
 
@@ -135,7 +140,7 @@ Acknowledgment is stored server-side (`metadata.export_ready_acknowledged_at`) a
 ## Shared mechanics
 
 - **Period lock:** After CFO final approval, `financial_periods.is_locked` is set and a global API guard blocks mutating **`POST`/`PUT`/`PATCH`/`DELETE`** on sessions in that period (`utils/period_lock_guard.py`). **CFO finalize is blocked** if no reporting period can be resolved (`period_id_unresolved`) or if the database lock write fails (`period_lock_db_sync_failed`) — finalize only succeeds when `financial_periods.is_locked` is persisted. **Official financial-statement PDF** generation and download require the locked period (`utils/pdf_availability.py`, `utils/pdf_download_guard.py`). Formula-breakdown PDFs and the Manager’s Certificate are **not** gated on period lock (see **PDF and export gates** below).
-- **Supabase period-lock migrations:** Run in order in Supabase SQL Editor: `scripts/add_period_lock_and_variance_explanations.sql`, `scripts/enable_financial_periods_cfo_lock_rls.sql` (includes legacy RLS consolidation). Verify with `python scripts/check_supabase_migrations.py` or `GET /api/system/schema-migrations` (CFO / System Admin). See `scripts/verify_supabase_cfo_migrations.sql` for manual audit queries.
+- **Supabase period-lock migrations:** Run in order in Supabase SQL Editor: `scripts/add_period_lock_and_variance_explanations.sql`, `scripts/enable_financial_periods_cfo_lock_rls.sql` (includes legacy RLS consolidation). Verify with `python scripts/check_supabase_migrations.py` or `GET /api/system/schema-migrations` (CFO / System Admin). Manual audit queries: `scripts/verify_supabase_cfo_migrations.sql`. Expected probe: `financial_periods.is_locked` readable; registry entries for all three migration IDs.
 - **GRAP by document type** (`utils/grap_standards_scope.py`, `services/grap_compliance_service.py`):
   - **`budget_report`:** GRAP 24 — mandatory variance explanations when |variance/budget| > 10%. Enforced at **clerk submit**, **FM forward**, and **CFO finalize** (`grap24_variance_explanations` in `UniversalWorkflowService`). The **Budget vs Actual** comparison table and variance panel appear on **`/mapping`** (clerk) and **statement review** (FM/CFO) — there is no separate route; `budget_report` *is* the GRAP 24 statement.
   - **`balance_sheet`:** GRAP 1 (SFP) — mapping complete, trial balance, assets = liabilities + equity.
@@ -148,6 +153,8 @@ Acknowledgment is stored server-side (`metadata.export_ready_acknowledged_at`) a
 - **Cards:** **`static/js/transaction-card-ui.js`** on FM/CFO Review and History.
 - **Statement review:** **`static/js/financial-statement-review.js`** (SFP/SFPER, actions, `returnTo`).
 - **Manager’s Certificate:** **`POST /api/certificate/generate/<session_id>`** where enabled after manager approval.
+- **Line-item comments:** `GET/POST /api/comments/line-item/<session_id>` — stored on `metadata.line_item_comments`; clerks read own sessions via `process`, reviewers via `review`. **Legacy rejections:** if top-level comments are empty, server resolves from the latest `rejection_history` / snapshot entry (`utils/session_metadata_helpers.py`).
+- **Clerk submission list API:** `GET /api/submissions/user` returns lean payloads (counts, status, resolved comments/rejection reason) — no full metadata blob.
 - **Status helpers:** **`utils/session_workflow.py`** — submitted-for-review vs clerk-actionable rejection sets.
 
 ### Formula transparency (review modal)
@@ -284,3 +291,83 @@ Excel, CSV, and Archive are wired via **`controllers/routes_export.py`** and **`
 | Manager’s Certificate | `controllers/routes_certificate.py`, button in `static/js/financial-statement-review.js` |
 | Schema migration check | `scripts/check_supabase_migrations.py`, `GET /api/system/schema-migrations`, `services/schema_migration_service.py` |
 | Period RLS (Supabase) | `scripts/enable_financial_periods_cfo_lock_rls.sql`, `scripts/consolidate_financial_periods_rls.sql` |
+| Line-item comment modal | `templates/components/line-item-comment-modal.html`, `static/js/line-item-comment-system.js` |
+| Metadata helpers (legacy comments / counts) | `utils/session_metadata_helpers.py` |
+
+---
+
+## UAT sign-off checklist
+
+Use this checklist for user acceptance testing before production sign-off. Record **Pass / Fail / N/A** and tester initials. Run `python scripts/check_supabase_migrations.py` first — all migrations should report `"all_applied": true`.
+
+### Environment prerequisites
+
+- [ ] Supabase migrations applied (`add_period_lock_and_variance_explanations`, `enable_financial_periods_cfo_lock_rls`, `consolidate_financial_periods_rls`)
+- [ ] `python scripts/check_supabase_migrations.py` → `all_applied: true`, probe `financial_periods.is_locked` passed
+- [ ] Test users exist for **Finance Clerk**, **Finance Manager**, and **CFO**
+- [ ] At least one open reporting period linked to uploads (or date-range resolution works)
+
+### Finance Clerk
+
+| # | Test | Pass |
+|---|------|------|
+| C1 | Upload **balance sheet** with unbalanced debits/credits — **Continue** disabled | |
+| C2 | Upload valid balance sheet → map all accounts → **Submit for review** succeeds | |
+| C3 | Success toast: *“Data forwarded to Finance Manager for review.”* | |
+| C4 | After submit, mapping and GRAP panels are **read-only** | |
+| C5 | Clerk **cannot** see Approve / Finalize on any page | |
+| C6 | **Income statement** and **budget report** upload gates behave per doc type | |
+| C7 | **Submission history** shows own submissions with correct document-type badge colours | |
+| C8 | After FM rejection → **Correct** opens correction workspace with reviewer feedback and per-account comments | |
+| C9 | Resubmit requires mandatory clerk note (≥10 chars) + balanced + mapped + GRAP checks | |
+| C10 | Clerk **View statement** shows read-only review with line-item comments and rejection context when applicable | |
+| C11 | Clerk **View statement** opens read-only statement review (`/approvals?review=statement&returnTo=/submission-history`) | |
+
+### Finance Manager
+
+| # | Test | Pass |
+|---|------|------|
+| M1 | **Review queue** shows only `pending_review` (not CFO items) | |
+| M2 | Queue cards have **Review** only (no Approve/Reject on card) | |
+| M3 | Statement review: click line → **Formula Transparency** modal opens | |
+| M4 | Budget report: GRAP 24 table rows clickable; variance explanations visible | |
+| M5 | **💬** on line adds comment; comment appears in audit panel | |
+| M6 | **Reject** requires mandatory reason → status `rejected_by_manager` | |
+| M7 | **Approve** forwards to CFO; `approval_signatures` shows FM entry | |
+| M8 | Optional manager’s certificate prompt after approve | |
+| M9 | **History** → View Details on approved item: statement read-only, **line item comments** visible | |
+| M10 | Rejected item in history shows rejection reason + line-item comments | |
+
+### CFO
+
+| # | Test | Pass |
+|---|------|------|
+| F1 | **Review queue** shows `pending_cfo` / `approved_by_manager` only | |
+| F2 | **Finalize** disabled until manager approved | |
+| F3 | Finalize confirm dialog warns about **period lock / audit trail** | |
+| F4 | **Batch finalization** works for multiple selected items | |
+| F5 | GRAP 24: finalize blocked when >10% variance lines lack explanations | |
+| F6 | After finalize: period `is_locked = true`; mutating API calls blocked | |
+| F7 | **Dashboard KPI strip** shows pending finalization / surplus-deficit / budget variance | |
+| F8 | **Export Center**: Generate PDF only after period lock | |
+| F9 | **History** → approved submission: line-item comments visible (read-only) | |
+| F10 | FM can download PDF after lock; clerk cannot export | |
+
+### Cross-role / audit
+
+| # | Test | Pass |
+|---|------|------|
+| X1 | End-to-end: Clerk submit → FM approve → CFO finalize → PDF export | |
+| X2 | Rejection loop: FM reject with line comments → clerk corrects → resubmit → FM approve | |
+| X3 | Workflow timeline tab shows submit, rejection, resubmission events | |
+| X4 | Line-item comments persist on metadata after approve (not cleared) | |
+| X5 | Formula breakdown PDF available in review (not gated on period lock) | |
+
+### Sign-off
+
+| Role | Name | Date | Signature / OK |
+|------|------|------|----------------|
+| Finance Clerk (UAT) | | | |
+| Finance Manager (UAT) | | | |
+| CFO (UAT) | | | |
+| Technical / Dev | | | |

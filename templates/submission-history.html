@@ -99,57 +99,6 @@
     </div>
 </div>
 
-<div id="submissionDetailsModal" class="submission-details-modal element--hidden">
-    <div class="submission-details-overlay"></div>
-    <div class="submission-details-content">
-        <div class="submission-details-header">
-            <div class="submission-details-header__copy">
-                <h3 id="detailModalTitle">Submission details</h3>
-                <p id="detailModalSubtitle" class="submission-details-subtitle"></p>
-            </div>
-            <button id="modalCloseBtn" class="btn-close" type="button" data-action="close-submission-details-modal" aria-label="Close">&times;</button>
-        </div>
-        <div class="submission-details-body">
-            <div class="submission-details-status-row">
-                <span id="detailStatus" class="submission-status">—</span>
-                <span id="detailDocumentType" class="submission-doc-badge">—</span>
-            </div>
-            <dl class="submission-details-grid">
-                <div class="detail-group">
-                    <dt>Filename</dt>
-                    <dd id="detailFilename">—</dd>
-                </div>
-                <div class="detail-group">
-                    <dt>Submitted</dt>
-                    <dd id="detailSubmissionDate">—</dd>
-                </div>
-                <div class="detail-group">
-                    <dt>Mapped accounts</dt>
-                    <dd id="detailMappedAccounts">—</dd>
-                </div>
-                <div class="detail-group">
-                    <dt>Editing</dt>
-                    <dd id="detailLocked">—</dd>
-                </div>
-                <div id="detailReviewNotesGroup" class="detail-group detail-group--full element--hidden">
-                    <dt>Review notes</dt>
-                    <dd id="detailReviewNotes">—</dd>
-                </div>
-            </dl>
-            <div id="detailRejectionBlock" class="detail-rejection-block element--hidden">
-                <h4>Rejection reason</h4>
-                <p id="detailRejectionReason" class="detail-rejection-reason"></p>
-            </div>
-        </div>
-        <div class="submission-details-footer">
-            <button type="button" id="modalOpenMappingBtn" class="btn btn-primary element--hidden" data-action="open-mapping-correction">
-                Open correction workspace
-            </button>
-            <button type="button" id="modalCloseFooterBtn" class="btn btn-secondary" data-action="close-submission-details-modal">Close</button>
-        </div>
-    </div>
-</div>
-
 <template id="submissionItemTemplate">
     <article class="submission-item submission-card" data-submission-id="">
         <div class="submission-icon" aria-hidden="true">
@@ -172,8 +121,8 @@
             <button type="button" class="btn btn-sm btn-primary btn-open-mapping element--hidden" title="Correct mapping and resubmit">
                 Correct
             </button>
-            <button type="button" class="btn btn-sm btn-outline btn-view-details" title="View details">
-                Details
+            <button type="button" class="btn btn-sm btn-primary btn-view-statement" title="Open read-only statement review">
+                View statement
             </button>
         </div>
     </article>

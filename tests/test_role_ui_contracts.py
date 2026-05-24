@@ -18,7 +18,9 @@ class ClerkUiContractTests(unittest.TestCase):
         self.assertIn('submission-history-page--clerk', html)
         self.assertIn('id="statusFilter"', html)
         self.assertIn('id="submissionsList"', html)
-        self.assertIn('submissionDetailsModal', html)
+        self.assertIn('btn-view-statement', html)
+        self.assertNotIn('submissionDetailsModal', html)
+        self.assertNotIn('btn-view-details', html)
 
     def test_upload_page_has_process_flow(self):
         js = read('static/js/upload.js')
@@ -70,6 +72,56 @@ class ReviewQueueUiContractTests(unittest.TestCase):
         self.assertIn('statement-line--clickable', js)
         self.assertIn('viewLineItemCalculation', js)
 
+    def test_line_item_comment_wired_in_statement_review(self):
+        js = read('static/js/financial-statement-review.js')
+        base = read('templates/base.html')
+        styles = read('static/css/styles.css')
+        self.assertIn('data-action="line-item-comment"', js)
+        self.assertIn('data-action="line-item-comment-view"', js)
+        self.assertIn('renderLineItemCommentsAuditPanel', js)
+        self.assertIn('openLineItemCommentForRow', js)
+        self.assertIn('line-item-comment-modal.html', base)
+        self.assertIn('line-item-comment-system.js', base)
+        self.assertIn('line-item-comment-modal.css', styles)
+
+    def test_line_item_comments_in_clerk_history(self):
+        js = read('static/js/submission-history.js')
+        self.assertIn('openClerkStatementReview', js)
+        self.assertIn('line_item_comments', read('controllers/routes.py'))
+
+    def test_line_item_comment_readonly_mode(self):
+        js = read('static/js/line-item-comment-system.js')
+        css = read('static/css/line-item-comment-modal.css')
+        self.assertIn('readOnlyMode', js)
+        self.assertIn('line-item-comment-modal--readonly', css)
+
+    def test_confirm_modal_prevents_click_through(self):
+        js = read('static/js/modal-system.js')
+        self.assertIn('_bindModalActions', js)
+        self.assertIn('modal-system-open', js)
+        self.assertIn('settled', js)
+
+    def test_cfo_finalize_confirm_dialog(self):
+        js = read('static/js/financial-statement-review.js')
+        queue_js = read('static/js/finance-manager-review-queue.js')
+        self.assertIn('varydianCfoFinalizeConfirm', js)
+        self.assertIn('irreversible without an audit log entry', js)
+        self.assertIn('varydianCfoFinalizeConfirm', queue_js)
+
+
+class CfoDashboardUiContractTests(unittest.TestCase):
+    def test_cfo_dashboard_kpi_strip(self):
+        html = read('templates/dashboard.html')
+        self.assertIn('dashboard-cfo', html)
+        self.assertIn('pending_finalization_count', html)
+        self.assertIn('surplus_deficit_total', html)
+        self.assertIn('budget_variance_total', html)
+
+    def test_dashboard_route_loads_cfo_kpis(self):
+        src = read('controllers/routes.py')
+        self.assertIn('get_cfo_dashboard_kpis', src)
+        self.assertIn("user.role == 'CFO'", src)
+
 
 class LegacyRoutesRemovedTests(unittest.TestCase):
     def test_finance_manager_api_routes_removed(self):
@@ -78,10 +130,36 @@ class LegacyRoutesRemovedTests(unittest.TestCase):
         self.assertIn('finance_manager_review_queue', src)
         self.assertIn('finance_manager_history', src)
 
+    def test_clerk_statement_review_scripts_in_base(self):
+        base = read('templates/base.html')
+        self.assertIn("current_user.role == 'FINANCE_CLERK'", base)
+        self.assertIn('financial-statement-review.js', base)
+        self.assertIn('formula-modal.js', base)
+
+    def test_clerk_can_open_statement_review_route(self):
+        src = read('controllers/routes.py')
+        self.assertIn("review_statement and user.role == 'FINANCE_CLERK'", src)
+        self.assertIn('openClerkStatementReview', read('static/js/submission-history.js'))
+        self.assertIn('/submission-history', read('static/js/financial-statement-review.js'))
+
     def test_clerk_workflow_redirects_to_history(self):
         src = read('controllers/routes.py')
         self.assertIn("redirect(url_for('submission_history_page'))", src)
         self.assertIn('/finance-clerk-workflow', src)
+
+    def test_session_metadata_helpers_used(self):
+        src = read('controllers/routes.py')
+        self.assertIn('resolve_line_item_comments', src)
+        self.assertIn('clerk_submission_account_counts', src)
+        self.assertIn('resolve_rejection_reason', src)
+
+    def test_correction_workspace_reviewer_feedback(self):
+        html = read('templates/mapping_interface.html')
+        js = read('static/js/mapping-interface.js')
+        self.assertIn('revisionReviewerFeedback', html)
+        self.assertIn('revisionLineCommentsMount', html)
+        self.assertIn('renderRevisionReviewerFeedback', js)
+        self.assertIn('renderCategories()', js)
 
 
 class RlsVerificationScriptTests(unittest.TestCase):

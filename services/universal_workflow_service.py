@@ -946,8 +946,8 @@ class UniversalWorkflowService:
 
             if session.metadata is None:
                 session.metadata = {}
-            # Per-account reviewer threads invalidated on any rejection return-to-clerk
-            session.metadata.pop('line_item_comments', None)
+            # Preserve reviewer line-item threads for clerk correction workspace (read-only).
+            comments_snapshot = list(session.metadata.get('line_item_comments') or [])[:50]
 
             if previous_status in CFO_PENDING_STATUSES and new_status == SubmissionStatus.REJECTED.value:
                 self._clear_forward_approvals_on_cfo_rejection(session.metadata)
@@ -963,6 +963,7 @@ class UniversalWorkflowService:
                 'new_status': new_status,
                 'prior_status': previous_status,
                 'rejector_role': role,
+                'line_item_comments': comments_snapshot,
             })
             session.metadata['rejection_history'] = hist[-50:]
 
@@ -1306,6 +1307,7 @@ class UniversalWorkflowService:
                         'total_columns': session.total_columns,
                         'period_name': md.get('period_name') or md.get('period') or md.get('reporting_period'),
                         'metadata': md,
+                        'kpi': self._session_kpi_snapshot(session, doc_type),
                     })
 
             pending_approvals.sort(key=lambda x: x['submitted_at'] or x['created_at'])
@@ -1324,7 +1326,89 @@ class UniversalWorkflowService:
         except Exception as e:
             logger.error(f"❌ Error getting pending approvals: {str(e)}")
             return {'success': False, 'error': f'Error getting pending approvals: {str(e)}'}
-    
+
+    @staticmethod
+    def _session_kpi_snapshot(session, document_type: str) -> Dict[str, Any]:
+        """Extract surplus/deficit or budget variance for CFO dashboard KPIs."""
+        md = getattr(session, 'metadata', None) or {}
+        out: Dict[str, Any] = {
+            'surplus_deficit': None,
+            'budget_variance': None,
+            'variance_percentage': None,
+        }
+        if document_type == DocumentType.INCOME_STATEMENT.value:
+            try:
+                out['surplus_deficit'] = float(getattr(session, 'net_income', 0) or 0)
+            except (TypeError, ValueError):
+                pass
+        elif document_type == DocumentType.BUDGET_REPORT.value:
+            try:
+                out['budget_variance'] = float(getattr(session, 'total_variance', 0) or 0)
+                out['variance_percentage'] = float(getattr(session, 'variance_percentage', 0) or 0)
+            except (TypeError, ValueError):
+                pass
+        elif document_type == DocumentType.BALANCE_SHEET.value:
+            for key in ('processing_summary', 'summary', 'financial_summary'):
+                block = md.get(key)
+                if isinstance(block, dict) and block.get('surplus_deficit') is not None:
+                    try:
+                        out['surplus_deficit'] = float(block['surplus_deficit'])
+                    except (TypeError, ValueError):
+                        pass
+                    break
+            if out['surplus_deficit'] is None:
+                fs = md.get('financial_statements') or {}
+                perf = fs.get('performance') or fs.get('sofe') or {}
+                if isinstance(perf, dict) and perf.get('surplus') is not None:
+                    try:
+                        out['surplus_deficit'] = float(perf['surplus'])
+                    except (TypeError, ValueError):
+                        pass
+        return out
+
+    def get_cfo_dashboard_kpis(self, user_id: str) -> Dict[str, Any]:
+        """Aggregate KPIs from submissions awaiting CFO finalization."""
+        user = supabase_auth.get_user_by_id(user_id)
+        if not user:
+            return {'success': False, 'error': 'User not found'}
+        if user.get('role') != 'CFO':
+            return {'success': False, 'error': 'CFO only'}
+
+        total_count = 0
+        items: List[Dict[str, Any]] = []
+        limit = 200
+        offset = 0
+        while True:
+            result = self.get_pending_approvals(user_id, limit=limit, offset=offset)
+            if not result.get('success'):
+                return result
+            page = result.get('pending_approvals') or []
+            items.extend(page)
+            total_count = int(result.get('total_count') or len(items))
+            if not result.get('has_more') or not page:
+                break
+            offset += limit
+            if offset >= total_count:
+                break
+
+        surplus_values: List[float] = []
+        variance_values: List[float] = []
+        for item in items:
+            kpi = item.get('kpi') or {}
+            if kpi.get('surplus_deficit') is not None:
+                surplus_values.append(float(kpi['surplus_deficit']))
+            if kpi.get('budget_variance') is not None:
+                variance_values.append(float(kpi['budget_variance']))
+
+        return {
+            'success': True,
+            'pending_finalization_count': total_count,
+            'surplus_deficit_total': sum(surplus_values) if surplus_values else None,
+            'surplus_deficit_submission_count': len(surplus_values),
+            'budget_variance_total': sum(variance_values) if variance_values else None,
+            'budget_variance_submission_count': len(variance_values),
+        }
+
     @staticmethod
     def _append_approval_signature(metadata: Dict[str, Any], user_id: str, role: str) -> None:
         """Append approver user id to metadata approval_signatures (audit trail)."""
@@ -1369,7 +1453,8 @@ class UniversalWorkflowService:
             'estimated_unmapped_accounts': unmapped_ct,
             'mapping_rows_sampled': rows_sampled,
             'total_upload_rows': getattr(session, 'total_rows', None),
-            'mapped_accounts_count': md.get('mapped_accounts_count') or md.get('mapped_accounts'),
+            'mapped_accounts_count': md.get('mapped_accounts_count') or md.get('total_mapped_accounts'),
+            'line_item_comments': list(md.get('line_item_comments') or [])[:50],
         }
 
     @staticmethod

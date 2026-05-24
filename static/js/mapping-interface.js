@@ -53,9 +53,17 @@ class GRAPMappingInterface {
         this.setupEventListeners();
         this.checkReviewMode();
         this.detectRevisionModeFromUrl();
-        this.loadGRAPCategories();
-        this.loadData();
-        void this.bootstrapWorkspace();
+        void this.bootstrapMappingPage();
+    }
+
+    async bootstrapMappingPage() {
+        await this.loadGRAPCategories();
+        if (this.state.isReviewMode && this.state.mappingData) {
+            this.loadReviewData();
+        } else {
+            await this.loadUnmappedAccounts();
+        }
+        await this.bootstrapWorkspace();
     }
 
     async bootstrapWorkspace() {
@@ -76,6 +84,8 @@ class GRAPMappingInterface {
         VarydianUtils.hideElement(document.getElementById('revisionRejectionBanner'));
         VarydianUtils.hideElement(document.getElementById('revisionBalanceStrip'));
         VarydianUtils.hideElement(document.getElementById('revisionResubmitPanel'));
+        VarydianUtils.hideElement(document.getElementById('revisionReviewerFeedback'));
+        VarydianUtils.hideElement(document.getElementById('revisionFlaggedAccountsStrip'));
         VarydianUtils.showElement(document.getElementById('mappingStandardActions'), 'flex');
     }
 
@@ -394,6 +404,10 @@ class GRAPMappingInterface {
         if (!this.state.isRevisionMode || !this.state.sessionId) return;
         await this.loadRevisionContext();
         this.activateRevisionWorkspace();
+        this.renderUnmappedAccounts();
+        this.renderCategories();
+        this.updateSectionBadges();
+        this.refreshFlaggedAccountsStrip();
     }
 
     async loadRevisionContext() {
@@ -413,6 +427,7 @@ class GRAPMappingInterface {
             this.state.currentStatus = data.status || this.state.currentStatus;
             this.state.rejectionBanner = data.rejection_banner || {};
             this.state.revisionTimeline = data.timeline || [];
+            this.state.revisionLineComments = data.line_item_comments || [];
             if (data.rejection_reason) {
                 this.state.rejectionReason = data.rejection_reason;
             }
@@ -448,6 +463,8 @@ class GRAPMappingInterface {
 
         VarydianUtils.showElement(document.getElementById('revisionBalanceStrip'), 'flex');
         VarydianUtils.showElement(document.getElementById('revisionResubmitPanel'), 'flex');
+        this.renderRevisionReviewerFeedback();
+        this.refreshFlaggedAccountsStrip();
         VarydianUtils.hideElement(document.getElementById('mappingStandardActions'));
 
         this.enableMapping();
@@ -472,6 +489,200 @@ class GRAPMappingInterface {
 
         this.scheduleBalanceRecheck();
         this.updateRevisionResubmitButton();
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text == null ? '' : String(text);
+        return div.innerHTML;
+    }
+
+    revisionAccountDomId(accountCode) {
+        const code = String(accountCode || '').trim();
+        return `revision-account-${code.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+    }
+
+    getReviewerCommentsByAccount() {
+        const map = {};
+        for (const comment of this.state.revisionLineComments || []) {
+            const code = String(comment.account_code || '').trim();
+            if (!code) continue;
+            if (!map[code]) map[code] = [];
+            map[code].push(comment);
+        }
+        return map;
+    }
+
+    accountHasReviewerComments(accountCode) {
+        const code = String(accountCode || '').trim();
+        if (!code || !this.state.isRevisionMode) return false;
+        return (this.getReviewerCommentsByAccount()[code] || []).length > 0;
+    }
+
+    renderAccountReviewerNotesHtml(accountCode) {
+        if (!this.state.isRevisionMode) return '';
+        const code = String(accountCode || '').trim();
+        const comments = this.getReviewerCommentsByAccount()[code] || [];
+        if (!comments.length) return '';
+
+        const items = comments.map((c) => {
+            const author = c.author_name || c.author_id || 'Reviewer';
+            const body = c.comment_text || c.correction_suggestion || '';
+            const type = c.comment_type || 'general';
+            const correction = c.correction_suggestion && c.comment_text
+                ? `<p class="account-reviewer-notes__correction"><strong>Suggested fix:</strong> ${this.escapeHtml(c.correction_suggestion)}</p>`
+                : '';
+            return `
+                <div class="account-reviewer-notes__item">
+                    <span class="account-reviewer-notes__type">${this.escapeHtml(type)} · ${this.escapeHtml(author)}</span>
+                    <p class="account-reviewer-notes__text">${this.escapeHtml(body) || '<em>No comment text</em>'}</p>
+                    ${correction}
+                </div>`;
+        }).join('');
+
+        return `
+            <div class="account-reviewer-notes" role="note" aria-label="Reviewer feedback for account ${this.escapeHtml(code)}">
+                <span class="account-reviewer-notes__label">Reviewer feedback</span>
+                ${items}
+            </div>`;
+    }
+
+    scrollToRevisionAccount(accountCode) {
+        const domId = this.revisionAccountDomId(accountCode);
+        const el = document.getElementById(domId);
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('revision-account--highlight');
+        window.setTimeout(() => el.classList.remove('revision-account--highlight'), 2200);
+    }
+
+    refreshFlaggedAccountsStrip() {
+        const strip = document.getElementById('revisionFlaggedAccountsStrip');
+        if (!strip || !this.state.isRevisionMode) return;
+
+        const byAccount = this.getReviewerCommentsByAccount();
+        const codes = Object.keys(byAccount).sort();
+        if (!codes.length) {
+            VarydianUtils.hideElement(strip);
+            strip.innerHTML = '';
+            return;
+        }
+
+        VarydianUtils.showElement(strip, 'block');
+        strip.innerHTML = `
+            <p class="revision-flagged-accounts__title">
+                ${codes.length} account${codes.length === 1 ? '' : 's'} flagged by reviewer — jump to account in the grid
+            </p>
+            <div class="revision-flagged-accounts__chips">
+                ${codes.map((code) => {
+                    const count = byAccount[code].length;
+                    const label = count > 1 ? `${code} (${count})` : code;
+                    return `<button type="button" class="revision-flagged-accounts__chip" data-account-code="${this.escapeHtml(code)}">${this.escapeHtml(label)}</button>`;
+                }).join('')}
+            </div>`;
+
+        strip.querySelectorAll('.revision-flagged-accounts__chip').forEach((chip) => {
+            if (chip.dataset.bound) return;
+            chip.dataset.bound = '1';
+            chip.addEventListener('click', () => {
+                this.scrollToRevisionAccount(chip.dataset.accountCode);
+            });
+        });
+    }
+
+    renderRevisionReviewerFeedback() {
+        const panel = document.getElementById('revisionReviewerFeedback');
+        const timelineMount = document.getElementById('revisionTimelineMount');
+        const commentsMount = document.getElementById('revisionLineCommentsMount');
+        if (!panel || !timelineMount || !commentsMount) return;
+
+        const timeline = this.state.revisionTimeline || [];
+        const comments = this.state.revisionLineComments || [];
+        const hasTimeline = timeline.length > 0;
+        const hasComments = comments.length > 0;
+
+        if (!hasTimeline && !hasComments) {
+            VarydianUtils.hideElement(panel);
+            return;
+        }
+
+        VarydianUtils.showElement(panel, 'block');
+
+        if (hasTimeline) {
+            timelineMount.innerHTML = `
+                <section class="revision-timeline-section" aria-label="Workflow timeline">
+                    <h3 class="revision-subsection-title">Workflow timeline</h3>
+                    <ol class="revision-timeline-list">
+                        ${timeline.map((ev) => `
+                            <li class="revision-timeline-item revision-timeline-item--${this.escapeHtml(ev.type || 'event')}">
+                                <div class="revision-timeline-item__head">
+                                    <strong>${this.escapeHtml(ev.label || ev.type || 'Event')}</strong>
+                                    <span class="revision-timeline-item__date">${this.escapeHtml(ev.at_display || ev.at || '')}</span>
+                                </div>
+                                ${ev.detail ? `<p class="revision-timeline-item__detail">${this.escapeHtml(ev.detail)}</p>` : ''}
+                            </li>
+                        `).join('')}
+                    </ol>
+                </section>`;
+        } else {
+            timelineMount.innerHTML = '';
+        }
+
+        if (hasComments) {
+            const grouped = {};
+            for (const c of comments) {
+                const acct = String(c.account_code || '—').trim() || '—';
+                if (!grouped[acct]) grouped[acct] = [];
+                grouped[acct].push(c);
+            }
+            const accountCodes = Object.keys(grouped).sort();
+
+            commentsMount.innerHTML = `
+                <section class="revision-line-comments-section" aria-label="Line item comments by account">
+                    <h3 class="revision-subsection-title">Line item comments by account</h3>
+                    <div class="revision-line-comments-by-account">
+                        ${accountCodes.map((acct) => {
+                            const items = grouped[acct];
+                            const jump = acct !== '—'
+                                ? `<button type="button" class="revision-line-comment-group__jump" data-account-code="${this.escapeHtml(acct)}">View in grid ↓</button>`
+                                : '';
+                            const body = items.map((c) => {
+                                const author = c.author_name || c.author_id || 'Reviewer';
+                                const text = c.comment_text || c.correction_suggestion || '';
+                                const subject = c.subject
+                                    ? `<div class="revision-line-comment__subject"><strong>${this.escapeHtml(c.subject)}</strong></div>`
+                                    : '';
+                                const correction = c.correction_suggestion && c.comment_text
+                                    ? `<p class="revision-line-comment__correction"><strong>Suggested fix:</strong> ${this.escapeHtml(c.correction_suggestion)}</p>`
+                                    : '';
+                                return `
+                                    <article class="revision-line-comment revision-line-comment--${this.escapeHtml(c.urgency_level || 'medium')}">
+                                        <header class="revision-line-comment__head">
+                                            <span class="revision-line-comment__meta">${this.escapeHtml(author)} · ${this.escapeHtml(c.comment_type || 'general')}</span>
+                                        </header>
+                                        ${subject}
+                                        <p class="revision-line-comment__text">${this.escapeHtml(text) || '<em class="text-muted">No comment text</em>'}</p>
+                                        ${correction}
+                                    </article>`;
+                            }).join('');
+                            return `
+                                <div class="revision-line-comment-group">
+                                    <div class="revision-line-comment-group__head">
+                                        <span class="revision-line-comment-group__code">Account ${this.escapeHtml(acct)}</span>
+                                        ${jump}
+                                    </div>
+                                    <div class="revision-line-comment-group__body">${body}</div>
+                                </div>`;
+                        }).join('')}
+                    </div>
+                </section>`;
+
+            commentsMount.querySelectorAll('.revision-line-comment-group__jump').forEach((btn) => {
+                btn.addEventListener('click', () => this.scrollToRevisionAccount(btn.dataset.accountCode));
+            });
+        } else {
+            commentsMount.innerHTML = '';
+        }
     }
 
     scheduleBalanceRecheck() {
@@ -533,7 +744,8 @@ class GRAPMappingInterface {
     updateRevisionResubmitButton() {
         const btn = document.getElementById('revisionResubmitBtn');
         if (!btn) return;
-        const noteOk = (this.state.correctionNote || '').length >= 10;
+        const noteLen = (this.state.correctionNote || '').length;
+        const noteOk = noteLen >= 10;
         const mappedOk = this.state.unmappedAccounts.length === 0;
         const balanced = this.state.balanceCheck.balanced === true;
         const grapOk = this.isClerkSubmitReady();
@@ -547,6 +759,29 @@ class GRAPMappingInterface {
                 : !grapOk
                   ? 'GRAP compliance checks must pass before resubmitting.'
                   : '';
+
+        const counter = document.getElementById('clerkCorrectionNoteCount');
+        if (counter) {
+            counter.textContent = noteOk
+                ? `${noteLen} characters — requirement met`
+                : `${noteLen} characters (${10 - noteLen} more needed)`;
+            counter.classList.toggle('revision-resubmit-panel__counter--ok', noteOk);
+        }
+
+        const checklist = document.getElementById('revisionResubmitChecklist');
+        if (checklist) {
+            const setDone = (req, done) => {
+                const item = checklist.querySelector(`[data-req="${req}"]`);
+                if (!item) return;
+                item.classList.toggle('revision-resubmit-checklist__item--done', done);
+                const icon = item.querySelector('.revision-resubmit-checklist__icon');
+                if (icon) icon.textContent = done ? '✓' : '○';
+            };
+            setDone('note', noteOk);
+            setDone('mapped', mappedOk);
+            setDone('balanced', balanced);
+            setDone('grap', grapOk);
+        }
     }
 
     async resubmitAfterCorrection() {
@@ -933,7 +1168,10 @@ class GRAPMappingInterface {
                 console.log('  - Mapped categories:', Object.keys(this.state.mappedAccounts).length);
                 
                 this.renderUnmappedAccounts();
+                this.renderCategories();
                 this.updateStats();
+                this.updateSectionBadges();
+                this.updateConfidenceSummary();
             } else {
                 console.error('❌ API Error:', result.error);
                 this.showError(result.error || 'Failed to load accounts');
@@ -1004,14 +1242,20 @@ class GRAPMappingInterface {
             const accountCode = account.account_code || account.code || '';
             const accountAmount = account.net_balance ?? account.amount ?? account.balance ?? 0;
             const accountKey = this.accountKey(account, `${categoryId}-${index}`);
+            const flaggedClass = this.accountHasReviewerComments(accountCode)
+                ? ' mapped-account--reviewer-flagged'
+                : '';
+            const domId = accountCode ? ` id="${this.revisionAccountDomId(accountCode)}"` : '';
+            const reviewerNotes = this.renderAccountReviewerNotesHtml(accountCode);
             
             return `
-                <div class="mapped-account" data-account-id="${accountKey}" data-category-id="${categoryId}" draggable="true">
+                <div class="mapped-account${flaggedClass}"${domId} data-account-id="${accountKey}" data-category-id="${categoryId}" data-account-code="${this.escapeHtml(accountCode)}" draggable="true">
                     <div class="account-info">
                         <div class="account-name">${accountName}</div>
                         <div class="account-code">${accountCode}</div>
                         <div class="account-amount">${this.formatCurrency(accountAmount)}</div>
                     </div>
+                    ${reviewerNotes}
                     <div class="confidence-score ${confidenceClass}">
                         <span class="confidence-label">${confidenceLabel}</span>
                         <span class="confidence-value">${Math.round(confidence * 100)}%</span>
@@ -1083,16 +1327,25 @@ class GRAPMappingInterface {
         this.state.unmappedAccounts.forEach((account, index) => {
             console.log(`  Rendering account ${index + 1}: ${account.account_code || account.code} - ${account.account_desc || account.name}`);
             
+            const accountCode = account.account_code || account.code || '';
             const accountEl = document.createElement('div');
             accountEl.className = 'unmapped-account';
+            if (this.accountHasReviewerComments(accountCode)) {
+                accountEl.classList.add('unmapped-account--reviewer-flagged');
+            }
+            if (accountCode) {
+                accountEl.id = this.revisionAccountDomId(accountCode);
+            }
             accountEl.draggable = true;
             accountEl.dataset.accountId = account.id || account.account_code || index.toString();
+            accountEl.dataset.accountCode = accountCode;
             
             accountEl.innerHTML = `
                 <div class="account-name">${account.account_desc || account.name || 'Unknown Account'}</div>
-                <div class="account-code">${account.account_code || account.code || ''}</div>
+                <div class="account-code">${accountCode}</div>
                 <div class="account-amount">${this.formatCurrency(account.net_balance || account.amount || 0)}</div>
                 <div class="account-description">${account.account_desc || account.description || ''}</div>
+                ${this.renderAccountReviewerNotesHtml(accountCode)}
             `;
             
             this.elements.unmappedAccountsList.appendChild(accountEl);

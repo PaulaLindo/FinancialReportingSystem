@@ -14,6 +14,11 @@ const DOCUMENT_TYPE_LABELS = {
     budget_report: 'Budget report',
 };
 
+function normalizeDocumentType(documentType) {
+    const raw = String(documentType || 'balance_sheet').trim().toLowerCase();
+    return raw.replace(/-/g, '_');
+}
+
 function isRejectedHistoryStatus(status) {
     return REJECTED_HISTORY_STATUSES.has(String(status || '').toLowerCase());
 }
@@ -52,7 +57,6 @@ class SubmissionHistoryManager {
         this.currentPage = 1;
         this.perPage = 12;
         this.totalPages = 1;
-        this.selectedSubmission = null;
 
         this.state = {
             loading: false,
@@ -72,9 +76,6 @@ class SubmissionHistoryManager {
             prevPageBtn: document.getElementById('prevPageBtn'),
             nextPageBtn: document.getElementById('nextPageBtn'),
             pageInfo: document.getElementById('pageInfo'),
-            modal: document.getElementById('submissionDetailsModal'),
-            modalCloseBtn: document.getElementById('modalCloseBtn'),
-            modalCloseFooterBtn: document.getElementById('modalCloseFooterBtn'),
         };
 
         this.init();
@@ -110,21 +111,6 @@ class SubmissionHistoryManager {
             this.elements.nextPageBtn.addEventListener('click', () => this.goToPage(this.currentPage + 1));
         }
 
-        if (this.elements.modalCloseBtn) {
-            this.elements.modalCloseBtn.addEventListener('click', () => this.closeModal());
-        }
-
-        if (this.elements.modalCloseFooterBtn) {
-            this.elements.modalCloseFooterBtn.addEventListener('click', () => this.closeModal());
-        }
-
-        const overlay = this.elements.modal?.querySelector('.submission-details-overlay');
-        if (overlay) {
-            overlay.addEventListener('click', (e) => {
-                if (e.target === e.currentTarget) this.closeModal();
-            });
-        }
-
         if (this.elements.submissionsList) {
             this.elements.submissionsList.addEventListener('click', (e) => {
                 const mapBtn = e.target.closest('.btn-open-mapping');
@@ -133,19 +119,20 @@ class SubmissionHistoryManager {
                     if (submissionId) this.openMappingWorkspace(submissionId);
                     return;
                 }
-                const viewBtn = e.target.closest('.btn-view-details');
-                if (viewBtn) {
-                    const submissionId = viewBtn.closest('.submission-item')?.dataset.submissionId;
-                    if (submissionId) this.showSubmissionDetails(submissionId);
+                const stmtBtn = e.target.closest('.btn-view-statement');
+                if (stmtBtn) {
+                    const item = stmtBtn.closest('.submission-item');
+                    const submissionId = item?.dataset.submissionId;
+                    const submission = this.submissions.find((s) => s.session_id === submissionId);
+                    if (submission) {
+                        this.openClerkStatementReview(
+                            submission.session_id,
+                            submission.document_type
+                        );
+                    }
                 }
             });
         }
-
-        document.getElementById('modalOpenMappingBtn')?.addEventListener('click', () => {
-            if (this.selectedSubmission?.session_id) {
-                this.openMappingWorkspace(this.selectedSubmission.session_id);
-            }
-        });
     }
 
     openMappingWorkspace(sessionId, { revision = true } = {}) {
@@ -153,6 +140,14 @@ class SubmissionHistoryManager {
         if (!sid) return;
         const rev = revision ? '&revision=1' : '';
         window.location.href = `/mapping?session_id=${sid}${rev}`;
+    }
+
+    openClerkStatementReview(sessionId, documentType) {
+        const sid = encodeURIComponent(String(sessionId || '').trim());
+        const docType = encodeURIComponent(normalizeDocumentType(documentType));
+        const returnTo = encodeURIComponent('/submission-history');
+        if (!sid) return;
+        window.location.href = `/approvals?review=statement&transaction=${sid}&type=${docType}&returnTo=${returnTo}`;
     }
 
     async loadSubmissions(retryCount = 0) {
@@ -354,7 +349,7 @@ class SubmissionHistoryManager {
             if (el) VarydianUtils.hideIcon(el);
         });
 
-        const documentType = submission.document_type || 'balance_sheet';
+        const documentType = normalizeDocumentType(submission.document_type);
         const iconByType = {
             income_statement: incomeStatementIcon,
             budget_report: budgetReportIcon,
@@ -394,91 +389,6 @@ class SubmissionHistoryManager {
         }
 
         return clone;
-    }
-
-    formatEditingState(submission) {
-        const status = String(submission.status || '').toLowerCase();
-        if (isRejectedHistoryStatus(status)) {
-            return 'Open for correction — use Correct or the correction workspace';
-        }
-        if (status === 'approved') {
-            return 'Finalized — no further clerk edits required';
-        }
-        if (submission.locked || ['pending_review', 'pending', 'submitted', 'pending_cfo', 'approved_by_manager'].includes(status)) {
-            return 'Read-only while under review';
-        }
-        return 'Editable';
-    }
-
-    showSubmissionDetails(submissionId) {
-        const submission = this.submissions.find((s) => s.session_id === submissionId);
-        if (!submission) return;
-
-        this.selectedSubmission = submission;
-        const filename = this.getFilename(submission);
-        const docType = submission.document_type || 'balance_sheet';
-        const status = String(submission.status || '').toLowerCase();
-        const rejected = isRejectedHistoryStatus(status);
-
-        const titleEl = document.getElementById('detailModalTitle');
-        const subtitleEl = document.getElementById('detailModalSubtitle');
-        if (titleEl) titleEl.textContent = filename;
-        if (subtitleEl) subtitleEl.textContent = this.formatDocumentType(docType);
-
-        document.getElementById('detailFilename').textContent = filename;
-
-        const docBadge = document.getElementById('detailDocumentType');
-        if (docBadge) {
-            docBadge.textContent = this.formatDocumentType(docType);
-            docBadge.className = `submission-doc-badge submission-doc-badge--${docType}`;
-        }
-
-        const statusEl = document.getElementById('detailStatus');
-        statusEl.textContent = this.formatStatus(submission.status);
-        statusEl.className = `submission-status status-${status}`;
-
-        document.getElementById('detailSubmissionDate').textContent = this.formatDate(
-            submission.submitted_at || submission.submission_timestamp
-        );
-
-        const modalMappedCount = typeof submission.mapped_accounts_count === 'number'
-            ? submission.mapped_accounts_count
-            : (Array.isArray(submission.mapped_accounts_count) ? submission.mapped_accounts_count.length : 0);
-        document.getElementById('detailMappedAccounts').textContent = `${modalMappedCount} account${modalMappedCount === 1 ? '' : 's'}`;
-        document.getElementById('detailLocked').textContent = this.formatEditingState(submission);
-
-        const reviewNotesGroup = document.getElementById('detailReviewNotesGroup');
-        const reviewNotes = String(submission.review_notes || '').trim();
-        if (reviewNotesGroup) {
-            if (reviewNotes) {
-                document.getElementById('detailReviewNotes').textContent = reviewNotes;
-                VarydianUtils.showElement(reviewNotesGroup);
-            } else {
-                VarydianUtils.hideElement(reviewNotesGroup);
-            }
-        }
-
-        const rejectionBlock = document.getElementById('detailRejectionBlock');
-        const rejectionReason = String(submission.rejection_reason || '').trim();
-        if (rejectionBlock) {
-            if (rejected && rejectionReason) {
-                document.getElementById('detailRejectionReason').textContent = rejectionReason;
-                VarydianUtils.showElement(rejectionBlock);
-            } else {
-                VarydianUtils.hideElement(rejectionBlock);
-            }
-        }
-
-        const mapBtn = document.getElementById('modalOpenMappingBtn');
-        if (mapBtn) {
-            if (rejected) {
-                VarydianUtils.showElement(mapBtn);
-            } else {
-                VarydianUtils.hideElement(mapBtn);
-            }
-        }
-
-        this.showModal();
     }
 
     goToPage(page) {
@@ -541,15 +451,6 @@ class SubmissionHistoryManager {
 
     hideError() {
         this.state.error = null;
-    }
-
-    showModal() {
-        VarydianUtils.showElement(this.elements.modal, 'flex');
-    }
-
-    closeModal() {
-        VarydianUtils.hideElement(this.elements.modal);
-        this.selectedSubmission = null;
     }
 
     formatDate(dateString) {

@@ -71,6 +71,21 @@ async function varydianAppConfirm(title, message, options = {}) {
 }
 window.varydianAppConfirm = varydianAppConfirm;
 
+/** CFO finalize — irreversible period lock with audit trail (single or batch). */
+async function varydianCfoFinalizeConfirm(options = {}) {
+    const count = Math.max(1, Number(options.count) || 1);
+    const plural = count > 1;
+    const title = plural ? `Finalize ${count} submissions` : 'Finalize period';
+    const message = plural
+        ? `This action will final-approve ${count} submission(s), lock each reporting period, and is irreversible without an audit log entry. An audit trail record is written for each finalization. Continue?`
+        : 'This action will lock all records for this submission\'s reporting period and is irreversible without an audit log entry. An audit trail record will be created. Continue?';
+    return varydianAppConfirm(title, message, {
+        confirmText: plural ? 'Finalize all and lock' : 'Finalize and lock',
+        cancelText: 'Cancel',
+    });
+}
+window.varydianCfoFinalizeConfirm = varydianCfoFinalizeConfirm;
+
 class FinancialStatementReview {
     constructor() {
         this.currentTransaction = null;
@@ -122,7 +137,7 @@ class FinancialStatementReview {
         if (!decoded.startsWith('/') || decoded.startsWith('//') || decoded.includes('://')) {
             return null;
         }
-        const allowedPrefixes = ['/finance-manager/', '/approvals', '/dashboard'];
+        const allowedPrefixes = ['/finance-manager/', '/approvals', '/dashboard', '/submission-history'];
         if (!allowedPrefixes.some((p) => decoded === p || decoded.startsWith(p))) {
             return null;
         }
@@ -141,13 +156,25 @@ class FinancialStatementReview {
     }
 
     isStatementReviewReadOnly() {
-        if (this._returnToUrl && this._returnToUrl.includes('/finance-manager/history')) {
+        const role = window.currentUserRole || '';
+        if (role === 'FINANCE_CLERK') {
+            return true;
+        }
+        if (this._returnToUrl && (
+            this._returnToUrl.includes('/finance-manager/history')
+            || this._returnToUrl.includes('/submission-history')
+        )) {
             return true;
         }
         try {
             const raw = new URLSearchParams(window.location.search).get('returnTo');
             const r = this.sanitizeReturnTo(raw);
-            return !!(r && r.includes('/finance-manager/history'));
+            return !!(
+                r && (
+                    r.includes('/finance-manager/history')
+                    || r.includes('/submission-history')
+                )
+            );
         } catch {
             return false;
         }
@@ -270,6 +297,117 @@ class FinancialStatementReview {
             </div>`;
     }
 
+    getLineItemCommentsFromMetadata() {
+        const md = this._sessionMetadataPayload || {};
+        let comments = Array.isArray(md.line_item_comments) ? md.line_item_comments.slice() : [];
+        if (comments.length) return comments;
+
+        const history = md.rejection_history;
+        if (!Array.isArray(history)) return [];
+
+        for (let i = history.length - 1; i >= 0; i -= 1) {
+            const entry = history[i];
+            if (!entry || typeof entry !== 'object') continue;
+            if (Array.isArray(entry.line_item_comments) && entry.line_item_comments.length) {
+                return entry.line_item_comments.slice();
+            }
+            const snap = entry.snapshot;
+            if (snap && Array.isArray(snap.line_item_comments) && snap.line_item_comments.length) {
+                return snap.line_item_comments.slice();
+            }
+        }
+        return [];
+    }
+
+    getLineItemCommentsByAccount() {
+        const map = {};
+        for (const comment of this.getLineItemCommentsFromMetadata()) {
+            const code = String(comment.account_code || '').trim();
+            if (!code) continue;
+            if (!map[code]) map[code] = [];
+            map[code].push(comment);
+        }
+        return map;
+    }
+
+    accountLineItemCommentCount(accountCode) {
+        const code = String(accountCode || '').trim();
+        if (!code) return 0;
+        return (this.getLineItemCommentsByAccount()[code] || []).length;
+    }
+
+    isSettledSessionForCommentArchive() {
+        const st = this.getEffectiveSessionStatus();
+        return [
+            'approved',
+            'rejected',
+            'rejected_by_manager',
+            'rejected_by_cfo',
+            'closed',
+        ].includes(st);
+    }
+
+    canAddLineItemCommentInReview() {
+        const role = window.currentUserRole || '';
+        if (this.isStatementReviewReadOnly()) return false;
+        if (role === 'FINANCE_MANAGER') return this.isFmApproveAllowed();
+        if (role === 'CFO') return this.isCfoFinalizeAllowed();
+        return false;
+    }
+
+    shouldOpenLineItemCommentReadOnly() {
+        if (this.canAddLineItemCommentInReview()) return false;
+        const role = window.currentUserRole || '';
+        return role === 'FINANCE_MANAGER' || role === 'CFO' || role === 'FINANCE_CLERK';
+    }
+
+    renderLineItemCommentsAuditPanel() {
+        const comments = this.getLineItemCommentsFromMetadata();
+        if (!comments.length) return '';
+
+        const byAccount = this.getLineItemCommentsByAccount();
+        const accountCodes = Object.keys(byAccount).sort();
+
+        const groups = accountCodes.map((acct) => {
+            const items = byAccount[acct];
+            const body = items.map((c) => {
+                const author = c.author_name || c.author_id || 'Reviewer';
+                const text = c.comment_text || c.correction_suggestion || '';
+                const subject = c.subject
+                    ? `<div class="line-item-audit-comment__subject"><strong>${this.escapeHtml(c.subject)}</strong></div>`
+                    : '';
+                const correction = c.correction_suggestion && c.comment_text
+                    ? `<p class="line-item-audit-comment__correction"><strong>Suggested fix:</strong> ${this.escapeHtml(c.correction_suggestion)}</p>`
+                    : '';
+                return `
+                    <article class="line-item-audit-comment line-item-audit-comment--${this.escapeHtml(c.urgency_level || 'medium')}">
+                        <header class="line-item-audit-comment__head">
+                            <span class="line-item-audit-comment__meta">${this.escapeHtml(author)} · ${this.escapeHtml(c.comment_type || 'general')}</span>
+                        </header>
+                        ${subject}
+                        <p class="line-item-audit-comment__text">${this.escapeHtml(text) || '<em class="text-muted">No comment text</em>'}</p>
+                        ${correction}
+                    </article>`;
+            }).join('');
+
+            return `
+                <div class="line-item-audit-group">
+                    <div class="line-item-audit-group__head">
+                        <span class="line-item-audit-group__code">Account ${this.escapeHtml(acct)}</span>
+                        <span class="line-item-audit-group__count">${items.length} comment${items.length === 1 ? '' : 's'}</span>
+                    </div>
+                    <div class="line-item-audit-group__body">${body}</div>
+                </div>`;
+        }).join('');
+
+        return `
+            <div class="line-item-comments-audit-panel" aria-label="Line item review comments">
+                <h4 class="line-item-comments-audit-panel__title">Line item review comments</h4>
+                <p class="section-intro text-muted">Reviewer notes recorded during statement review — preserved on approve, reject, and in history.</p>
+                <div class="line-item-comments-audit-panel__groups">${groups}</div>
+            </div>`;
+    }
+
     getReviewReturnContext() {
         const urlParams = new URLSearchParams(window.location.search);
         const fromQuery = this.sanitizeReturnTo(urlParams.get('returnTo'));
@@ -296,6 +434,7 @@ class FinancialStatementReview {
     }
 
     labelForReturnUrl(url) {
+        if (url.includes('/submission-history')) return 'submission history';
         if (url.includes('/finance-manager/history')) return 'submission history';
         if (url.includes('/finance-manager/review-queue')) return 'review queue';
         if (url.includes('/finance-manager/dashboard')) return 'review queue';
@@ -1181,10 +1320,12 @@ class FinancialStatementReview {
                         </button>`;
 
         let commentsSectionHtml = '';
+        const lineItemAuditPanel = this.renderLineItemCommentsAuditPanel();
         if (readOnly) {
             if (this.isRejectedSettlementStatus()) {
                 const reason = this.getRejectionReasonDisplay();
                 commentsSectionHtml = `
+                ${lineItemAuditPanel}
                 <div class="review-comments-section review-comments-section--readonly">
                     <h4>Rejection reason</h4>
                     <p class="section-intro text-muted" style="margin: 0 0 0.75rem;">Recorded when this submission was returned for correction.</p>
@@ -1194,6 +1335,8 @@ class FinancialStatementReview {
                             : '<p class="text-muted">No detailed reason was recorded.</p>'
                     }</div>
                 </div>`;
+            } else {
+                commentsSectionHtml = lineItemAuditPanel;
             }
         } else {
             commentsSectionHtml = `
@@ -1246,6 +1389,8 @@ class FinancialStatementReview {
                 ${this.renderReviewerRoleBanner()}
 
                 ${this.renderApprovalSignaturesPanel()}
+
+                ${lineItemAuditPanel && !readOnly ? lineItemAuditPanel : ''}
 
                 <!-- Statement Content -->
                 <div class="statement-content-section">
@@ -1872,6 +2017,8 @@ class FinancialStatementReview {
     renderStatementLines(lines, documentType) {
         const G = this._grap();
         const docT = documentType || this.currentTransaction?.transaction_type || this.statementData?.document_type || '';
+        const canAddComment = this.canAddLineItemCommentInReview();
+        const canViewComment = this.shouldOpenLineItemCommentReadOnly();
         const breakdownTitle =
             docT === 'income_statement'
                 ? 'Click to view income statement → GRAP calculation breakdown'
@@ -1883,23 +2030,76 @@ class FinancialStatementReview {
                 ? G.lineAmountFormulaHint(line, documentType)
                 : 'Mapped amount';
             const grapNote = [line.grap_code, line.note].filter(Boolean).join(' · ') || '-';
+            const accountCode = String(line.account_code || '');
+            const description = String(line.description || '');
+            const commentCount = this.accountLineItemCommentCount(accountCode);
+            const flaggedClass = commentCount > 0 ? ' statement-line--has-comments' : '';
+            let commentBtn = '';
+            if (canAddComment) {
+                commentBtn = `<button type="button" class="btn btn-xs btn-outline-secondary line-item-comment-btn"
+                        data-action="line-item-comment"
+                        data-account-code="${this.escapeHtml(accountCode)}"
+                        data-description="${this.escapeHtml(description)}"
+                        data-amount="${this.escapeHtml(String(line.amount || 0))}"
+                        data-grap-code="${this.escapeHtml(String(line.grap_code || ''))}"
+                        title="Add comment or reject with correction"
+                        aria-label="Comment on line ${this.escapeHtml(accountCode || description)}">💬</button>`;
+            } else if (canViewComment && (commentCount > 0 || this.isStatementReviewReadOnly() || this.isSettledSessionForCommentArchive())) {
+                commentBtn = `<button type="button" class="btn btn-xs btn-outline-secondary line-item-comment-btn line-item-comment-btn--view"
+                        data-action="line-item-comment-view"
+                        data-account-code="${this.escapeHtml(accountCode)}"
+                        data-description="${this.escapeHtml(description)}"
+                        data-amount="${this.escapeHtml(String(line.amount || 0))}"
+                        data-grap-code="${this.escapeHtml(String(line.grap_code || ''))}"
+                        title="View reviewer comments for this line"
+                        aria-label="View comments on line ${this.escapeHtml(accountCode || description)}">${commentCount > 0 ? `💬 ${commentCount}` : '💬'}</button>`;
+            }
             return `
-            <tr class="statement-line statement-line--clickable" role="button" tabindex="0"
-                data-account-code="${this.escapeHtml(String(line.account_code || ''))}"
+            <tr class="statement-line statement-line--clickable${flaggedClass}" role="button" tabindex="0"
+                data-account-code="${this.escapeHtml(accountCode)}"
                 data-grap-code="${this.escapeHtml(String(line.grap_code || ''))}"
+                data-description="${this.escapeHtml(description)}"
+                data-amount="${this.escapeHtml(String(line.amount || 0))}"
                 title="${this.escapeHtml(breakdownTitle)}">
-                <td class="account-code">${this.escapeHtml(String(line.account_code || ''))}</td>
-                <td class="account-description">${this.escapeHtml(String(line.description || ''))}</td>
+                <td class="account-code">${this.escapeHtml(accountCode)}</td>
+                <td class="account-description">${this.escapeHtml(description)}</td>
                 <td class="note-column">${this.escapeHtml(grapNote)}</td>
                 <td class="amount-column">R${this.formatNumber(line.amount || 0)}</td>
                 <td class="actions-column formula-hint" title="${this.escapeHtml(formulaHint)}">
                     <span class="formula-hint-text">${this.escapeHtml(formulaHint)}</span>
-                    <button type="button" class="btn btn-xs btn-secondary" data-action="view-calculation" data-account="${this.escapeHtml(String(line.account_code || ''))}" data-grap="${this.escapeHtml(String(line.grap_code || ''))}">
+                    <button type="button" class="btn btn-xs btn-secondary" data-action="view-calculation" data-account="${this.escapeHtml(accountCode)}" data-grap="${this.escapeHtml(String(line.grap_code || ''))}">
                         Detail
                     </button>
+                    ${commentBtn}
                 </td>
             </tr>`;
         }).join('');
+    }
+
+    openLineItemCommentForRow(rowEl, readOnly = false) {
+        if (!rowEl || !window.openLineItemComment) {
+            this.showError('Line item comments are not available.');
+            return;
+        }
+        const accountCode = rowEl.dataset.accountCode || '';
+        const sessionId = this._sessionId || this.currentTransaction?.transaction_id;
+        const docT = this.currentTransaction?.transaction_type || this._documentType || 'balance_sheet';
+        if (!sessionId) {
+            this.showError('Cannot open comment (missing session).');
+            return;
+        }
+        const viewOnly = readOnly || this.shouldOpenLineItemCommentReadOnly();
+        window.openLineItemComment(
+            accountCode,
+            {
+                description: rowEl.dataset.description || '',
+                amount: rowEl.dataset.amount || 0,
+                grap_code: rowEl.dataset.grapCode || '',
+            },
+            sessionId,
+            docT,
+            { readOnly: viewOnly }
+        );
     }
 
     renderAccountMappings() {
@@ -2140,10 +2340,32 @@ class FinancialStatementReview {
         // Line item actions
         root.querySelectorAll('[data-action="view-calculation"]').forEach(btn => {
             btn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const el = e.currentTarget;
                 const accountCode = el.dataset.account;
                 const grapCode = el.dataset.grap;
                 this.viewLineItemCalculation(accountCode, grapCode);
+            });
+        });
+
+        root.querySelectorAll('[data-action="line-item-comment"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const row = e.currentTarget.closest('.statement-line');
+                if (row) {
+                    this.openLineItemCommentForRow(row, false);
+                }
+            });
+        });
+        root.querySelectorAll('[data-action="line-item-comment-view"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const row = e.currentTarget.closest('.statement-line');
+                if (row) {
+                    this.openLineItemCommentForRow(row, true);
+                }
             });
         });
         root.querySelectorAll('.tab-btn').forEach(btn => {
@@ -2254,6 +2476,19 @@ class FinancialStatementReview {
         }
         if (role === 'CFO' && !(await this.ensureGrap24CompleteBeforeFinalize())) {
             return;
+        }
+
+        if (role === 'CFO') {
+            const confirmed = window.varydianCfoFinalizeConfirm
+                ? await window.varydianCfoFinalizeConfirm({ count: 1 })
+                : await varydianAppConfirm(
+                    'Finalize period',
+                    'This action will lock all records for this submission\'s reporting period and is irreversible without an audit log entry. An audit trail record will be created. Continue?',
+                    { confirmText: 'Finalize and lock', cancelText: 'Cancel' }
+                );
+            if (!confirmed) {
+                return;
+            }
         }
 
         const commentEl = document.getElementById('reviewComment');
@@ -2488,10 +2723,18 @@ class FinancialStatementReview {
     }
 }
 
-// Initialize Financial Statement Review
-document.addEventListener('DOMContentLoaded', () => {
-    window.financialStatementReview = new FinancialStatementReview();
-});
+// Initialize Financial Statement Review (also when script loads after DOMContentLoaded)
+function initFinancialStatementReview() {
+    if (!window.financialStatementReview) {
+        window.financialStatementReview = new FinancialStatementReview();
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFinancialStatementReview);
+} else {
+    initFinancialStatementReview();
+}
 
 // Export for use in other scripts
 window.FinancialStatementReview = FinancialStatementReview;

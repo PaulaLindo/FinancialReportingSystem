@@ -28,56 +28,37 @@ class ModalSystem {
     async prompt(title, message, defaultValue = '', options = {}) {
         return new Promise((resolve) => {
             const modal = this.createModal('prompt', title, message, defaultValue, options);
-            
             const input = modal.querySelector('.modal-input');
-            const confirmBtn = modal.querySelector('.modal-confirm');
-            const cancelBtn = modal.querySelector('.modal-cancel');
-            const closeBtn = modal.querySelector('.modal-close');
 
-            // Focus input
             setTimeout(() => {
-                input.focus();
-                input.select();
+                input?.focus();
+                input?.select();
             }, 100);
 
-            // Handle confirm
-            const handleConfirm = () => {
-                const value = input.value.trim() || defaultValue;
-                this.removeModal(modal);
-                resolve(value);
-            };
+            this._bindModalActions(modal, {
+                onConfirm: () => {
+                    const value = input?.value.trim() || defaultValue;
+                    this.removeModal(modal);
+                    resolve(value);
+                },
+                onCancel: () => {
+                    this.removeModal(modal);
+                    resolve(null);
+                },
+            });
 
-            // Handle cancel
-            const handleCancel = () => {
-                this.removeModal(modal);
-                resolve(null);
-            };
-
-            // Event listeners
-            confirmBtn.addEventListener('click', handleConfirm);
-            cancelBtn.addEventListener('click', handleCancel);
-            closeBtn.addEventListener('click', handleCancel);
-
-            // Handle Enter key
-            input.addEventListener('keypress', (e) => {
+            input?.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
-                    handleConfirm();
+                    e.preventDefault();
+                    modal.querySelector('.modal-confirm')?.click();
                 }
             });
 
-            // Handle Escape key
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
-                    handleCancel();
+                    modal.querySelector('.modal-cancel')?.click();
                 }
             }, { once: true });
-
-            // Handle overlay click
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    handleCancel();
-                }
-            });
         });
     }
 
@@ -91,41 +72,23 @@ class ModalSystem {
     async confirm(title, message, options = {}) {
         return new Promise((resolve) => {
             const modal = this.createModal('confirm', title, message, '', options);
-            
-            const confirmBtn = modal.querySelector('.modal-confirm');
-            const cancelBtn = modal.querySelector('.modal-cancel');
-            const closeBtn = modal.querySelector('.modal-close');
 
-            // Handle confirm
-            const handleConfirm = () => {
-                this.removeModal(modal);
-                resolve(true);
-            };
+            this._bindModalActions(modal, {
+                onConfirm: () => {
+                    this.removeModal(modal);
+                    resolve(true);
+                },
+                onCancel: () => {
+                    this.removeModal(modal);
+                    resolve(false);
+                },
+            });
 
-            // Handle cancel
-            const handleCancel = () => {
-                this.removeModal(modal);
-                resolve(false);
-            };
-
-            // Event listeners
-            confirmBtn.addEventListener('click', handleConfirm);
-            cancelBtn.addEventListener('click', handleCancel);
-            closeBtn.addEventListener('click', handleCancel);
-
-            // Handle Escape key
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
-                    handleCancel();
+                    modal.querySelector('.modal-cancel')?.click();
                 }
             }, { once: true });
-
-            // Handle overlay click
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    handleCancel();
-                }
-            });
         });
     }
 
@@ -139,33 +102,22 @@ class ModalSystem {
     async alert(title, message, options = {}) {
         return new Promise((resolve) => {
             const modal = this.createModal('alert', title, message, '', options);
-            
-            const okBtn = modal.querySelector('.modal-ok');
-            const closeBtn = modal.querySelector('.modal-close');
 
-            // Handle close
             const handleClose = () => {
                 this.removeModal(modal);
                 resolve();
             };
 
-            // Event listeners
-            okBtn.addEventListener('click', handleClose);
-            closeBtn.addEventListener('click', handleClose);
+            this._bindModalActions(modal, {
+                onConfirm: handleClose,
+                onCancel: handleClose,
+            });
 
-            // Handle Escape key and Enter key
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' || e.key === 'Enter') {
-                    handleClose();
+                    modal.querySelector('.modal-ok')?.click();
                 }
             }, { once: true });
-
-            // Handle overlay click
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    handleClose();
-                }
-            });
         });
     }
 
@@ -186,7 +138,7 @@ class ModalSystem {
                 <div class="modal-container modal-${type}">
                     <div class="modal-header">
                         <h3 class="modal-title">${this.escapeHtml(title)}</h3>
-                        <button class="modal-close" aria-label="Close modal">
+                        <button type="button" class="modal-close" aria-label="Close modal">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -201,15 +153,15 @@ class ModalSystem {
                     </div>
                     <div class="modal-footer">
                         ${type === 'prompt' ? `
-                            <button class="btn btn-secondary modal-cancel">Cancel</button>
-                            <button class="btn btn-primary modal-confirm">OK</button>
+                            <button type="button" class="btn btn-secondary modal-cancel">Cancel</button>
+                            <button type="button" class="btn btn-primary modal-confirm">OK</button>
                         ` : ''}
                         ${type === 'confirm' ? `
-                            <button class="btn btn-secondary modal-cancel">${options.cancelText || 'Cancel'}</button>
-                            <button class="btn btn-primary modal-confirm">${options.confirmText || 'Confirm'}</button>
+                            <button type="button" class="btn btn-secondary modal-cancel">${options.cancelText || 'Cancel'}</button>
+                            <button type="button" class="btn btn-primary modal-confirm">${options.confirmText || 'Confirm'}</button>
                         ` : ''}
                         ${type === 'alert' ? `
-                            <button class="btn btn-primary modal-ok">OK</button>
+                            <button type="button" class="btn btn-primary modal-ok">OK</button>
                         ` : ''}
                     </div>
                 </div>
@@ -228,6 +180,56 @@ class ModalSystem {
         if (modal && modal.parentNode) {
             modal.parentNode.removeChild(modal);
         }
+        const host = document.getElementById('modalSystem');
+        if (host && !host.children.length) {
+            document.body.classList.remove('modal-system-open');
+        }
+    }
+
+    /**
+     * Bind dismiss/confirm handlers without click-through to elements beneath the overlay.
+     */
+    _bindModalActions(modal, { onConfirm, onCancel }) {
+        let settled = false;
+        const finish = (handler) => (e) => {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            if (settled) return;
+            settled = true;
+            window.setTimeout(() => {
+                handler();
+            }, 0);
+        };
+
+        const confirmBtn = modal.querySelector('.modal-confirm');
+        const cancelBtn = modal.querySelector('.modal-cancel');
+        const closeBtn = modal.querySelector('.modal-close');
+        const okBtn = modal.querySelector('.modal-ok');
+
+        confirmBtn?.addEventListener('mousedown', (e) => e.preventDefault());
+        cancelBtn?.addEventListener('mousedown', (e) => e.preventDefault());
+        closeBtn?.addEventListener('mousedown', (e) => e.preventDefault());
+        okBtn?.addEventListener('mousedown', (e) => e.preventDefault());
+
+        confirmBtn?.addEventListener('click', finish(onConfirm));
+        cancelBtn?.addEventListener('click', finish(onCancel));
+        closeBtn?.addEventListener('click', finish(onCancel));
+        okBtn?.addEventListener('click', finish(onConfirm));
+
+        modal.addEventListener('mousedown', (e) => {
+            if (e.target === modal) {
+                e.preventDefault();
+            }
+        });
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                finish(onCancel)(e);
+            }
+        });
+
+        document.body.classList.add('modal-system-open');
     }
 
     /**

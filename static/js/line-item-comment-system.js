@@ -9,6 +9,7 @@ class LineItemCommentSystem {
         this.currentTransaction = null;
         this.documentType = null;
         this.comments = [];
+        this.readOnlyMode = false;
         /** Element that opened the modal (avoid aria-hidden on an ancestor while it still has focus) */
         this._priorFocusEl = null;
         this.initializeEventListeners();
@@ -31,11 +32,19 @@ class LineItemCommentSystem {
         const root = this.modalRoot();
         if (!root) return;
 
+        root.addEventListener('mousedown', (e) => {
+            const overlay = root.querySelector('.line-item-comment-modal__overlay');
+            if (e.target === overlay) {
+                e.preventDefault();
+            }
+        });
+
         root.addEventListener('click', (e) => {
             const overlay = root.querySelector('.line-item-comment-modal__overlay');
             if (e.target === overlay) {
                 e.preventDefault();
-                this.closeModal();
+                e.stopPropagation();
+                window.setTimeout(() => this.closeModal(), 0);
                 return;
             }
 
@@ -46,7 +55,8 @@ class LineItemCommentSystem {
             switch (action) {
                 case 'close-line-item-comment-modal':
                     e.preventDefault();
-                    this.closeModal();
+                    e.stopPropagation();
+                    window.setTimeout(() => this.closeModal(), 0);
                     break;
                 case 'save-line-item-comment':
                     e.preventDefault();
@@ -99,7 +109,7 @@ class LineItemCommentSystem {
         return '/approvals';
     }
 
-    openModal(accountCode, accountData, transactionId, documentType) {
+    openModal(accountCode, accountData, transactionId, documentType, options = {}) {
         if (window.formulaModalController && typeof window.formulaModalController.close === 'function') {
             try {
                 window.formulaModalController.close();
@@ -108,6 +118,7 @@ class LineItemCommentSystem {
             }
         }
 
+        this.readOnlyMode = !!options.readOnly;
         this.currentAccount = {
             code: accountCode,
             ...accountData
@@ -117,7 +128,10 @@ class LineItemCommentSystem {
 
         this.populateAccountInfo();
         this.loadPreviousComments();
-        this.resetForm();
+        if (!this.readOnlyMode) {
+            this.resetForm();
+        }
+        this.applyReadOnlyMode();
 
         const modal = this.modalRoot();
         if (!modal) return;
@@ -130,8 +144,29 @@ class LineItemCommentSystem {
         modal.setAttribute('aria-hidden', 'false');
 
         setTimeout(() => {
-            this.qs('#commentSubject')?.focus();
+            if (this.readOnlyMode) {
+                this.qs('[data-action="close-line-item-comment-modal"]')?.focus();
+            } else {
+                this.qs('#commentSubject')?.focus();
+            }
         }, 100);
+    }
+
+    applyReadOnlyMode() {
+        const modal = this.modalRoot();
+        if (!modal) return;
+
+        modal.classList.toggle('line-item-comment-modal--readonly', this.readOnlyMode);
+
+        const title = this.qs('#lineItemCommentTitle');
+        if (title) {
+            title.textContent = this.readOnlyMode ? 'Line item review comments' : 'Add Line Item Comment';
+        }
+
+        const prevTitle = this.qs('#previousCommentsSection .section-title');
+        if (prevTitle) {
+            prevTitle.textContent = this.readOnlyMode ? 'Comments for this line' : 'Previous Comments';
+        }
     }
 
     /** Move focus out of the dialog before marking it aria-hidden */
@@ -169,6 +204,8 @@ class LineItemCommentSystem {
             this.currentTransaction = null;
             this.documentType = null;
             this.comments = [];
+            this.readOnlyMode = false;
+            this.applyReadOnlyMode();
         };
 
         const applyHidden = () => {
@@ -271,6 +308,7 @@ class LineItemCommentSystem {
                         <strong>Suggested Correction:</strong> ${comment.correction_suggestion}
                     </div>
                 ` : ''}
+                ${this.readOnlyMode ? '' : `
                 <div class="comment-actions">
                     <button type="button" class="btn btn-xs btn-secondary" data-action="edit-line-item-comment" data-comment-id="${comment.id}">
                         ✏️ Edit
@@ -278,7 +316,7 @@ class LineItemCommentSystem {
                     <button type="button" class="btn btn-xs btn-danger" data-action="delete-line-item-comment" data-comment-id="${comment.id}">
                         🗑️ Delete
                     </button>
-                </div>
+                </div>`}
             </div>
         `).join('');
 
@@ -620,27 +658,49 @@ class LineItemCommentSystem {
     }
 
     showSuccess(message) {
+        if (window.VarydianUtils && typeof VarydianUtils.showToast === 'function') {
+            VarydianUtils.showToast(message, 'success', { duration: 5000 });
+            return;
+        }
+        if (window.modalSystem && typeof window.modalSystem.showSuccess === 'function') {
+            window.modalSystem.showSuccess(message, { duration: 5000 });
+            return;
+        }
         this.showNotification(message, 'success');
     }
 
     showError(message) {
+        if (window.VarydianUtils && typeof VarydianUtils.showToast === 'function') {
+            VarydianUtils.showToast(message, 'error');
+            return;
+        }
+        if (window.modalSystem && typeof window.modalSystem.showError === 'function') {
+            window.modalSystem.showError(message);
+            return;
+        }
         this.showNotification(message, 'error');
     }
 
     showNotification(message, type) {
         const notification = document.createElement('div');
-        notification.className = `notification notification--${type}`;
+        notification.className = `notification notification-${type} notification--center notification-fixed`;
+        notification.setAttribute('role', 'alert');
         notification.innerHTML = `
             <div class="notification-content">
-                <span class="notification-message">${message}</span>
-                <button type="button" class="notification-close" onclick="this.parentElement.parentElement.remove()">✕</button>
+                <span class="notification-message">${this.escapeHtml(String(message))}</span>
+                <button type="button" class="notification-close" aria-label="Dismiss">✕</button>
             </div>
         `;
-
+        const close = () => notification.remove();
+        notification.querySelector('.notification-close')?.addEventListener('click', close);
         document.body.appendChild(notification);
-        setTimeout(() => {
-            notification.remove();
-        }, 5000);
+        window.setTimeout(close, 5000);
+    }
+
+    escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
     }
 }
 
@@ -659,6 +719,6 @@ if (document.readyState === 'loading') {
 
 window.LineItemCommentSystem = LineItemCommentSystem;
 
-window.openLineItemComment = (accountCode, accountData, transactionId, documentType) => {
-    window.lineItemCommentSystem?.openModal(accountCode, accountData, transactionId, documentType);
+window.openLineItemComment = (accountCode, accountData, transactionId, documentType, options = {}) => {
+    window.lineItemCommentSystem?.openModal(accountCode, accountData, transactionId, documentType, options);
 };

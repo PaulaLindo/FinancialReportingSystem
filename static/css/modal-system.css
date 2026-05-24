@@ -1,5 +1,9 @@
 /* Modal System Styles - Replaces browser-native dialogs */
 
+body.modal-system-open {
+    overflow: hidden;
+}
+
 /* Modal Overlay — scoped to ModalSystem host so upload page #confirmModal is unaffected */
 #modalSystem > .modal-overlay {
     position: fixed;

@@ -2249,7 +2249,9 @@ def register_line_item_comment_routes(app):
                 return jsonify({'success': False, 'error': 'Insufficient permissions'}), 403
 
             account_code = request.args.get('account_code')
-            comments = (sess.metadata or {}).get('line_item_comments') or []
+            from utils.session_metadata_helpers import resolve_line_item_comments
+
+            comments = resolve_line_item_comments(sess.metadata or {})
 
             if account_code:
                 filtered = [c for c in comments if str(c.get('account_code')) == str(account_code)]

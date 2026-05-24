@@ -414,6 +414,31 @@
     width: 100%;
 }
 
+.dashboard-cfo-kpi-note {
+    margin: 0 0 var(--fluid-space-xl);
+    font-size: var(--fluid-text-sm);
+}
+
+.stat-number--currency {
+    font-size: clamp(1rem, 2.5vw, var(--heading-lg));
+    line-height: 1.25;
+    word-break: break-word;
+}
+
+.stat-sublabel {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 400;
+    opacity: 0.85;
+}
+
+.stat-card--action {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+}
+
 /* .stat-card / .stat-number / .stat-label: see components.css */
 
 .empty-state {

@@ -1228,6 +1228,39 @@ def dashboard():
             'dashboard.html', user=user, current_user=user, periods=periods, stats=clerk_stats
         )
 
+    if user and user.role == 'CFO':
+        cfo_kpis = {
+            'pending_finalization_count': 0,
+            'surplus_deficit_total': None,
+            'surplus_deficit_submission_count': 0,
+            'budget_variance_total': None,
+            'budget_variance_submission_count': 0,
+        }
+        try:
+            from services.universal_workflow_service import UniversalWorkflowService
+
+            kpi_result = UniversalWorkflowService().get_cfo_dashboard_kpis(user.id)
+            if kpi_result.get('success'):
+                cfo_kpis = kpi_result
+        except Exception as e:
+            app.logger.error(f"Error loading CFO dashboard KPIs: {str(e)}")
+
+        stats = {
+            'open_periods': 0,
+            'pending_uploads': 0,
+            'pending_approvals': cfo_kpis.get('pending_finalization_count', 0),
+            'completed_reports': 0,
+            'total_assets': 0,
+            'total_liabilities': 0,
+        }
+        return render_template(
+            'dashboard.html',
+            user=user,
+            current_user=user,
+            stats=stats,
+            cfo_kpis=cfo_kpis,
+        )
+
     else:
 
         # Provide default stats data to prevent template errors
@@ -1266,13 +1299,18 @@ def approvals_page():
 
     user = get_current_user()
 
+    review_statement = request.args.get('review') == 'statement'
+
+    if review_statement and user.role == 'FINANCE_CLERK' and user.has_permission('process'):
+        return render_template('approvals.html', user=user)
+
     if not user.can_review():
 
         flash('Access denied. Finance Manager or CFO privileges required.', 'error')
 
         return redirect(url_for('dashboard'))
 
-    if request.args.get('review') != 'statement':
+    if not review_statement:
 
         if user.role == 'FINANCE_MANAGER':
 
@@ -3696,10 +3734,11 @@ def get_user_submissions():
         
         print(f"📊 Total sessions across all document types: {len(all_sessions)}")
 
-        session_ids_for_batch = []
-
-        
-
+        from utils.session_metadata_helpers import (
+            clerk_submission_account_counts,
+            resolve_line_item_comments,
+            resolve_rejection_reason,
+        )
         from utils.session_workflow import (
             session_hidden_from_clerk_history,
             session_pending_approval,
@@ -3713,52 +3752,11 @@ def get_user_submissions():
             if not session_submitted_for_review(session):
                 continue
 
-            # Fast account counts from metadata only - NO EXPENSIVE FALLBACKS
-
-            mapped_accounts_count = 0
-
-            total_accounts_count = 0
-            
-            # Only get from metadata - no expensive service calls
-            if session.metadata:
-                # Check for mapped_accounts directly in metadata (this is the correct field for balance sheets)
-                mapped_accounts_count = session.metadata.get('mapped_accounts', 0)
-                total_accounts_count = session.metadata.get('total_accounts', 0)
-                
-                # Fallback to processing_results if direct field not found
-                if mapped_accounts_count == 0:
-                    processing_results = session.metadata.get('processing_results', {})
-                    mapped_accounts_count = processing_results.get('mapped_accounts', 0)
-                    total_accounts_count = processing_results.get('total_accounts', 0)
-                
-                # For income statements and budget reports, check grap_mapping.mapped_accounts
-                if mapped_accounts_count == 0 and 'grap_mapping' in session.metadata:
-                    grap_mapping = session.metadata['grap_mapping']
-                    mapped_accounts = grap_mapping.get('mapped_accounts', [])
-                    mapped_accounts_count = len(mapped_accounts) if mapped_accounts else 0
-                    
-                    # Also get total_accounts from grap_mapping if available
-                    if total_accounts_count == 0:
-                        total_accounts_count = grap_mapping.get('total_accounts', 0)
-
-            print(f"DEBUG: Final mapped_accounts_count for session {session.id}: {mapped_accounts_count}")
-
-            
-
-            # Use session status directly - no expensive batch queries for now
+            md = session.metadata or {}
+            mapped_accounts_count, total_accounts_count = clerk_submission_account_counts(md)
 
             validation_status = session.status
 
-            
-
-            # Collect session IDs for potential batch query (but skip for performance)
-
-            # session_ids_for_batch.append(session.id)
-
-            
-
-            # Submissions awaiting review are locked for the clerk.
-            # Returned-for-correction statuses must stay editable.
             locked_statuses = [
                 'pending', 'submitted', 'approved',
                 'pending_review', 'pending_cfo', 'approved_by_manager',
@@ -3766,12 +3764,7 @@ def get_user_submissions():
             correction_statuses = frozenset({'rejected', 'rejected_by_manager', 'rejected_by_cfo'})
             locked_status = validation_status in locked_statuses and validation_status not in correction_statuses
 
-            
-
-            # Determine document type from session
-            document_type = getattr(session, 'document_type', 'balance_sheet')  # Default to balance_sheet for backward compatibility
-            
-            # Format submission data
+            document_type = getattr(session, 'document_type', 'balance_sheet')
             submitted_ts = session_submitted_at(session)
             submission_data = {
                 'session_id': session.id,
@@ -3785,29 +3778,14 @@ def get_user_submissions():
                 'mapped_accounts_count': mapped_accounts_count,
                 'total_accounts_count': total_accounts_count,
                 'file_type': session.file_type,
-                'document_type': document_type,  # Add document type field
-                'review_notes': session.metadata.get('review_notes', ''),
-                'rejection_reason': session.metadata.get('rejection_reason', ''),
+                'document_type': document_type,
+                'review_notes': md.get('review_notes', ''),
+                'rejection_reason': resolve_rejection_reason(md),
+                'line_item_comments': resolve_line_item_comments(md),
                 'locked': locked_status,
-                'grap_mapping': session.metadata.get('grap_mapping', {}),
-                'structure_info': session.metadata.get('structure_info', {}),
-                'processing_results': session.metadata.get('processing_results', {}),
-                'mapping_progress': session.metadata.get('mapping_progress', {}),
-                # DEBUG: Add metadata info for debugging
-                '_debug_metadata': session.metadata,
-                '_debug_mapped_accounts_count': mapped_accounts_count,
-                '_debug_processing_results': session.metadata.get('processing_results', {}) if session.metadata else {}
             }
 
             submissions.append(submission_data)
-
-        
-
-        # Skip expensive batch query for now to improve performance
-
-        # TODO: Add back later with proper indexing
-
-        
 
         print(f"✅ Successfully prepared {len(submissions)} submissions for response")
 
@@ -4700,20 +4678,32 @@ def get_unmapped_accounts(session_id):
         print(f" Found {len(data_rows)} data rows for session {session_id}")
         print(f" Session metadata keys: {list(session_metadata.keys()) if session_metadata else 'None'}")
 
-        # Get mapping results from session metadata
-        # The universal service stores results directly in metadata, not under grap_mapping
-        mapped_accounts_data = session_metadata.get('mapped_accounts', [])
+        # Get mapping results from session metadata (mapped_data, grap_mapping, etc.)
+        from services.statement_validation_service import mapped_lines_from_metadata
+
+        mapped_lines = mapped_lines_from_metadata(session_metadata)
         mapping_confidence = session_metadata.get('mapping_confidence', 0)
-        
-        print(f" Found {len(mapped_accounts_data)} pre-mapped accounts from metadata")
+
+        print(f" Found {len(mapped_lines)} mapped account rows from metadata")
         print(f" Mapping confidence: {mapping_confidence}")
 
         # Process accounts for mapping interface
         unmapped_accounts = []
         mapped_accounts = {}
-        
-        # Create a set of mapped account codes for quick lookup
-        mapped_codes = {acc.get('account_code') for acc in mapped_accounts_data}
+
+        def _account_code_from_row(row: dict) -> str:
+            return str(
+                row.get('account_code')
+                or row.get('code')
+                or row.get('Account Code')
+                or ''
+            )
+
+        mapped_by_code = {}
+        for mapped_acc in mapped_lines:
+            code = _account_code_from_row(mapped_acc)
+            if code:
+                mapped_by_code[code] = mapped_acc
         
         for i, row in enumerate(data_rows):
             account_code = str(row.get('Account Code', ''))
@@ -4733,28 +4723,26 @@ def get_unmapped_accounts(session_id):
                 'row_index': i
             }
             
-            # Check if this account was pre-mapped during GRAP processing
-            mapped_account = None
-            for mapped_acc in mapped_accounts_data:
-                if mapped_acc.get('account_code') == account_code:
-                    mapped_account = mapped_acc
-                    break
+            mapped_account = mapped_by_code.get(account_code)
             
             if mapped_account:
-                # Account was auto-mapped - add to mapped accounts
-                grap_code = mapped_account.get('grap_code')
+                grap_code = (
+                    mapped_account.get('grap_code')
+                    or mapped_account.get('grap_category')
+                    or mapped_account.get('mapped_to_grap')
+                    or ''
+                )
                 if grap_code not in mapped_accounts:
                     mapped_accounts[grap_code] = []
                 
                 account_with_mapping = account.copy()
                 account_with_mapping.update({
                     'grap_code': grap_code,
-                    'grap_name': mapped_account.get('grap_name', ''),
-                    'confidence': mapped_account.get('confidence', 0)
+                    'grap_name': mapped_account.get('grap_name') or mapped_account.get('grap_category') or '',
+                    'confidence': mapped_account.get('confidence', 1.0)
                 })
                 mapped_accounts[grap_code].append(account_with_mapping)
             else:
-                # Account was not mapped - add to unmapped accounts
                 unmapped_accounts.append(account)
 
         return jsonify({

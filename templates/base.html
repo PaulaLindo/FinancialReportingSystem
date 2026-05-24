@@ -168,6 +168,10 @@
     {% include 'components/file-details-modal.html' %}
     {% endif %}
 
+    {% if current_user and (current_user.can_review() or (current_user.role == 'FINANCE_CLERK' and current_user.can_process())) %}
+    {% include 'components/line-item-comment-modal.html' %}
+    {% endif %}
+
     <footer>
         <div class="container-content">
             <p>&copy; 2026 Varydian | Financial Reporting System</p>
@@ -187,15 +191,16 @@
             <script src="{{ url_for('static', filename='js/global-user-context.js') }}"></script>
             <script src="{{ url_for('static', filename='js/main.js') }}"></script>
             <script src="{{ url_for('static', filename='js/navigation-fluid.js') }}"></script>
-            {% if current_user and current_user.can_review() %}
+            {% if current_user and (current_user.can_review() or (current_user.role == 'FINANCE_CLERK' and current_user.can_process())) %}
             <script src="{{ url_for('static', filename='js/grap-standards.js') }}"></script>
             <script src="{{ url_for('static', filename='js/budget-variance-grap24.js') }}"></script>
             <script src="{{ url_for('static', filename='js/financial-statement-review.js') }}"></script>
+            <script src="{{ url_for('static', filename='js/line-item-comment-system.js') }}"></script>
             {% endif %}
             <script src="{{ url_for('static', filename='js/draft-statement-viewer.js') }}"></script>
             <script src="{{ url_for('static', filename='js/processing-state.js') }}"></script>
             
-            {% if current_user and (current_user.can_review() or current_user.can_export_audit()) %}
+            {% if current_user and (current_user.can_review() or current_user.can_export_audit() or (current_user.role == 'FINANCE_CLERK' and current_user.can_process())) %}
             <script src="{{ url_for('static', filename='js/formula-modal.js') }}"></script>
             {% endif %}
             

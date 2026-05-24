@@ -177,6 +177,10 @@ def correction_workspace_payload(
     owner_id = str(getattr(session, 'user_id', '') or '')
     banner = rejection_banner_text(md, status)
     timeline = build_timeline_from_metadata(md)
+    from utils.session_metadata_helpers import resolve_line_item_comments, resolve_rejection_reason
+
+    line_item_comments = resolve_line_item_comments(md)
+    rejection_reason = resolve_rejection_reason(md) or banner.get('reason') or ''
     return {
         'session_id': getattr(session, 'id', None),
         'document_type': document_type,
@@ -185,6 +189,7 @@ def correction_workspace_payload(
         'is_owner': owner_id == str(user_id),
         'rejection_banner': banner,
         'timeline': timeline,
-        'rejection_reason': banner['reason'],
+        'rejection_reason': rejection_reason,
         'filename': getattr(session, 'original_filename', None) or getattr(session, 'filename', None),
+        'line_item_comments': line_item_comments,
     }

@@ -125,35 +125,53 @@ def validate_balance_sheet(lines: List[Dict[str, Any]], *, tolerance: float = 0.
 def mapped_lines_from_metadata(metadata: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Normalized mapped rows from session metadata (submit / mapping / grap_mapping)."""
     md = metadata or {}
-    raw = md.get("mapped_data") or md.get("mapped_accounts") or md.get("grap_mapping") or []
-    lines: List[Dict[str, Any]] = []
 
-    if isinstance(raw, dict):
-        for key, val in raw.items():
-            if isinstance(val, list):
-                for item in val:
-                    if isinstance(item, dict):
-                        row = dict(item)
-                        row.setdefault("grap_code", row.get("grap_code") or key)
-                        row.setdefault("grap_category", row.get("grap_category") or key)
-                        lines.append(row)
-                continue
-            if isinstance(val, dict):
-                row = dict(val)
-                row.setdefault("grap_code", row.get("grap_code") or key)
-                row.setdefault("grap_category", row.get("grap_category") or key)
-                lines.append(row)
-        return lines
+    for key in ("mapped_data", "mapped_accounts"):
+        val = md.get(key)
+        if isinstance(val, list):
+            return _normalize_mapped_list(val)
 
-    if isinstance(raw, list):
-        for item in raw:
-            if isinstance(item, dict):
-                row = dict(item)
-                if not row.get("grap_category") and row.get("grap_code"):
-                    row["grap_category"] = row["grap_code"]
-                lines.append(row)
-        return lines
+    gm = md.get("grap_mapping")
+    if isinstance(gm, dict):
+        for inner_key in ("mapping_data", "mapped_accounts"):
+            inner = gm.get(inner_key)
+            if isinstance(inner, list):
+                return _normalize_mapped_list(inner)
+        return _normalize_mapped_dict(gm)
+
     return []
+
+
+def _normalize_mapped_list(items: List[Any]) -> List[Dict[str, Any]]:
+    lines: List[Dict[str, Any]] = []
+    for item in items:
+        if isinstance(item, dict):
+            row = dict(item)
+            if not row.get("grap_category") and row.get("grap_code"):
+                row["grap_category"] = row["grap_code"]
+            lines.append(row)
+    return lines
+
+
+def _normalize_mapped_dict(raw: Dict[str, Any]) -> List[Dict[str, Any]]:
+    lines: List[Dict[str, Any]] = []
+    for key, val in raw.items():
+        if key in ("mapping_data", "mapped_accounts", "total_mapped", "total_accounts", "mapping_confidence"):
+            continue
+        if isinstance(val, list):
+            for item in val:
+                if isinstance(item, dict):
+                    row = dict(item)
+                    row.setdefault("grap_code", row.get("grap_code") or key)
+                    row.setdefault("grap_category", row.get("grap_category") or key)
+                    lines.append(row)
+            continue
+        if isinstance(val, dict):
+            row = dict(val)
+            row.setdefault("grap_code", row.get("grap_code") or key)
+            row.setdefault("grap_category", row.get("grap_category") or key)
+            lines.append(row)
+    return lines
 
 
 def compute_sfp_totals_from_lines(lines: List[Dict[str, Any]], *, tolerance: float = 0.01) -> Dict[str, Any]:

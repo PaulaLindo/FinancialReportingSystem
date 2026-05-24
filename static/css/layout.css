@@ -1049,45 +1049,7 @@ main {
 
 /* Formula modal visual styles: static/css/formula-modal.css */
 
-/* Line-item comment modal: above formula modal; sharp panel (no stacked backdrop blur) */
-#lineItemCommentModal.line-item-comment-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 1080;
-    box-sizing: border-box;
-}
-
-#lineItemCommentModal.line-item-comment-modal.visibility--hidden {
-    display: none !important;
-}
-
-#lineItemCommentModal .line-item-comment-modal__overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(10, 17, 40, 0.55);
-    backdrop-filter: blur(4px);
-}
-
-#lineItemCommentModal .line-item-comment-modal__panel {
-    position: relative;
-    z-index: 1;
-    max-width: min(640px, 96vw);
-    margin: 3vh auto;
-    max-height: 94vh;
-    overflow: auto;
-    background: var(--bg-primary, #0f172a);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
-    color: var(--text-primary, #e2e8f0);
-    filter: none;
-    backdrop-filter: none;
-}
-
-#lineItemCommentModal .line-item-comment-modal__panel .form-hint {
-    font-size: 0.8125rem;
-    margin-top: 0.35rem;
-}
+/* Line-item comment modal: see line-item-comment-modal.css */
 
 /* ======================================== */
 /* FOOTER LAYOUT */
