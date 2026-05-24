@@ -142,6 +142,14 @@ class LegacyRoutesRemovedTests(unittest.TestCase):
         self.assertIn('openClerkStatementReview', read('static/js/submission-history.js'))
         self.assertIn('/submission-history', read('static/js/financial-statement-review.js'))
 
+    def test_submission_history_clerk_only_guard(self):
+        src = read('controllers/routes.py')
+        self.assertIn('def _finance_clerk_page_guard', src)
+        self.assertIn('def _finance_clerk_api_guard', src)
+        self.assertIn('_finance_clerk_page_guard(user)', src)
+        self.assertIn('_finance_clerk_api_guard(user)', src)
+        self.assertIn("redirect(url_for('finance_manager_history'))", src)
+
     def test_clerk_workflow_redirects_to_history(self):
         src = read('controllers/routes.py')
         self.assertIn("redirect(url_for('submission_history_page'))", src)

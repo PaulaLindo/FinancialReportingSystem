@@ -1382,11 +1382,30 @@ def mapping_page(session_id=None):
 @login_required
 def finance_clerk_workflow():
     """Legacy bookmark → clerk submission history."""
-    user = get_current_user()
-    if user.role != 'FINANCE_CLERK':
-        flash('Access denied. Finance Clerk privileges required.', 'error')
-        return redirect(url_for('dashboard'))
+    denied = _finance_clerk_page_guard(get_current_user())
+    if denied:
+        return denied
     return redirect(url_for('submission_history_page'))
+
+
+def _finance_clerk_page_guard(user):
+    """Redirect non-clerks away from clerk-only pages."""
+    if user and user.role == 'FINANCE_CLERK':
+        return None
+    flash('Access denied. Finance Clerk privileges required.', 'error')
+    if user and user.can_review():
+        return redirect(url_for('finance_manager_history'))
+    return redirect(url_for('dashboard'))
+
+
+def _finance_clerk_api_guard(user):
+    """JSON guard for clerk-only submission list APIs."""
+    if user and user.role == 'FINANCE_CLERK':
+        return None
+    return jsonify({
+        'success': False,
+        'error': 'Finance Clerk privileges required.',
+    }), 403
 
 
 
@@ -2731,6 +2750,9 @@ def submission_history_page():
     """
 
     user = get_current_user()
+    denied = _finance_clerk_page_guard(user)
+    if denied:
+        return denied
 
     # Calculate stats for the submission history page
 
@@ -3699,6 +3721,9 @@ def get_user_submissions():
     try:
 
         user = get_current_user()
+        denied = _finance_clerk_api_guard(user)
+        if denied:
+            return denied
 
         user_id = user.id
 
@@ -3736,6 +3761,7 @@ def get_user_submissions():
 
         from utils.session_metadata_helpers import (
             clerk_submission_account_counts,
+            maybe_persist_legacy_rejection_repair,
             resolve_line_item_comments,
             resolve_rejection_reason,
         )
@@ -3752,6 +3778,15 @@ def get_user_submissions():
             if not session_submitted_for_review(session):
                 continue
 
+            md = session.metadata or {}
+            model = None
+            if getattr(session, 'document_type', None) == 'income_statement':
+                model = income_statement_model
+            elif getattr(session, 'document_type', None) == 'budget_report':
+                model = budget_report_model
+            else:
+                model = balance_sheet_model
+            maybe_persist_legacy_rejection_repair(session, model)
             md = session.metadata or {}
             mapped_accounts_count, total_accounts_count = clerk_submission_account_counts(md)
 

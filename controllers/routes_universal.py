@@ -524,8 +524,10 @@ def register_universal_routes(app):
             if str(db_session.user_id) != str(current_user.id) and not current_user.can_review():
                 return jsonify({'success': False, 'error': 'Access denied'}), 403
 
+            from utils.session_metadata_helpers import maybe_persist_legacy_rejection_repair
             from services.workflow_timeline_service import correction_workspace_payload
 
+            maybe_persist_legacy_rejection_repair(db_session, model)
             payload = correction_workspace_payload(
                 db_session, document_type=document_type, user_id=current_user.id
             )
@@ -2249,7 +2251,14 @@ def register_line_item_comment_routes(app):
                 return jsonify({'success': False, 'error': 'Insufficient permissions'}), 403
 
             account_code = request.args.get('account_code')
-            from utils.session_metadata_helpers import resolve_line_item_comments
+            from utils.session_metadata_helpers import (
+                maybe_persist_legacy_rejection_repair,
+                resolve_line_item_comments,
+            )
+
+            sess_model, _, _ = _comment_resolve_session(session_id, doc_type)
+            if sess_model is not None:
+                maybe_persist_legacy_rejection_repair(sess, sess_model)
 
             comments = resolve_line_item_comments(sess.metadata or {})
 

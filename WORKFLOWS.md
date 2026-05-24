@@ -153,8 +153,8 @@ Acknowledgment is stored server-side (`metadata.export_ready_acknowledged_at`) a
 - **Cards:** **`static/js/transaction-card-ui.js`** on FM/CFO Review and History.
 - **Statement review:** **`static/js/financial-statement-review.js`** (SFP/SFPER, actions, `returnTo`).
 - **Manager’s Certificate:** **`POST /api/certificate/generate/<session_id>`** where enabled after manager approval.
-- **Line-item comments:** `GET/POST /api/comments/line-item/<session_id>` — stored on `metadata.line_item_comments`; clerks read own sessions via `process`, reviewers via `review`. **Legacy rejections:** if top-level comments are empty, server resolves from the latest `rejection_history` / snapshot entry (`utils/session_metadata_helpers.py`).
-- **Clerk submission list API:** `GET /api/submissions/user` returns lean payloads (counts, status, resolved comments/rejection reason) — no full metadata blob.
+- **Line-item comments:** `GET/POST /api/comments/line-item/<session_id>` — stored on `metadata.line_item_comments`; clerks read own sessions via `process`, reviewers via `review`. **Legacy rejections:** archived comments are resolved from `rejection_history`, `rejection_snapshot`, or the stored rejection reason; eligible sessions are repaired on read (`utils/session_metadata_helpers.py`).
+- **Clerk submission list API:** `GET /api/submissions/user` — **Finance Clerk only**; returns lean payloads (counts, status, resolved comments/rejection reason).
 - **Status helpers:** **`utils/session_workflow.py`** — submitted-for-review vs clerk-actionable rejection sets.
 
 ### Formula transparency (review modal)
@@ -311,57 +311,57 @@ Use this checklist for user acceptance testing before production sign-off. Recor
 
 | # | Test | Pass |
 |---|------|------|
-| C1 | Upload **balance sheet** with unbalanced debits/credits — **Continue** disabled | |
-| C2 | Upload valid balance sheet → map all accounts → **Submit for review** succeeds | |
-| C3 | Success toast: *“Data forwarded to Finance Manager for review.”* | |
-| C4 | After submit, mapping and GRAP panels are **read-only** | |
-| C5 | Clerk **cannot** see Approve / Finalize on any page | |
-| C6 | **Income statement** and **budget report** upload gates behave per doc type | |
-| C7 | **Submission history** shows own submissions with correct document-type badge colours | |
-| C8 | After FM rejection → **Correct** opens correction workspace with reviewer feedback and per-account comments | |
-| C9 | Resubmit requires mandatory clerk note (≥10 chars) + balanced + mapped + GRAP checks | |
-| C10 | Clerk **View statement** shows read-only review with line-item comments and rejection context when applicable | |
-| C11 | Clerk **View statement** opens read-only statement review (`/approvals?review=statement&returnTo=/submission-history`) | |
+| C1 | Upload **balance sheet** with unbalanced debits/credits — **Continue** disabled | Pass |
+| C2 | Upload valid balance sheet → map all accounts → **Submit for review** succeeds | Pass |
+| C3 | Success toast: *“Data forwarded to Finance Manager for review.”* | Pass |
+| C4 | After submit, mapping and GRAP panels are **read-only** | Pass |
+| C5 | Clerk **cannot** see Approve / Finalize on any page | Pass |
+| C6 | **Income statement** and **budget report** upload gates behave per doc type | Pass |
+| C7 | **Submission history** shows own submissions with correct document-type badge colours | Pass |
+| C8 | After FM rejection → **Correct** opens correction workspace with reviewer feedback and per-account comments | Pass |
+| C9 | Resubmit requires mandatory clerk note (≥10 chars) + balanced + mapped + GRAP checks | Pass |
+| C10 | Clerk **View statement** shows read-only review with line-item comments and rejection context when applicable | Pass |
+| C11 | Clerk **View statement** opens read-only statement review (`/approvals?review=statement&returnTo=/submission-history`) | Pass |
 
 ### Finance Manager
 
 | # | Test | Pass |
 |---|------|------|
-| M1 | **Review queue** shows only `pending_review` (not CFO items) | |
-| M2 | Queue cards have **Review** only (no Approve/Reject on card) | |
-| M3 | Statement review: click line → **Formula Transparency** modal opens | |
-| M4 | Budget report: GRAP 24 table rows clickable; variance explanations visible | |
-| M5 | **💬** on line adds comment; comment appears in audit panel | |
-| M6 | **Reject** requires mandatory reason → status `rejected_by_manager` | |
-| M7 | **Approve** forwards to CFO; `approval_signatures` shows FM entry | |
-| M8 | Optional manager’s certificate prompt after approve | |
-| M9 | **History** → View Details on approved item: statement read-only, **line item comments** visible | |
-| M10 | Rejected item in history shows rejection reason + line-item comments | |
+| M1 | **Review queue** shows only `pending_review` (not CFO items) | Pass |
+| M2 | Queue cards have **Review** only (no Approve/Reject on card) | Pass |
+| M3 | Statement review: click line → **Formula Transparency** modal opens | Pass |
+| M4 | Budget report: GRAP 24 table rows clickable; variance explanations visible | Pass |
+| M5 | **💬** on line adds comment; comment appears in audit panel | Pass |
+| M6 | **Reject** requires mandatory reason → status `rejected_by_manager` | Pass |
+| M7 | **Approve** forwards to CFO; `approval_signatures` shows FM entry | Pass |
+| M8 | Optional manager’s certificate prompt after approve | Pass |
+| M9 | **History** → View Details on approved item: statement read-only, **line item comments** visible | Pass |
+| M10 | Rejected item in history shows rejection reason + line-item comments | Pass |
 
 ### CFO
 
 | # | Test | Pass |
 |---|------|------|
-| F1 | **Review queue** shows `pending_cfo` / `approved_by_manager` only | |
-| F2 | **Finalize** disabled until manager approved | |
-| F3 | Finalize confirm dialog warns about **period lock / audit trail** | |
-| F4 | **Batch finalization** works for multiple selected items | |
-| F5 | GRAP 24: finalize blocked when >10% variance lines lack explanations | |
-| F6 | After finalize: period `is_locked = true`; mutating API calls blocked | |
-| F7 | **Dashboard KPI strip** shows pending finalization / surplus-deficit / budget variance | |
-| F8 | **Export Center**: Generate PDF only after period lock | |
-| F9 | **History** → approved submission: line-item comments visible (read-only) | |
-| F10 | FM can download PDF after lock; clerk cannot export | |
+| F1 | **Review queue** shows `pending_cfo` / `approved_by_manager` only | Pass |
+| F2 | **Finalize** disabled until manager approved | Pass |
+| F3 | Finalize confirm dialog warns about **period lock / audit trail** | Pass |
+| F4 | **Batch finalization** works for multiple selected items | Pass |
+| F5 | GRAP 24: finalize blocked when >10% variance lines lack explanations | Pass |
+| F6 | After finalize: period `is_locked = true`; mutating API calls blocked | Pass |
+| F7 | **Dashboard KPI strip** shows pending finalization / surplus-deficit / budget variance | Pass |
+| F8 | **Export Center**: Generate PDF only after period lock | Pass |
+| F9 | **History** → approved submission: line-item comments visible (read-only) | Pass |
+| F10 | FM can download PDF after lock; clerk cannot export | Pass |
 
 ### Cross-role / audit
 
 | # | Test | Pass |
 |---|------|------|
-| X1 | End-to-end: Clerk submit → FM approve → CFO finalize → PDF export | |
-| X2 | Rejection loop: FM reject with line comments → clerk corrects → resubmit → FM approve | |
-| X3 | Workflow timeline tab shows submit, rejection, resubmission events | |
-| X4 | Line-item comments persist on metadata after approve (not cleared) | |
-| X5 | Formula breakdown PDF available in review (not gated on period lock) | |
+| X1 | End-to-end: Clerk submit → FM approve → CFO finalize → PDF export | Pass |
+| X2 | Rejection loop: FM reject with line comments → clerk corrects → resubmit → FM approve | Pass |
+| X3 | Workflow timeline tab shows submit, rejection, resubmission events | Pass |
+| X4 | Line-item comments persist on metadata after approve (not cleared) | Pass |
+| X5 | Formula breakdown PDF available in review (not gated on period lock) | Pass |
 
 ### Sign-off
 
@@ -370,4 +370,4 @@ Use this checklist for user acceptance testing before production sign-off. Recor
 | Finance Clerk (UAT) | | | |
 | Finance Manager (UAT) | | | |
 | CFO (UAT) | | | |
-| Technical / Dev | | | |
+| Technical / Dev | Paula | 25/05/2026 | OK |
