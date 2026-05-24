@@ -267,21 +267,49 @@
         };
     }
 
+    function formulaHintSourceLabel(documentType) {
+        const dt = normalizeType(documentType);
+        if (dt === 'income_statement') return 'income statement';
+        if (dt === 'budget_report') return 'budget report';
+        return 'trial balance';
+    }
+
     function lineAmountFormulaHint(row, documentType) {
         const dt = normalizeType(documentType);
         const kind = classifyLine(row);
+        const source = formulaHintSourceLabel(documentType);
+        const fromSource = `from ${source}`;
+
         if (dt === 'balance_sheet' && trialBalanceSection(row) === 'performance') {
             return 'P&L account (4xxx/5xxx) — shown on Statement of Financial Performance, not in A = L + E';
         }
-        if (kind === 'asset' || kind === 'liability' || kind === 'equity') {
-            return kind === 'asset'
-                ? 'Debit − credit (or net_balance as signed)'
-                : 'Credit − debit (or |net_balance|)';
+        if (kind === 'asset') {
+            return dt === 'balance_sheet'
+                ? 'Debit minus credit from trial balance'
+                : `Asset amount ${fromSource}`;
         }
-        if (kind === 'revenue' || kind === 'expense') {
-            return '|net_balance| or |amount|';
+        if (kind === 'liability' || kind === 'equity') {
+            return dt === 'balance_sheet'
+                ? 'Credit minus debit from trial balance'
+                : `${kind === 'liability' ? 'Liability' : 'Equity'} amount ${fromSource}`;
         }
-        return 'Mapped line amount';
+        if (kind === 'revenue') {
+            return dt === 'income_statement'
+                ? 'Revenue from income statement (credit balance, shown as positive)'
+                : `Revenue ${fromSource} (credit balance, shown as positive)`;
+        }
+        if (kind === 'expense') {
+            return dt === 'income_statement'
+                ? 'Expense from income statement (debit balance, shown as positive)'
+                : `Expense ${fromSource} (debit balance, shown as positive)`;
+        }
+        if (dt === 'budget_report') {
+            return 'Budget or actual amount from budget report';
+        }
+        if (dt === 'income_statement') {
+            return 'Mapped amount from income statement';
+        }
+        return 'Mapped amount from trial balance';
     }
 
     function validateBalanceSheetLines(lines) {

@@ -220,6 +220,7 @@
         const createdDate = VarydianUtils.formatDateTime(tx.created_at) || '—';
         const reason = tx.reason || tx.filename || '';
         const showApproveReject = opts.showApproveReject === true && canApproveTransactions();
+        const selectable = opts.selectable === true;
         const isPending = variant === 'pending' || st === 'pending_review' || st === 'pending_cfo';
         const cardModifier = isPending ? 'pending' : cardStatusClass;
         const reviewLabel = opts.reviewLabel || (variant === 'history' ? 'View Details' : 'Review');
@@ -275,12 +276,19 @@
             ? '<span class="priority-badge priority-medium">PENDING</span>'
             : '';
 
+        const selectCheckbox = selectable && sessionId
+            ? `<label class="transaction-card__select">
+                <input type="checkbox" class="transaction-select-cb" data-session-id="${escapeHtml(sessionId)}" data-transaction-type="${escapeHtml(dtype)}" aria-label="Select for batch finalization">
+            </label>`
+            : '';
+
         const idForDisplay = shortSessionIdForDisplay(sessionId, tx.transaction_id);
         const docContext = documentContextLine(tx);
 
         return `
             <div class="transaction-card ${cardModifier}${cardExportClass}" data-transaction-id="${escapeHtml(tx.transaction_id || '')}"
                 data-session-id="${escapeHtml(sessionId)}" data-document-type="${escapeHtml(dtype)}">
+                ${selectCheckbox}
                 <div class="transaction-header">
                     <div class="transaction-info">
                         <h3 class="transaction-title">${escapeHtml(typeLabel(dtype))}</h3>

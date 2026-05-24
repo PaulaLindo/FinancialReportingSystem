@@ -205,7 +205,7 @@ class ModalSystem {
                             <button class="btn btn-primary modal-confirm">OK</button>
                         ` : ''}
                         ${type === 'confirm' ? `
-                            <button class="btn btn-secondary modal-cancel">Cancel</button>
+                            <button class="btn btn-secondary modal-cancel">${options.cancelText || 'Cancel'}</button>
                             <button class="btn btn-primary modal-confirm">${options.confirmText || 'Confirm'}</button>
                         ` : ''}
                         ${type === 'alert' ? `

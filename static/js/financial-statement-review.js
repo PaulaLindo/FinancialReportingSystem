@@ -59,6 +59,18 @@ function varydianMandatoryRejectionReason() {
 
 window.varydianMandatoryRejectionReason = varydianMandatoryRejectionReason;
 
+/** In-app confirm dialog — replaces browser confirm() in review workflows. */
+async function varydianAppConfirm(title, message, options = {}) {
+    if (window.modalSystem && typeof window.modalSystem.confirm === 'function') {
+        return window.modalSystem.confirm(title, message, options);
+    }
+    if (typeof window.showConfirm === 'function') {
+        return window.showConfirm(title, message, options);
+    }
+    return window.confirm(`${title}\n\n${message}`);
+}
+window.varydianAppConfirm = varydianAppConfirm;
+
 class FinancialStatementReview {
     constructor() {
         this.currentTransaction = null;
@@ -222,6 +234,42 @@ class FinancialStatementReview {
         return r;
     }
 
+    formatApprovalRoleLabel(role) {
+        const r = String(role || '').toUpperCase();
+        const map = {
+            FINANCE_MANAGER: 'Finance Manager',
+            CFO: 'CFO',
+            SYSTEM_ADMIN: 'System Admin',
+        };
+        return map[r] || (role ? String(role).replace(/_/g, ' ') : 'Reviewer');
+    }
+
+    renderApprovalSignaturesPanel() {
+        const md = this._sessionMetadataPayload || {};
+        const sigs = Array.isArray(md.approval_signatures) ? md.approval_signatures : [];
+        if (!sigs.length) {
+            return '';
+        }
+        const rows = sigs.map((sig) => {
+            if (!sig || typeof sig !== 'object') return '';
+            const role = this.formatApprovalRoleLabel(sig.role);
+            const userId = String(sig.user_id || '—');
+            const at = sig.at ? this.formatDate(sig.at) : '—';
+            return `
+                <li class="approval-signature-item">
+                    <span class="approval-signature-role">${this.escapeHtml(role)}</span>
+                    <span class="approval-signature-user" title="${this.escapeHtml(userId)}">${this.escapeHtml(userId.slice(0, 8))}${userId.length > 8 ? '…' : ''}</span>
+                    <span class="approval-signature-at">${this.escapeHtml(at)}</span>
+                </li>`;
+        }).join('');
+        return `
+            <div class="approval-signatures-panel" aria-label="Approval signatures">
+                <h4 class="approval-signatures-panel__title">Approval signatures</h4>
+                <p class="section-intro text-muted">Recorded approvers for this submission (audit trail).</p>
+                <ul class="approval-signatures-list">${rows}</ul>
+            </div>`;
+    }
+
     getReviewReturnContext() {
         const urlParams = new URLSearchParams(window.location.search);
         const fromQuery = this.sanitizeReturnTo(urlParams.get('returnTo'));
@@ -324,6 +372,19 @@ class FinancialStatementReview {
 
     getReviewRedirectUrl() {
         return this.getReviewReturnContext().url;
+    }
+
+    /** After approve/reject on embedded review queue — return to list without full page reload. */
+    completeReviewWorkflowAndReturn() {
+        if (
+            (this._returnToReviewQueue || window.location.pathname.includes('/finance-manager/review-queue'))
+            && window.financeManagerReviewQueue
+            && typeof window.financeManagerReviewQueue.hideReviewPanel === 'function'
+        ) {
+            window.financeManagerReviewQueue.hideReviewPanel();
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -1184,6 +1245,8 @@ class FinancialStatementReview {
 
                 ${this.renderReviewerRoleBanner()}
 
+                ${this.renderApprovalSignaturesPanel()}
+
                 <!-- Statement Content -->
                 <div class="statement-content-section">
                     <div class="statement-tabs">
@@ -1748,10 +1811,10 @@ class FinancialStatementReview {
         const foot = this.renderStatementTableFooter(opts, lines);
         const intro =
             opts.mode === 'sfp'
-                ? '<p class="statement-table-intro text-muted">Balance sheet accounts only (1xxx / 2xxx / 3xxx). Amounts feed the accounting equation above — not a simple sum of the column.</p>'
+                ? '<p class="statement-table-intro text-muted">Balance sheet accounts only (1xxx / 2xxx / 3xxx). Click any line to open TB→GRAP calculation breakdown.</p>'
                 : opts.mode === 'sfper'
-                  ? '<p class="statement-table-intro text-muted">Revenue and expense accounts (4xxx / 5xxx and RV/EX mappings).</p>'
-                  : '';
+                  ? '<p class="statement-table-intro text-muted">Revenue and expense accounts (4xxx / 5xxx and RV/EX mappings). Click any line to open TB→GRAP calculation breakdown.</p>'
+                  : '<p class="statement-table-intro text-muted">Click any line item to open the Formula Transparency modal (TB→GRAP mapping).</p>';
         return `
             ${titleHtml}
             ${intro}
@@ -1808,6 +1871,13 @@ class FinancialStatementReview {
 
     renderStatementLines(lines, documentType) {
         const G = this._grap();
+        const docT = documentType || this.currentTransaction?.transaction_type || this.statementData?.document_type || '';
+        const breakdownTitle =
+            docT === 'income_statement'
+                ? 'Click to view income statement → GRAP calculation breakdown'
+                : docT === 'budget_report'
+                  ? 'Click to view budget line → GRAP calculation breakdown'
+                  : 'Click to view trial balance → GRAP calculation breakdown';
         return lines.map(line => {
             const formulaHint = G && G.lineAmountFormulaHint
                 ? G.lineAmountFormulaHint(line, documentType)
@@ -1817,7 +1887,7 @@ class FinancialStatementReview {
             <tr class="statement-line statement-line--clickable" role="button" tabindex="0"
                 data-account-code="${this.escapeHtml(String(line.account_code || ''))}"
                 data-grap-code="${this.escapeHtml(String(line.grap_code || ''))}"
-                title="Click to view TB→GRAP calculation breakdown">
+                title="${this.escapeHtml(breakdownTitle)}">
                 <td class="account-code">${this.escapeHtml(String(line.account_code || ''))}</td>
                 <td class="account-description">${this.escapeHtml(String(line.description || ''))}</td>
                 <td class="note-column">${this.escapeHtml(grapNote)}</td>
@@ -2208,6 +2278,9 @@ class FinancialStatementReview {
                 const role = window.currentUserRole || '';
 
                 const scheduleRedirect = () => {
+                    if (this.completeReviewWorkflowAndReturn()) {
+                        return;
+                    }
                     window.setTimeout(() => {
                         window.location.href = this.getReviewRedirectUrl();
                     }, 2000);
@@ -2216,7 +2289,12 @@ class FinancialStatementReview {
                 if (role === 'FINANCE_MANAGER' && (newStatus === 'approved_by_manager' || newStatus === 'pending_cfo')) {
                     this.showSuccess(result.message || 'Approved by manager — forwarded to CFO.');
                     window.setTimeout(async () => {
-                        if (window.confirm('Download the manager\'s certificate (PDF) now? (Cancel to skip — you can generate it later from the review tools when the session is forwarded.)')) {
+                        const downloadNow = await varydianAppConfirm(
+                            "Manager's certificate",
+                            "Download the manager's certificate (PDF) now? You can generate it later from the review tools after the session is forwarded.",
+                            { confirmText: 'Download PDF', cancelText: 'Skip for now' }
+                        );
+                        if (downloadNow) {
                             await this.generateManagersCertificate();
                         }
                         scheduleRedirect();
@@ -2286,9 +2364,11 @@ class FinancialStatementReview {
                     ? 'Rejected by manager — returned to the clerk for correction.'
                     : 'Submission rejected.';
                 this.showSuccess(msg);
-                setTimeout(() => {
-                    window.location.href = this.getReviewRedirectUrl();
-                }, 2000);
+                if (!this.completeReviewWorkflowAndReturn()) {
+                    setTimeout(() => {
+                        window.location.href = this.getReviewRedirectUrl();
+                    }, 2000);
+                }
             } else {
                 this.showError('Rejection failed: ' + (result.error || 'Unknown error'));
             }

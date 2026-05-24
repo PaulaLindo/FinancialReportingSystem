@@ -1341,22 +1341,14 @@ def mapping_page(session_id=None):
 
 
 @app.route('/finance-clerk-workflow')
-
 @login_required
-
 def finance_clerk_workflow():
-
-    """Finance Clerk Workflow Integration Page"""
-
+    """Legacy bookmark → clerk submission history."""
     user = get_current_user()
-
     if user.role != 'FINANCE_CLERK':
-
         flash('Access denied. Finance Clerk privileges required.', 'error')
-
         return redirect(url_for('dashboard'))
-
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('submission_history_page'))
 
 
 

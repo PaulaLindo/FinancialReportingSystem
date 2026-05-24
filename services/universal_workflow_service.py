@@ -757,6 +757,7 @@ class UniversalWorkflowService:
                     'new_status': new_status,
                     'workflow_record': workflow_record,
                     'approval_signatures': session.metadata.get('approval_signatures', []),
+                    'approval_signature': session.metadata.get('approval_signatures', []),
                     'message': 'Submission approved by Finance Manager and forwarded to CFO',
                 }
 

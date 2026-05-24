@@ -11,10 +11,26 @@
             <p>Submissions awaiting CFO action: <strong>pending CFO</strong> and <strong>approved by manager</strong> (forwarded for final approval).</p>
             <p class="content-page-header__lead"><span id="reviewQueueCount" class="review-queue-count" aria-live="polite">—</span> submission(s) awaiting your final approval.</p>
             {% else %}
-            <p>Submissions with status <strong>pending review</strong>. Open a statement for verification, then approve or reject with a mandatory reason when rejecting.</p>
+            <p>Submissions with status <strong>pending review</strong>. Open a statement, click any line item for TB→GRAP calculations, then approve or reject (rejection requires a reason).</p>
             <p class="content-page-header__lead"><span id="reviewQueueCount" class="review-queue-count" aria-live="polite">—</span> submission(s) awaiting your review before they can move to the CFO.</p>
             {% endif %}
         </header>
+
+        {% if current_user.role == 'CFO' %}
+        <div id="reviewQueueBatchBar" class="review-queue-batch-bar element--hidden" aria-label="Batch finalization">
+            <div class="review-queue-batch-bar__copy">
+                <strong>Batch finalization</strong>
+                <span id="reviewQueueBatchCount" class="review-queue-batch-bar__count">0 selected</span>
+            </div>
+            <div class="review-queue-batch-bar__actions">
+                <button type="button" id="reviewQueueSelectAllBtn" class="btn btn-secondary btn-sm">Select all</button>
+                <button type="button" id="reviewQueueClearSelectionBtn" class="btn btn-secondary btn-sm">Clear</button>
+                <button type="button" id="reviewQueueBatchFinalizeBtn" class="btn btn-success btn-sm" disabled>
+                    Finalize selected
+                </button>
+            </div>
+        </div>
+        {% endif %}
 
         <div id="fmReviewQueueList" class="queue-items" data-queue-scope="{{ 'cfo' if current_user.role == 'CFO' else 'fm' }}">
             <div class="queue-loading">

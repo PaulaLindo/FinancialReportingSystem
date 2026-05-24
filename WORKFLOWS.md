@@ -95,19 +95,21 @@ This file is the **single workflow reference** for clerks, managers, and CFOs.
 
 1. **Queue:** Open **Review** (`/finance-manager/review-queue`) from the nav or the **Dashboard** hero (**View Queue**); **Learn More** on the hero links to About. **Quick Actions** on the dashboard includes **Submission history** only (no duplicate review-queue card; **File Management** is hidden for Finance Manager). The queue loads **`GET /api/transactions/pending`** filtered to **`pending_review`**.
 2. **Work:** Use **Review** on a card to open statement review (full-page or inline on the Review page, depending on navigation). Verify lines, formulas, and comments as implemented in the app. For **`budget_report`**, confirm **GRAP 24** variance explanations are present for line items exceeding 10% before forwarding.
-3. **Approve:** **`POST /api/universal/approve`** with `session_id` and `document_type` — forwards the workflow toward CFO (session moves out of **`pending_review`**). For **budget reports**, the backend re-validates **GRAP 24** variance explanations at forward time (same gate as clerk submit and CFO finalize).
+3. **Approve:** **`POST /api/universal/approve`** with `session_id` and `document_type` — forwards the workflow toward CFO (session moves out of **`pending_review`**). For **budget reports**, the backend re-validates **GRAP 24** variance explanations at forward time (same gate as clerk submit and CFO finalize). Approve/reject from queue cards is disabled for FM — use statement review.
 4. **Reject:** **`POST /api/universal/reject`** with a **mandatory reason** — typically **`rejected_by_manager`** so the clerk can fix and resubmit.
 5. **History:** Settled items appear under **`/finance-manager/history`** with filters as implemented.
+6. **Approval signatures:** Shown in statement review when `metadata.approval_signatures` is present.
 
 ---
 
 ## CFO
 
-1. **Queue:** Same **Review** page. The UI filters **`GET /api/transactions/pending`** to **`pending_cfo`** and **`approved_by_manager`**.
+1. **Queue:** Same **Review** page. The UI filters **`GET /api/transactions/pending`** to **`pending_cfo`** and **`approved_by_manager`**. Queue cards include **Finalize** / **Reject** quick actions; use **Batch finalization** to finalize multiple submissions via **`POST /api/universal/batch-approve`**.
 2. **Work:** Same statement review entry points as the manager (session + document type).
 3. **Approve:** **`POST /api/universal/approve`** — final approval step for the CFO stage (exact terminal status depends on service rules).
 4. **Reject:** **`POST /api/universal/reject`** with reason — returns feedback toward submitter/workflow per backend rules.
 5. **History:** Same **`/finance-manager/history`** page. On approved cards, **Finalized export** opens an in-app notice (does not navigate away) so you can keep final-approving other documents; open **Export Center** from the nav when ready to generate PDFs for all finalized submissions.
+6. **Approval signatures:** Shown in statement review when prior approvers are recorded.
 
 ### CFO batch finalization and export
 
@@ -138,7 +140,7 @@ Acknowledgment is stored server-side (`metadata.export_ready_acknowledged_at`) a
   - **`budget_report`:** GRAP 24 — mandatory variance explanations when |variance/budget| > 10%. Enforced at **clerk submit**, **FM forward**, and **CFO finalize** (`grap24_variance_explanations` in `UniversalWorkflowService`). The **Budget vs Actual** comparison table and variance panel appear on **`/mapping`** (clerk) and **statement review** (FM/CFO) — there is no separate route; `budget_report` *is* the GRAP 24 statement.
   - **`balance_sheet`:** GRAP 1 (SFP) — mapping complete, trial balance, assets = liabilities + equity.
   - **`income_statement`:** GRAP 1 (performance) — mapping complete, trial balance, revenue/expense structure (no GRAP 24 narratives).
-- **Approval:** Use **`GET /api/transactions/pending`** and **`POST /api/universal/approve`** / **`reject`**. Legacy `/api/approval-workflows/*` routes have been removed.
+- **Approval:** Use **`GET /api/transactions/pending`**, **`POST /api/universal/approve`** / **`reject`**, and **`POST /api/universal/batch-approve`** (CFO batch finalize on Review page). Legacy `/api/finance-manager/*` routes removed.
 - **Preferred APIs:** Upload `POST /api/universal/upload`, GRAP mapping `POST /api/universal/process-grap-mapping`, submit `POST /api/submit-mapping`, approve/reject `POST /api/universal/approve` and `/reject`. Legacy `/api/upload` returns **410**; `/api/processing` delegates to the universal mapping endpoint.
 - **Clerk submit:** **`POST /api/submit-mapping`** → **`UniversalWorkflowService.submit_for_review`** (`controllers/routes_universal.py`).
 - **Pending queue (reviewers):** **`GET /api/transactions/pending`** — FM/CFO filtering in **`static/js/finance-manager-review-queue.js`**.

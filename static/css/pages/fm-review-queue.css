@@ -41,6 +41,95 @@
     background: transparent;
 }
 
+.review-queue-batch-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fluid-space-md);
+    margin-bottom: var(--fluid-space-lg);
+    padding: var(--fluid-space-md) var(--fluid-space-lg);
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.review-queue-batch-bar__count {
+    margin-left: var(--fluid-space-sm);
+    font-size: var(--text-sm);
+    color: var(--gray-600);
+}
+
+.review-queue-batch-bar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fluid-space-sm);
+}
+
+.page--fm-review-queue .transaction-card {
+    position: relative;
+}
+
+.transaction-card__select {
+    position: absolute;
+    top: var(--fluid-space-md);
+    left: var(--fluid-space-md);
+    z-index: 1;
+}
+
+.page--fm-review-queue .transaction-card:has(.transaction-card__select) {
+    padding-left: calc(var(--fluid-space-xl) + 1.25rem);
+}
+
+.statement-review-panel .approval-signatures-panel {
+    margin: var(--fluid-space-lg) 0;
+    padding: var(--fluid-space-md) var(--fluid-space-lg);
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+}
+
+.approval-signatures-panel__title {
+    margin: 0 0 var(--fluid-space-xs);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+}
+
+.approval-signatures-list {
+    list-style: none;
+    margin: var(--fluid-space-sm) 0 0;
+    padding: 0;
+}
+
+.approval-signature-item {
+    display: grid;
+    grid-template-columns: minmax(8rem, 1fr) minmax(6rem, auto) minmax(8rem, auto);
+    gap: var(--fluid-space-sm);
+    padding: var(--fluid-space-xs) 0;
+    border-bottom: 1px solid var(--gray-200);
+    font-size: var(--text-sm);
+}
+
+.approval-signature-item:last-child {
+    border-bottom: none;
+}
+
+.approval-signature-role {
+    font-weight: var(--font-medium);
+    color: var(--gray-800);
+}
+
+.approval-signature-user {
+    font-family: var(--font-mono, monospace);
+    color: var(--gray-600);
+}
+
+.approval-signature-at {
+    color: var(--gray-500);
+    text-align: right;
+}
+
 .page--fm-review-queue .review-queue-count {
     display: inline-flex;
     align-items: center;

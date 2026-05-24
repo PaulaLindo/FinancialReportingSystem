@@ -128,20 +128,28 @@
         const variance = row.variance != null ? row.variance : lineVariance(row);
         const total = isTotalRow(row);
         const tone = varianceTone(vp, enriched.requires_variance_explanation);
-        const code = escapeHtml(row.account_code || '');
+        const code = String(row.account_code || '').trim();
+        const grapCode = String(row.grap_code || row.grap_category || '').trim();
+        const codeHtml = escapeHtml(code);
         const desc = escapeHtml(row.account_description || row.expense_category || code);
         const needsMark = enriched.requires_variance_explanation
             ? '<span class="grap24-budget-table__required" title="Variance explanation required">*</span>'
             : '';
         const rowClass = [
             'grap24-budget-table__row',
-            total ? 'grap24-budget-table__row--total' : '',
+            total ? 'grap24-budget-table__row--total' : 'statement-line--clickable',
             enriched.requires_variance_explanation ? 'grap24-budget-table__row--needs-explanation' : '',
             `grap24-budget-table__row--${tone}`,
         ].filter(Boolean).join(' ');
+        const clickAttrs = total
+            ? ''
+            : ` role="button" tabindex="0"
+                data-account-code="${codeHtml}"
+                data-grap-code="${escapeHtml(grapCode)}"
+                title="Click to view TB→GRAP calculation breakdown"`;
 
-        return `<tr class="${rowClass}">
-            <td data-label="Code"><span class="grap24-budget-table__code">${code}</span></td>
+        return `<tr class="${rowClass}"${clickAttrs}>
+            <td data-label="Code"><span class="grap24-budget-table__code">${codeHtml}</span></td>
             <td data-label="Description"><span class="grap24-budget-table__desc">${desc}${needsMark}</span></td>
             <td data-label="Budget (R)" class="grap24-budget-table__amount">R${formatAmount(row.budget_amount)}</td>
             <td data-label="Actual (R)" class="grap24-budget-table__amount">R${formatAmount(row.actual_amount)}</td>
@@ -201,6 +209,7 @@
                 </header>
                 <p class="grap24-budget-comparison__intro">
                     Statement of Comparison of Budget and Actual Amounts.
+                    Click any line item to open the <strong>Formula Transparency</strong> modal (TB→GRAP mapping).
                     Lines marked <span class="grap24-budget-table__required">*</span> require a written variance explanation when variance exceeds 10%.
                 </p>
                 <div class="grap24-budget-comparison__table-shell">
