@@ -266,19 +266,22 @@
     flex-wrap: wrap;
 }
 
-.filter-group {
+.approval-controls .filter-group,
+.filter-controls .filter-group {
     display: flex;
     flex-direction: column;
     gap: var(--fluid-space-xs);
 }
 
-.filter-group label {
+.approval-controls .filter-group label,
+.filter-controls .filter-group label {
     font-size: var(--body-text-sm);
     font-weight: var(--font-medium);
     color: var(--text-secondary);
 }
 
-.filter-group select {
+.approval-controls .filter-group select,
+.filter-controls .filter-group select {
     min-width: 150px;
     padding: var(--fluid-space-sm);
     border: 1px solid var(--border-color);
@@ -1010,7 +1013,8 @@
         width: 100%;
     }
 
-    .filter-group select {
+    .approval-controls .filter-group select,
+    .filter-controls .filter-group select {
         min-width: auto;
         width: 100%;
     }
@@ -1194,7 +1198,8 @@
         gap: var(--fluid-space-sm);
     }
     
-    .filter-group select {
+    .approval-controls .filter-group select,
+    .filter-controls .filter-group select {
         min-width: auto;
         width: 100%;
     }

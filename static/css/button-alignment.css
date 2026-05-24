@@ -95,3 +95,47 @@
         max-width: min(20rem, 100%);
     }
 }
+
+/* Queue filter toolbar — must load after approval-workflow.css (global select min-width) */
+.queue-filters .filter-group {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.queue-filters .filter-group select,
+.queue-filters .filter-group .filter-select,
+.queue-filters .filter-group .search-input {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.submission-history-page--clerk .history-toolbar.queue-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--fluid-space-md);
+}
+
+.submission-history-page--clerk .history-toolbar .filter-group--grow {
+    flex: 1 1 100%;
+    min-width: min(100%, 16rem);
+}
+
+.submission-history-page--clerk .history-toolbar .filter-group:not(.filter-group--grow) {
+    flex: 1 1 11rem;
+    min-width: 11rem;
+    max-width: 100%;
+}
+
+@media (min-width: 1024px) {
+    .submission-history-page--clerk .history-toolbar .filter-group--grow {
+        flex: 2 1 14rem;
+        max-width: none;
+    }
+
+    .submission-history-page--clerk .history-toolbar .filter-group:not(.filter-group--grow) {
+        flex: 1 1 10rem;
+    }
+}
