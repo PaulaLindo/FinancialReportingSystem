@@ -109,7 +109,9 @@
     display: flex;
     gap: var(--fluid-space-sm);
     align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    flex-wrap: wrap;
 }
 
 .draft-btn {
@@ -574,7 +576,7 @@
     }
     
     .draft-statement-actions {
-        justify-content: flex-start;
+        justify-content: center;
     }
     
     .draft-statement-footer {

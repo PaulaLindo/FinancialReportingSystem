@@ -1,0 +1,51 @@
+/* Layout-aware visibility — pair element--visible with -flex / -grid when the container uses flex or grid */
+
+/* Lists */
+.submissions-list.element--visible,
+.submissions-list.element--visible-grid {
+    display: grid;
+}
+
+.files-list.element--visible,
+.files-list.element--visible-flex {
+    display: flex;
+    flex-direction: column;
+}
+
+.workflow-list.element--visible,
+.workflow-list.element--visible-grid,
+#workflowContainer.element--visible,
+#workflowContainer.element--visible-grid {
+    display: grid;
+}
+
+/* Toolbars & status rows */
+.pagination-controls.element--visible,
+.pagination-controls.element--visible-flex {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.detail-row.element--visible,
+.detail-row.element--visible-flex {
+    display: flex;
+}
+
+/* Icon slots inside submission/file cards */
+.submission-icon > [class*="icon-"].element--visible {
+    display: block;
+}
+
+.submission-icon > [class*="icon-"].element--hidden {
+    display: none;
+}
+
+/* Fullscreen PDF overlay */
+#pdfFullscreen.element--visible,
+.pdf-fullscreen.element--visible {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

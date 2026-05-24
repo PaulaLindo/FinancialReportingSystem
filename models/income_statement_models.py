@@ -197,6 +197,40 @@ class IncomeStatementMappingRule:
         return data
 
 
+def income_statement_session_from_row(session_data: Dict[str, Any]) -> IncomeStatementSession:
+    """Hydrate session from Supabase row (workflow label from metadata when present)."""
+    from utils.session_workflow import hydrate_session_status_from_row
+
+    return IncomeStatementSession(
+        id=session_data['id'],
+        user_id=session_data['user_id'],
+        document_type=session_data.get('document_type', 'income_statement'),
+        filename=session_data['filename'],
+        original_filename=session_data.get('original_filename', ''),
+        file_type=session_data.get('file_type', 'unknown'),
+        file_format=session_data.get('file_format', 'unknown'),
+        status=hydrate_session_status_from_row(session_data),
+        total_rows=session_data.get('total_rows', 0),
+        total_columns=session_data.get('total_columns', 0),
+        file_size_bytes=session_data.get('file_size_bytes', 0),
+        checksum_md5=session_data.get('checksum_md5', ''),
+        created_at=datetime.fromisoformat(session_data['created_at']) if session_data.get('created_at') else None,
+        updated_at=datetime.fromisoformat(session_data['updated_at']) if session_data.get('updated_at') else None,
+        processed_at=datetime.fromisoformat(session_data['processed_at']) if session_data.get('processed_at') else None,
+        metadata=session_data.get('metadata') or {},
+        processing_log=session_data.get('processing_log') or [],
+        validation_results=session_data.get('validation_results') or {},
+        total_revenue=Decimal(str(session_data.get('total_revenue', '0.00'))),
+        total_expenses=Decimal(str(session_data.get('total_expenses', '0.00'))),
+        net_income=Decimal(str(session_data.get('net_income', '0.00'))),
+        gross_profit=Decimal(str(session_data.get('gross_profit', '0.00'))),
+        operating_income=Decimal(str(session_data.get('operating_income', '0.00'))),
+        fiscal_year=session_data.get('fiscal_year', 0),
+        reporting_period=session_data.get('reporting_period', ''),
+        statement_type=session_data.get('statement_type', 'monthly'),
+    )
+
+
 class IncomeStatementModel:
     """Model for income statement database operations"""
     
@@ -240,38 +274,9 @@ class IncomeStatementModel:
             response = self.client.table(self.table_name).select("*").eq("id", session_id).execute()
             
             if response.data:
-                session_data = response.data[0]
-                return IncomeStatementSession(
-                    id=session_data['id'],
-                    user_id=session_data['user_id'],
-                    document_type=session_data['document_type'],
-                    filename=session_data['filename'],
-                    original_filename=session_data['original_filename'],
-                    file_type=session_data['file_type'],
-                    file_format=session_data['file_format'],
-                    status=session_data['status'],
-                    total_rows=session_data['total_rows'],
-                    total_columns=session_data['total_columns'],
-                    file_size_bytes=session_data['file_size_bytes'],
-                    checksum_md5=session_data['checksum_md5'],
-                    created_at=datetime.fromisoformat(session_data['created_at']) if session_data['created_at'] else None,
-                    updated_at=datetime.fromisoformat(session_data['updated_at']) if session_data['updated_at'] else None,
-                    processed_at=datetime.fromisoformat(session_data['processed_at']) if session_data['processed_at'] else None,
-                    metadata=session_data['metadata'],
-                    processing_log=session_data['processing_log'],
-                    validation_results=session_data['validation_results'],
-                    total_revenue=Decimal(session_data.get('total_revenue', '0.00')),
-                    total_expenses=Decimal(session_data.get('total_expenses', '0.00')),
-                    net_income=Decimal(session_data.get('net_income', '0.00')),
-                    gross_profit=Decimal(session_data.get('gross_profit', '0.00')),
-                    operating_income=Decimal(session_data.get('operating_income', '0.00')),
-                    fiscal_year=session_data.get('fiscal_year', 0),
-                    reporting_period=session_data.get('reporting_period', ''),
-                    statement_type=session_data.get('statement_type', 'monthly')
-                )
-            else:
-                return None
-                
+                return income_statement_session_from_row(response.data[0])
+            return None
+
         except Exception as e:
             logger.error(f"Error getting income statement session: {str(e)}")
             return None
@@ -347,44 +352,17 @@ class IncomeStatementModel:
             return []
     
     def get_sessions_by_status(self, status: str, limit: int = 100) -> List[IncomeStatementSession]:
-        """Get sessions by status"""
+        """Get sessions by workflow or DB status (metadata.workflow_status aware)."""
         try:
-            response = self.client.table(self.table_name).select("*").eq("status", status).order("created_at", desc=True).limit(limit).execute()
-            
-            sessions = []
-            for session_data in response.data:
-                session = IncomeStatementSession(
-                    id=session_data['id'],
-                    user_id=session_data['user_id'],
-                    document_type=session_data['document_type'],
-                    filename=session_data['filename'],
-                    original_filename=session_data['original_filename'],
-                    file_type=session_data['file_type'],
-                    file_format=session_data['file_format'],
-                    status=session_data['status'],
-                    total_rows=session_data['total_rows'],
-                    total_columns=session_data['total_columns'],
-                    file_size_bytes=session_data['file_size_bytes'],
-                    checksum_md5=session_data['checksum_md5'],
-                    created_at=datetime.fromisoformat(session_data['created_at']) if session_data['created_at'] else None,
-                    updated_at=datetime.fromisoformat(session_data['updated_at']) if session_data['updated_at'] else None,
-                    processed_at=datetime.fromisoformat(session_data['processed_at']) if session_data['processed_at'] else None,
-                    metadata=session_data['metadata'],
-                    processing_log=session_data['processing_log'],
-                    validation_results=session_data['validation_results'],
-                    total_revenue=Decimal(session_data.get('total_revenue', '0.00')),
-                    total_expenses=Decimal(session_data.get('total_expenses', '0.00')),
-                    net_income=Decimal(session_data.get('net_income', '0.00')),
-                    gross_profit=Decimal(session_data.get('gross_profit', '0.00')),
-                    operating_income=Decimal(session_data.get('operating_income', '0.00')),
-                    fiscal_year=session_data.get('fiscal_year', 0),
-                    reporting_period=session_data.get('reporting_period', ''),
-                    statement_type=session_data.get('statement_type', 'monthly')
-                )
-                sessions.append(session)
-            
-            return sessions
-            
+            from utils.session_workflow import query_sessions_by_workflow_status
+
+            return query_sessions_by_workflow_status(
+                self.client,
+                self.table_name,
+                income_statement_session_from_row,
+                status,
+                limit=limit,
+            )
         except Exception as e:
             logger.error(f"Error getting income statement sessions by status: {str(e)}")
             return []

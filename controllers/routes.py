@@ -9,22 +9,18 @@ Web interface and API endpoints for GRAP financial statement generation
 
 
 from flask import Flask, render_template, request, jsonify, send_file, flash, redirect, url_for, session
-
 from werkzeug.utils import secure_filename
-
 from functools import wraps
 
 import os
-
 import pandas as pd
-
 import json
 
 from datetime import datetime
 
 import sys
-
 import logging
+import uuid
 
 
 
@@ -34,9 +30,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models.grap_models import GRAPMappingEngine
 
-from models.supabase_auth_models import supabase_auth, SupabaseUser, get_role_description, get_role_color
+from models.supabase_auth_models import supabase_auth, SupabaseUser, get_role_description, get_role_color, get_role_label
 
 from services.grap_mapping_service import grap_mapping_service
+
+from services.approval_facade import approval_facade
 
 from utils.constants import WorkflowErrorMessages
 
@@ -56,6 +54,8 @@ logger = logging.getLogger(__name__)
 
 # Configuration
 
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 app = Flask(__name__, 
 
            template_folder='../templates', 
@@ -66,14 +66,33 @@ app = Flask(__name__,
 
 app.config['SECRET_KEY'] = 'varydian-demo-2025-secure-key-auth-enabled'
 
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = os.path.join(_PROJECT_ROOT, 'uploads')
 
-app.config['OUTPUT_FOLDER'] = 'outputs'
+app.config['OUTPUT_FOLDER'] = os.path.join(_PROJECT_ROOT, 'outputs')
+
+os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
 
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 app.config['DEBUG'] = True  # Enable debug logging
 
+app.jinja_env.globals['get_role_label'] = get_role_label
+
+
+app.register_blueprint(formula_bp)
+
+
+from utils.datetime_display import format_display_datetime, format_display_date_range
+
+
+@app.template_filter('display_datetime')
+def display_datetime_filter(value):
+    return format_display_datetime(value)
+
+
+@app.template_filter('display_date_range')
+def display_date_range_filter(start, end=None):
+    return format_display_date_range(start, end)
 
 
 ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv', 'xlsm', 'xlsb', 'tsv'}
@@ -748,9 +767,11 @@ def login_required(f):
 
 
 
-def permission_required(permission):
+def permission_required(*permissions):
 
-    """Decorator to check specific permissions using Supabase only"""
+    """Decorator — user must have at least one of the listed permissions."""
+
+    required = permissions or ('',)
 
     def permission_decorator(f):
 
@@ -776,9 +797,11 @@ def permission_required(permission):
 
                 user = SupabaseUser(user_data)
 
-                if not user.has_permission(permission):
+                if not any(user.has_permission(p) for p in required):
 
-                    return jsonify({'success': False, 'error': f'Permission denied. {permission.upper()} access required.'}), 403
+                    label = ' or '.join(p.upper() for p in required)
+
+                    return jsonify({'success': False, 'error': f'Permission denied. {label} access required.'}), 403
 
                 
 
@@ -817,7 +840,15 @@ def get_current_user():
     return None
 
 
-
+@app.context_processor
+def inject_template_globals():
+    """Expose current_user and role helpers to all Jinja templates (base.html, dashboard, etc.)."""
+    return {
+        'current_user': get_current_user(),
+        'get_role_description': get_role_description,
+        'get_role_color': get_role_color,
+        'get_role_label': get_role_label,
+    }
 
 
 # Authentication Routes
@@ -841,6 +872,7 @@ def login():
         
 
         if user_data and user_data['is_active']:
+            print(f"DEBUG: User authenticated: {user_data['id']}")
 
             session['user_id'] = user_data['id']
 
@@ -961,6 +993,7 @@ def api_login():
         
 
         if user_data and user_data['is_active']:
+            print(f"DEBUG: User authenticated: {user_data['id']}")
 
             return jsonify({
 
@@ -1033,6 +1066,10 @@ def get_user_permissions():
                 'can_final_approve': user.can_final_approve(),
 
                 'can_generate_pdf': user.can_generate_pdf(),
+
+                'can_download_pdf': user.can_download_pdf(),
+
+                'can_access_export_center': user.can_access_export_center(),
 
                 'can_view_all': user.can_view_all(),
 
@@ -1140,156 +1177,56 @@ def dashboard():
 
         
 
+        periods = []
+        period_stats = {
+            'open_periods': 0,
+            'available_periods': 0,
+            'urgent_periods': 0,
+        }
+        submission_counts = {
+            'pending_uploads': 0,
+            'submitted_today': 0,
+            'approved_this_month': 0,
+        }
+
         try:
-
-            # Get real period data
-
             dashboard_data = period_management_service.get_dashboard_data()
+            periods = dashboard_data.get('periods', [])
+            period_stats = dashboard_data.get('stats', period_stats)
+        except Exception as e:
+            app.logger.error(f"Error loading period dashboard data: {str(e)}")
 
-            periods = dashboard_data['periods']
-            stats = dashboard_data['stats']
-
-            # Get actual pending uploads count for current user from all document types
+        try:
             from models.balance_sheet_models import balance_sheet_model
             from models.income_statement_models import income_statement_model
             from models.budget_report_models import budget_report_model
+            from utils.session_workflow import clerk_submission_stats
 
-            try:
-                # Get user sessions from all document type models
-                balance_sheet_sessions = balance_sheet_model.get_user_sessions(user.id, limit=100)
-                income_statement_sessions = income_statement_model.get_user_sessions(user.id, limit=100)
-                budget_report_sessions = budget_report_model.get_user_sessions(user.id, limit=100)
-
-                # Combine all sessions
-                user_sessions = balance_sheet_sessions + income_statement_sessions + budget_report_sessions
-
-                # DEBUG: Print what we actually got from Supabase
-                print(f"DEBUG: Retrieved {len(user_sessions)} total sessions from Supabase for user {user.id}")
-                print(f"DEBUG: Balance sheets: {len(balance_sheet_sessions)}, Income statements: {len(income_statement_sessions)}, Budget reports: {len(budget_report_sessions)}")
-                for i, session in enumerate(user_sessions):
-                    print(f"  Session {i+1}: status={session.status}, created_at={session.created_at}")
-
-                # Count sessions with pending statuses (uploaded, processing, mapped, pending)
-                # These are all states that still require action from the finance clerk
-                pending_statuses = ['uploaded', 'processing', 'mapped', 'pending']
-                pending_uploads_count = len([s for s in user_sessions if s.status in pending_statuses])
-
-                # Count documents submitted today (all document types)
-
-                from datetime import datetime, timezone
-
-                # Use UTC time to match Supabase timestamps
-                today_utc = datetime.now(timezone.utc).date()
-
-                submitted_today_count = len([s for s in user_sessions 
-
-                    if s.created_at and s.created_at.date() == today_utc 
-
-                    and s.status in ['uploaded', 'processing', 'mapped', 'pending', 'pending_review', 'submitted', 'approved']])
-
-                # DEBUG: Show the calculation
-
-                print(f"DEBUG: Today is {today_utc}")
-
-                print(f"DEBUG: submitted_today_count = {submitted_today_count}")
-
-                for i, s in enumerate(user_sessions):
-
-                    if s.created_at and s.created_at.date() == today_utc:
-
-                        counts = s.status in ['uploaded', 'processing', 'mapped', 'pending', 'pending_review', 'submitted', 'approved']
-
-                        print(f"  Session {i+1}: status={s.status}, counts={counts}")
-
-                # Count balance sheets approved this month
-
-                current_month = datetime.now().month
-
-                current_year = datetime.now().year
-
-                approved_this_month_count = len([s for s in user_sessions 
-
-                    if s.status == 'approved' and s.updated_at 
-
-                    and s.updated_at.month == current_month 
-
-                    and s.updated_at.year == current_year])
-
-            except Exception as e:
-
-                pending_uploads_count = 0
-
-                submitted_today_count = 0
-
-                approved_this_month_count = 0
-
-            
-
-            # Add additional stats for clerk dashboard
-
-            clerk_stats = {
-
-                'open_periods': stats.get('open_periods', 0),
-
-                'available_periods': stats.get('available_periods', 0),
-
-                'urgent_periods': stats.get('urgent_periods', 0),
-
-                'submitted_today': submitted_today_count,
-
-                'approved_this_month': approved_this_month_count,
-
-                'pending_uploads': pending_uploads_count,
-
-                'pending_approvals': 0,
-
-                'completed_reports': 0,
-
-                'total_assets': 0,
-
-                'total_liabilities': 0
-
-            }
-
-            
-
-            return render_template('dashboard.html', user=user, periods=periods, stats=clerk_stats)
-
-            
-
+            user_sessions = (
+                balance_sheet_model.get_user_sessions(user.id, limit=100)
+                + income_statement_model.get_user_sessions(user.id, limit=100)
+                + budget_report_model.get_user_sessions(user.id, limit=100)
+            )
+            submission_counts = clerk_submission_stats(user_sessions)
         except Exception as e:
+            app.logger.error(f"Error loading clerk submission stats: {str(e)}")
 
-            app.logger.error(f"Error loading dashboard data: {str(e)}")
+        clerk_stats = {
+            'open_periods': period_stats.get('open_periods', 0),
+            'available_periods': period_stats.get('available_periods', 0),
+            'urgent_periods': period_stats.get('urgent_periods', 0),
+            'submitted_today': submission_counts.get('submitted_today', 0),
+            'approved_this_month': submission_counts.get('approved_this_month', 0),
+            'pending_uploads': submission_counts.get('pending_uploads', 0),
+            'pending_approvals': 0,
+            'completed_reports': 0,
+            'total_assets': 0,
+            'total_liabilities': 0,
+        }
 
-            # Fallback to default data
-
-            stats = {
-
-                'open_periods': 0,
-
-                'available_periods': 0,
-
-                'urgent_periods': 0,
-
-                'submitted_today': 0,
-
-                'approved_this_month': 0,
-
-                'pending_uploads': 0,
-
-                'pending_approvals': 0,
-
-                'completed_reports': 0,
-
-                'total_assets': 0,
-
-                'total_liabilities': 0
-
-            }
-
-            
-
-            return render_template('dashboard.html', user=user, periods=[], stats=stats)
+        return render_template(
+            'dashboard.html', user=user, current_user=user, periods=periods, stats=clerk_stats
+        )
 
     else:
 
@@ -1313,7 +1250,7 @@ def dashboard():
 
         
 
-        return render_template('dashboard.html', user=user, stats=stats)
+        return render_template('dashboard.html', user=user, current_user=user, stats=stats)
 
 
 
@@ -1325,9 +1262,25 @@ def dashboard():
 
 def approvals_page():
 
-    """Transaction approvals page"""
+    """Statement review host (?review=statement). Queue/history live on FM routes."""
 
     user = get_current_user()
+
+    if not user.can_review():
+
+        flash('Access denied. Finance Manager or CFO privileges required.', 'error')
+
+        return redirect(url_for('dashboard'))
+
+    if request.args.get('review') != 'statement':
+
+        if user.role == 'FINANCE_MANAGER':
+
+            return redirect(url_for('finance_manager_review_queue'))
+
+        if user.role == 'CFO':
+
+            return redirect(url_for('finance_manager_review_queue'))
 
     return render_template('approvals.html', user=user)
 
@@ -1358,10 +1311,12 @@ def upload_page():
 
 
 @app.route('/mapping')
+@app.route('/mapping-interface')
+@app.route('/mapping/<session_id>')
 
 @login_required
 
-def mapping_page():
+def mapping_page(session_id=None):
 
     """Account Mapping Interface Page"""
 
@@ -1373,9 +1328,12 @@ def mapping_page():
 
         return redirect(url_for('dashboard'))
 
-    # Get session_id from URL parameters
-    session_id = request.args.get('session_id')
-    
+    from utils.session_workflow import normalize_mapping_session_id
+
+    if session_id is None:
+        session_id = request.args.get('session_id')
+    session_id = normalize_mapping_session_id(session_id) or ''
+
     return render_template('mapping_interface.html', user=user, session_id=session_id)
 
 
@@ -1398,266 +1356,21 @@ def finance_clerk_workflow():
 
         return redirect(url_for('dashboard'))
 
-    return render_template('finance_clerk_workflow.html', user=user)
+    return redirect(url_for('dashboard'))
 
 
 
 
 
 @app.route('/api/upload', methods=['POST'])
-
 def upload_balance_sheet():
-
-    """
-
-    API endpoint to handle Balance Sheet file upload with flexible format detection
-
-    Processes file directly into database for GRAP compliance
-
-    Returns: JSON with upload status and session details
-
-    """
-
-    try:
-
-        print(" Upload endpoint called")
-
-        print(f" Request files: {list(request.files.keys())}")
-
-        print(f" Request form: {dict(request.form)}")
-
-        print(f" Session: {dict(session)}")
-
-        
-
-        # Check if user is authenticated
-
-        if 'user_id' not in session:
-
-            print(" User not authenticated - no user_id in session")
-
-            return jsonify({'success': False, 'error': 'User not authenticated. Please login first.'}), 401
-
-        
-
-        if 'file' not in request.files:
-
-            print(" No file in request")
-
-            return jsonify({'success': False, 'error': 'No file uploaded'}), 400
-
-        
-
-        file = request.files['file']
-
-        print(f" File received: {file.filename}")
-
-        print(f" File size: {file.content_length if hasattr(file, 'content_length') else 'Unknown'}")
-
-        
-
-        if file.filename == '':
-
-            print(" Empty filename")
-
-            return jsonify({'success': False, 'error': 'No file selected'}), 400
-
-        
-
-        if file and allowed_file(file.filename):
-
-            print(" File type allowed")
-
-            
-
-            # Get current user first
-
-            current_user = get_current_user()
-
-            if not current_user:
-
-                print(" User not authenticated")
-
-                return jsonify({'success': False, 'error': 'User not authenticated'}), 401
-
-            
-
-            print(f" User authenticated: {current_user.username}")
-
-            print(f" User ID: {current_user.id}")
-
-            
-
-            # Read file data for processing
-
-            file_data = file.read()
-
-            original_filename = secure_filename(file.filename)
-
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-
-            processing_filename = f"{timestamp}_{original_filename}"
-
-            
-
-            # Create temporary file for processing (will be deleted after)
-
-            import tempfile
-
-            with tempfile.NamedTemporaryFile(delete=False, suffix=f".{original_filename.split('.')[-1]}") as temp_file:
-
-                temp_file.write(file_data)
-
-                temp_filepath = temp_file.name
-
-            
-
-            try:
-
-                print(" Starting flexible balance sheet processing...")
-
-                
-
-                # Use flexible balance sheet service for processing
-
-                from services.flexible_balance_sheet_service import flexible_balance_sheet_service
-
-                
-
-                print(" Processing upload with flexible service...")
-
-                # Get period_id from form data if provided
-
-                period_id = request.form.get('period_id')
-
-                processing_result = flexible_balance_sheet_service.process_upload(
-
-                    file_path=temp_filepath,
-
-                    user_id=current_user.id,
-
-                    filename=processing_filename,
-
-                    period_id=period_id
-
-                )
-
-                
-
-                print(f" Processing result: {processing_result}")
-
-                
-
-                if not processing_result['success']:
-
-                    print(f" Processing failed: {processing_result['error']}")
-
-                    return jsonify({
-
-                        'success': False,
-
-                        'error': processing_result['error']
-
-                    }), 400
-
-                
-
-                print(" Getting session summary...")
-
-                # Get session summary for detailed response
-
-                session_summary = flexible_balance_sheet_service.get_session_summary(processing_result['session_id'])
-
-                
-
-                print(" Upload processing completed successfully")
-
-                return jsonify({
-
-                    'success': True,
-
-                    'session_id': processing_result['session_id'],
-
-                    'filename': processing_filename,
-
-                    'filepath': None,  # No local file storage
-
-                    'storage_type': 'database',  # Data stored in database
-
-                    'file_format': processing_result['file_format'],
-
-                    'structure_info': processing_result['structure_info'],
-
-                    'total_rows': processing_result['total_rows'],
-
-                    'total_columns': processing_result['total_columns'],
-
-                    'columns': processing_result['columns'],
-
-                    'mapping_results': processing_result['mapping_results'],
-
-                    'session_summary': session_summary,
-
-                    'message': f'Successfully processed {processing_result["total_rows"]} rows with {processing_result["total_columns"]} columns and stored in database',
-
-                    'detected_file_type': processing_result['structure_info']['file_type'],
-
-                    'data_quality_score': processing_result['structure_info']['quality_score']
-
-                })
-
-                
-
-            finally:
-
-                # Clean up temporary file
-
-                try:
-
-                    os.unlink(temp_filepath)
-
-                    print(" Temporary file cleaned up")
-
-                except:
-
-                    pass
-
-        
-
-        else:
-
-            print(f" File type not allowed: {file.filename}")
-
-            file_extension = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'unknown'
-
-            return jsonify({
-
-                'success': False, 
-
-                'error': f'Invalid file type: .{file_extension}\n\nAllowed file types: .xlsx, .xls, .csv, .xlsm, .xlsb, .tsv\n\nPlease upload a balance sheet file in one of the supported formats.'
-
-            }), 400
-
-        
-
-    except Exception as e:
-
-        print(f" Exception in upload processing: {str(e)}")
-
-        import traceback
-
-        print(f" Full traceback: {traceback.format_exc()}")
-
-        return jsonify({
-
-            'success': False,
-
-            'error': f'Upload processing failed: {str(e)}'
-
-        }), 500
-
-
-
+    """Deprecated — use POST /api/universal/upload (all document types)."""
+    return jsonify({
+        'success': False,
+        'error': 'This endpoint is deprecated. Use POST /api/universal/upload with document_type in form data.',
+        'deprecated': True,
+        'replacement': '/api/universal/upload',
+    }), 410
 
 
 @app.route('/api/debug-test', methods=['GET'])
@@ -2064,7 +1777,7 @@ def validate_balance_sheet():
 
             'can_submit': is_balanced,
 
-            'allow_proceed_with_warning': bool(balance_difference <= (tolerance * 100)),  # Allow proceeding if difference is small
+            'allow_proceed_with_warning': False,
 
             'message': 'Balance sheet is balanced' if is_balanced else 
 
@@ -2364,11 +2077,21 @@ def proceed_with_unbalanced():
 
             return jsonify({'success': False, 'error': 'Must confirm proceeding with warning'}), 400
 
+        user = get_current_user()
+
+        if user and user.role == 'FINANCE_CLERK':
+
+            return jsonify({
+
+                'success': False,
+
+                'error': 'Trial balance must be balanced. Debits must equal credits before processing.',
+
+            }), 400
+
         
 
         # Log the decision to proceed with unbalanced balance sheet
-
-        user = get_current_user()
 
         
 
@@ -2528,23 +2251,36 @@ def remove_uploaded_file():
 
 def generate_pdf():
 
-    """
-
-    Generate PDF financial statements
-
-    """
+    """Generate PDF financial statements (requires locked reporting period)."""
 
     try:
 
         data = request.get_json()
 
         results_file = data.get('results_file')
+        session_id = data.get('session_id')
+        document_type = data.get('document_type')
+        period_id = data.get('period_id')
 
         
 
         if not results_file:
 
             return jsonify({'success': False, 'error': 'No results file specified'}), 400
+
+        from utils.pdf_availability import resolve_pdf_availability
+
+        availability = resolve_pdf_availability(
+            session_id=session_id,
+            document_type=document_type,
+            period_id=period_id,
+        )
+        if not availability["can_generate_pdf"]:
+            return jsonify({
+                'success': False,
+                'error': availability["reason"],
+                'period_locked': availability["period_locked"],
+            }), 403
 
         
 
@@ -2580,7 +2316,25 @@ def generate_pdf():
 
         generate_pdf_report(results, pdf_path)
 
-        
+        current_user = get_current_user()
+        user_id = current_user.id if current_user else session.get('user_id')
+        from utils.pdf_download_guard import write_pdf_download_meta
+
+        write_pdf_download_meta(
+            app.config['OUTPUT_FOLDER'],
+            pdf_filename,
+            session_id=session_id,
+            document_type=document_type,
+            period_id=period_id,
+            user_id=user_id,
+        )
+
+        download_q = []
+        if session_id:
+            download_q.append(f'session_id={session_id}')
+        if document_type:
+            download_q.append(f'document_type={document_type}')
+        download_suffix = f'?{"&".join(download_q)}' if download_q else ''
 
         return jsonify({
 
@@ -2588,7 +2342,7 @@ def generate_pdf():
 
             'pdf_filename': pdf_filename,
 
-            'download_url': f'/download/{pdf_filename}'
+            'download_url': f'/download/{pdf_filename}{download_suffix}'
 
         })
 
@@ -2605,6 +2359,28 @@ def generate_pdf():
         }), 500
 
 
+@app.route('/api/pdf/availability', methods=['GET'])
+@login_required
+def pdf_availability():
+    """Check whether PDF generation/download is allowed (period must be locked by CFO)."""
+    session_id = request.args.get('session_id')
+    document_type = request.args.get('document_type')
+    period_id = request.args.get('period_id')
+    from utils.pdf_availability import resolve_pdf_availability
+    result = resolve_pdf_availability(
+        session_id=session_id,
+        document_type=document_type,
+        period_id=period_id,
+    )
+    user = get_current_user()
+    period_ok = bool(result.get('period_locked'))
+    if user:
+        result['can_generate_pdf'] = period_ok and user.can_generate_pdf()
+        result['can_download_pdf'] = period_ok and user.can_download_pdf()
+    else:
+        result['can_generate_pdf'] = False
+        result['can_download_pdf'] = False
+    return jsonify({'success': True, **result})
 
 
 
@@ -2616,75 +2392,59 @@ def download_file(filename):
 
     """
 
-    Download generated PDF
+    Download generated PDF (requires locked reporting period).
 
     """
 
-    filepath = os.path.join(app.config['OUTPUT_FOLDER'], filename)
+    filepath = os.path.join(app.config['OUTPUT_FOLDER'], os.path.basename(filename))
 
     
 
-    if not os.path.exists(filepath):
+    if not os.path.isfile(filepath):
 
         return "File not found", 404
 
-    
+    from utils.pdf_download_guard import verify_pdf_download_allowed
 
-    return send_file(filepath, as_attachment=True)
+    current_user = get_current_user()
+    if not current_user or not current_user.can_download_pdf():
+        return jsonify({'success': False, 'error': 'Permission denied. PDF download access required.'}), 403
 
-
-
-
-
-@app.route('/api/transactions/pending')
-
-@login_required
-
-@permission_required('review')  # Finance Manager and CFO can view pending
-
-def get_pending_transactions():
-
-    """Get pending transactions for approval"""
+    user_id = current_user.id if current_user else session.get('user_id')
+    allowed, err = verify_pdf_download_allowed(
+        app.config['OUTPUT_FOLDER'],
+        filename,
+        session_id=request.args.get('session_id'),
+        document_type=request.args.get('document_type'),
+        period_id=request.args.get('period_id'),
+        user_id=user_id,
+    )
+    if not allowed:
+        return jsonify({'success': False, 'error': err, 'period_locked': True}), 403
 
     try:
+        from utils.pdf_download_guard import read_pdf_download_meta
+        from services.export_log_service import export_log_service
 
-        user = get_current_user()
+        meta = read_pdf_download_meta(app.config['OUTPUT_FOLDER'], filename) or {}
+        sid = request.args.get('session_id') or meta.get('session_id')
+        dtype = request.args.get('document_type') or meta.get('document_type')
+        if sid and dtype:
+            export_log_service.record(
+                export_format='pdf_download',
+                session_id=sid,
+                document_type=dtype,
+                user_id=user_id,
+                user_name=current_user.full_name if current_user else '',
+                user_role=current_user.role if current_user else '',
+                filename=os.path.basename(filename),
+                ip_address=request.remote_addr,
+                user_agent=(request.headers.get('User-Agent') or '')[:500],
+            )
+    except Exception as log_exc:
+        app.logger.warning('Export log (pdf download) failed: %s', log_exc)
 
-        
-
-        # Import approval model
-
-        from models.approval_models import approval_model
-
-        
-
-        # Get pending transactions filtered by approver role
-
-        pending = approval_model.get_pending_transactions(approver_role=user.role)
-
-        
-
-        return jsonify({
-
-            'success': True,
-
-            'pending_transactions': pending,
-
-            'count': len(pending)
-
-        })
-
-    
-
-    except Exception as e:
-
-        return jsonify({
-
-            'success': False,
-
-            'error': f'Error fetching pending transactions: {str(e)}'
-
-        }), 500
+    return send_file(filepath, as_attachment=True, download_name=os.path.basename(filename))
 
 
 
@@ -2972,40 +2732,16 @@ def submission_history_page():
 
         
 
-        # Calculate stats
+        from utils.session_workflow import clerk_submission_stats
 
-        # Use UTC time to match Supabase timestamps
-        today_utc = datetime.now(timezone.utc).date()
-
-        submitted_today_count = len([s for s in all_sessions 
-
-            if s.created_at and s.created_at.date() == today_utc 
-
-            and s.status in ['uploaded', 'processing', 'mapped', 'pending', 'pending_review', 'submitted', 'approved']])
-
-        pending_count = len([s for s in all_sessions if s.status in ['uploaded', 'processing', 'mapped', 'pending', 'pending_review', 'submitted']])
-
-        approved_count = len([s for s in all_sessions if s.status == 'approved'])
-
-        rejected_count = len([s for s in all_sessions if s.status == 'rejected'])
-
-        
-
+        submission_counts = clerk_submission_stats(all_sessions)
         stats = {
-
-            'submitted_today': submitted_today_count,
-
-            'pending': pending_count,
-
-            'approved': approved_count,
-
-            'rejected': rejected_count
-
+            'submitted_today': submission_counts['submitted_today'],
+            'total_submissions': submission_counts['total_submissions'],
+            'pending': submission_counts['pending'],
+            'approved': submission_counts['approved'],
+            'rejected': submission_counts['rejected'],
         }
-
-        
-
-        print(f"DEBUG: Submission History Stats - Today: {submitted_today_count}, Pending: {pending_count}, Approved: {approved_count}")
 
         
 
@@ -3017,11 +2753,13 @@ def submission_history_page():
 
             'submitted_today': 0,
 
+            'total_submissions': 0,
+
             'pending': 0,
 
             'approved': 0,
 
-            'rejected': 0
+            'rejected': 0,
 
         }
 
@@ -3041,19 +2779,19 @@ def export_page():
 
     """
 
-    Export Page - CFO only
+    Export Center — CFO full export; Finance Manager read-only finalized PDF download.
 
     """
 
     user = get_current_user()
 
-    if user.role != 'CFO':
+    if not user or not user.can_access_export_center():
 
-        flash('Access denied. CFO privileges required.', 'error')
+        flash('Access denied. Export privileges required.', 'error')
 
         return redirect(url_for('index'))
 
-    return render_template('export.html', user=user)
+    return render_template('export.html', user=user, read_only_export=user.can_download_pdf() and not user.can_export())
 
 
 
@@ -3137,7 +2875,19 @@ def submission_status_page(submission_id):
 
                         session = model_class().get_session(submission_id)
 
-                        if session and session.status == 'pending_review':
+                        from utils.session_workflow import effective_workflow_status
+
+                        eff_status = effective_workflow_status(session)
+                        visible_statuses = {
+                            'pending_review', 'pending_cfo', 'pending',
+                            'rejected', 'rejected_by_manager', 'rejected_by_cfo',
+                            'mapped', 'uploaded', 'draft', 'validated', 'processing',
+                            'approved_by_manager', 'resubmitted', 'submitted',
+                        }
+                        if session and session.user_id == user.id and (
+                            session.status in visible_statuses or eff_status in visible_statuses
+                        ):
+                            meta = getattr(session, 'metadata', None) or {}
 
                             # Create submission-like data from session
 
@@ -3149,7 +2899,7 @@ def submission_status_page(submission_id):
 
                                 'original_filename': getattr(session, 'original_filename', 'Unknown'),
 
-                                'status': session.status,
+                                'status': eff_status,
 
                                 'user_id': session.user_id,
 
@@ -3157,19 +2907,40 @@ def submission_status_page(submission_id):
 
                                 'created_at': session.created_at.isoformat() if session.created_at else None,
 
-                                'submitted_at': session.metadata.get('submitted_at'),
+                                'submitted_at': meta.get('submitted_at'),
 
-                                'total_accounts': session.metadata.get('total_accounts', 0),
+                                'total_accounts': meta.get('total_accounts', 0),
 
-                                'mapped_accounts': session.metadata.get('total_mapped_accounts', 0),
+                                'mapped_accounts': meta.get('total_mapped_accounts', 0),
 
-                                'mapping_completion_percentage': 100.0 if session.metadata.get('total_mapped_accounts', 0) > 0 else 0.0,
+                                'mapping_completion_percentage': 100.0 if meta.get('total_mapped_accounts', 0) > 0 else 0.0,
 
-                                'session_metadata': session.metadata
+                                'review_notes': meta.get('review_notes', ''),
+
+                                'rejection_reason': meta.get('rejection_reason', ''),
+
+                                'is_locked': False,
+
+                                'session_metadata': meta,
 
                             }
 
                             print(f"✅ Found session as submission: {submission_id} ({doc_type})")
+
+                            try:
+                                from controllers.routes_universal import compute_submission_balance_totals
+                                balance = compute_submission_balance_totals(session.id, doc_type)
+                                if balance:
+                                    submission_data.update({
+                                        k: balance[k]
+                                        for k in (
+                                            'total_revenue', 'total_expenses', 'net_income',
+                                            'total_debits', 'total_credits', 'total_budget', 'total_actual',
+                                        )
+                                        if k in balance
+                                    })
+                            except Exception as balance_err:
+                                print(f"Balance totals for submission status: {balance_err}")
 
                             break
 
@@ -3241,6 +3012,8 @@ def submission_status_page(submission_id):
 
             'status': submission_data.get('status', 'pending'),
 
+            'document_type': submission_data.get('document_type', 'balance_sheet'),
+
             'priority': submission_data.get('priority', 'normal'),
 
             'total_accounts': submission_data.get('total_accounts', 0),
@@ -3263,6 +3036,16 @@ def submission_status_page(submission_id):
 
             'total_expenses': submission_data.get('total_expenses', 0),
 
+            'total_debits': submission_data.get('total_debits', 0),
+
+            'total_credits': submission_data.get('total_credits', 0),
+
+            'total_budget': submission_data.get('total_budget', 0),
+
+            'total_actual': submission_data.get('total_actual', 0),
+
+            'net_income': submission_data.get('net_income', 0),
+
             'data_quality_score': submission_data.get('data_quality_score', 0),
 
             'grap_categories_used': submission_data.get('grap_categories_used', 0),
@@ -3279,7 +3062,8 @@ def submission_status_page(submission_id):
 
             'approval_comments': submission_data.get('approval_comments'),
 
-            'rejection_reason': submission_data.get('rejection_reason'),
+            'rejection_reason': submission_data.get('rejection_reason')
+            or (submission_data.get('session_metadata') or {}).get('rejection_reason', ''),
 
             'is_locked': submission_data.get('is_locked', False),
 
@@ -3304,6 +3088,26 @@ def submission_status_page(submission_id):
             'filepath': submission_data.get('submission_name') or submission_data.get('original_filename') or submission_data.get('filename') or 'N/A'
 
         }
+
+        doc_type = formatted_submission.get('document_type') or 'balance_sheet'
+        sid = submission_id or formatted_submission.get('id')
+        needs_balance = (
+            (doc_type == 'balance_sheet' and not (formatted_submission.get('total_debits') or formatted_submission.get('total_credits')))
+            or (doc_type == 'income_statement' and not (formatted_submission.get('total_revenue') or formatted_submission.get('total_expenses')))
+            or (doc_type == 'budget_report' and not (formatted_submission.get('total_budget') or formatted_submission.get('total_actual')))
+        )
+        if sid and needs_balance:
+            try:
+                from controllers.routes_universal import compute_submission_balance_totals
+                balance = compute_submission_balance_totals(sid, doc_type)
+                for key in (
+                    'total_revenue', 'total_expenses', 'net_income',
+                    'total_debits', 'total_credits', 'total_budget', 'total_actual',
+                ):
+                    if key in balance:
+                        formatted_submission[key] = balance[key]
+            except Exception as balance_err:
+                print(f"Balance totals enrichment for submission status: {balance_err}")
 
         
 
@@ -3389,7 +3193,45 @@ def get_submission_status(submission_id):
 
             else:
 
-                return jsonify({'success': False, 'error': 'Submission not found'}), 404
+                submission_data = None
+
+                for doc_type, model in (
+                    ('balance_sheet', None),
+                    ('income_statement', None),
+                    ('budget_report', None),
+                ):
+                    try:
+                        if doc_type == 'balance_sheet':
+                            from models.balance_sheet_models import balance_sheet_model as doc_model
+                        elif doc_type == 'income_statement':
+                            from models.income_statement_models import income_statement_model as doc_model
+                        else:
+                            from models.budget_report_models import budget_report_model as doc_model
+                        db_session = doc_model.get_session(submission_id)
+                        if db_session:
+                            from utils.session_workflow import (
+                                CLERK_ACTIONABLE_REJECTION_STATUSES,
+                                effective_workflow_status,
+                            )
+
+                            meta = getattr(db_session, 'metadata', None) or {}
+                            eff = effective_workflow_status(db_session)
+                            submission_data = {
+                                'user_id': db_session.user_id,
+                                'status': eff,
+                                'submission_timestamp': meta.get('submitted_at'),
+                                'review_notes': meta.get('review_notes', ''),
+                                'rejection_reason': meta.get('rejection_reason', '')
+                                if eff in CLERK_ACTIONABLE_REJECTION_STATUSES
+                                else '',
+                                'document_type': doc_type,
+                            }
+                            break
+                    except Exception:
+                        continue
+
+                if not submission_data:
+                    return jsonify({'success': False, 'error': 'Submission not found'}), 404
 
         
 
@@ -3401,15 +3243,27 @@ def get_submission_status(submission_id):
 
         
 
-        # Determine if file can be edited
+        locked_statuses = {
+            'pending', 'submitted', 'approved',
+            'pending_review', 'pending_cfo', 'approved_by_manager',
+        }
+        status = submission_data['status']
+        is_locked = status in locked_statuses
+
+        from utils.session_workflow import CLERK_ACTIONABLE_REJECTION_STATUSES
 
         can_edit = (
+            status in ('draft', 'uploaded', 'processing', 'mapped', 'validated', 'resubmitted')
+            or (
+                status in CLERK_ACTIONABLE_REJECTION_STATUSES
+                and submission_data['user_id'] == user.id
+            )
+        ) and not is_locked
 
-            submission_data['status'] == 'draft' or 
-
-            (submission_data['status'] == 'rejected' and submission_data['user_id'] == user.id)
-
-        )
+        rejection_reason = ''
+        if status in CLERK_ACTIONABLE_REJECTION_STATUSES:
+            rejection_reason = submission_data.get('rejection_reason', '')
+        is_correction_mode = status in CLERK_ACTIONABLE_REJECTION_STATUSES
 
         
 
@@ -3417,17 +3271,21 @@ def get_submission_status(submission_id):
 
             'success': True,
 
-            'status': submission_data['status'],
+            'status': status,
 
-            'locked': submission_data.get('locked', False),
+            'locked': submission_data.get('locked', is_locked),
 
             'can_edit': can_edit,
+
+            'is_correction_mode': is_correction_mode,
+
+            'rejection_reason': rejection_reason,
 
             'submission_timestamp': submission_data.get('submission_timestamp'),
 
             'review_notes': submission_data.get('review_notes', ''),
 
-            'message': f"File is {submission_data['status']}"
+            'message': f"File is {status}"
 
         })
 
@@ -3850,7 +3708,18 @@ def get_user_submissions():
 
         
 
+        from utils.session_workflow import (
+            session_hidden_from_clerk_history,
+            session_pending_approval,
+            session_submitted_at,
+            session_submitted_for_review,
+        )
+
         for session in all_sessions:
+            if session_hidden_from_clerk_history(session):
+                continue
+            if not session_submitted_for_review(session):
+                continue
 
             # Fast account counts from metadata only - NO EXPENSIVE FALLBACKS
 
@@ -3896,15 +3765,14 @@ def get_user_submissions():
 
             
 
-            # Check if submission should be locked based on status
-
-            # Submissions that have been submitted for review should be locked
-
-            # 'mapped' status means accounts have been mapped and submission is locked for editing
-
-            locked_statuses = ['mapped', 'pending', 'submitted', 'approved', 'rejected', 'uploaded', 'pending_review']
-
-            locked_status = validation_status in locked_statuses
+            # Submissions awaiting review are locked for the clerk.
+            # Returned-for-correction statuses must stay editable.
+            locked_statuses = [
+                'pending', 'submitted', 'approved',
+                'pending_review', 'pending_cfo', 'approved_by_manager',
+            ]
+            correction_statuses = frozenset({'rejected', 'rejected_by_manager', 'rejected_by_cfo'})
+            locked_status = validation_status in locked_statuses and validation_status not in correction_statuses
 
             
 
@@ -3912,18 +3780,22 @@ def get_user_submissions():
             document_type = getattr(session, 'document_type', 'balance_sheet')  # Default to balance_sheet for backward compatibility
             
             # Format submission data
+            submitted_ts = session_submitted_at(session)
             submission_data = {
                 'session_id': session.id,
                 'user_id': session.user_id,
                 'filename': session.original_filename or session.filename,
                 'filepath': session.filename,
-                'submission_timestamp': session.created_at.isoformat() if session.created_at else None,
+                'submission_timestamp': submitted_ts.isoformat() if submitted_ts else None,
+                'submitted_at': submitted_ts.isoformat() if submitted_ts else None,
                 'status': validation_status,
+                'pending_approval': session_pending_approval(session),
                 'mapped_accounts_count': mapped_accounts_count,
                 'total_accounts_count': total_accounts_count,
                 'file_type': session.file_type,
                 'document_type': document_type,  # Add document type field
                 'review_notes': session.metadata.get('review_notes', ''),
+                'rejection_reason': session.metadata.get('rejection_reason', ''),
                 'locked': locked_status,
                 'grap_mapping': session.metadata.get('grap_mapping', {}),
                 'structure_info': session.metadata.get('structure_info', {}),
@@ -4216,11 +4088,111 @@ def close_submission(submission_id):
 
 
 
-@app.route('/api/submissions/pending')
-
+@app.route('/api/submission/<submission_id>/approve', methods=['POST'])
 @login_required
+@permission_required('process')
+def submit_for_approval(submission_id):
+    """Submit a document for approval workflow"""
+    try:
+        user = get_current_user()
+        data = request.get_json()
+        action = data.get('action')
+        
+        if action != 'submit_for_approval':
+            return jsonify({'success': False, 'error': 'Invalid action'}), 400
+        
+        # Use universal lookup approach to find submission across all document types
+        submission_data = None
+        document_type = None
+        session = None
+        
+        # Try each document type model
+        for doc_type in ['balance_sheet', 'income_statement', 'budget_report']:
+            try:
+                if doc_type == 'balance_sheet':
+                    from models.balance_sheet_models import balance_sheet_model
+                    session = balance_sheet_model.get_session(submission_id)
+                elif doc_type == 'income_statement':
+                    from models.income_statement_models import income_statement_model
+                    session = income_statement_model.get_session(submission_id)
+                elif doc_type == 'budget_report':
+                    from models.budget_report_models import budget_report_model
+                    session = budget_report_model.get_session(submission_id)
+                
+                if session:
+                    # Create submission-like data from session
+                    submission_data = {
+                        'id': session.id,
+                        'submission_name': f'{doc_type.replace("_", " ").title()} Submission',
+                        'original_filename': getattr(session, 'original_filename', 'Unknown'),
+                        'status': session.status,
+                        'user_id': session.user_id,
+                        'document_type': doc_type,
+                        'created_at': session.created_at.isoformat() if session.created_at else None,
+                    }
+                    document_type = doc_type
+                    print(f"✅ Found session for approval: {submission_id} ({doc_type})")
+                    break
+                    
+            except Exception as model_error:
+                continue
+        
+        if not submission_data:
+            return jsonify({'success': False, 'error': 'Submission not found'}), 404
+        
+        # Check if user owns this submission
+        if submission_data['user_id'] != user.id:
+            return jsonify({'success': False, 'error': 'Permission denied'}), 403
 
-@permission_required('approve')
+        from controllers.routes_universal import (
+            _clerk_mapping_locked_json_error,
+            _period_lock_json_error,
+            require_balanced_session,
+        )
+
+        lock_resp = _period_lock_json_error(submission_id, document_type)
+        if lock_resp:
+            return lock_resp
+
+        locked_resp = _clerk_mapping_locked_json_error(submission_id, document_type)
+        if locked_resp:
+            return locked_resp
+
+        balanced, balance_error = require_balanced_session(submission_id, document_type)
+        if not balanced:
+            return jsonify({'success': False, 'error': balance_error}), 400
+        
+        from services.universal_workflow_service import UniversalWorkflowService
+
+        wf = UniversalWorkflowService()
+        result = wf.submit_for_review(
+            document_type=document_type,
+            session_id=submission_id,
+            user_id=user.id,
+            notes='Submitted from submission status page',
+        )
+        if result.get('success'):
+            return jsonify({
+                'success': True,
+                'message': result.get('message') or f'{submission_data["submission_name"]} submitted for review',
+                'new_status': result.get('new_status'),
+            })
+        return jsonify({
+            'success': False,
+            'error': result.get('error', 'Failed to submit for review'),
+        }), 400
+            
+    except Exception as e:
+        app.logger.error(f"Error submitting for approval: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error submitting for approval: {str(e)}'
+        }), 500
+
+
+@app.route('/api/submissions/pending')
+@login_required
+@permission_required('approve', 'final_approve')
 
 def get_pending_submissions():
 
@@ -4838,230 +4810,32 @@ def save_mapping_progress():
 
     """
 
-    API endpoint to save mapping progress during review
-
-    Allows finance clerks to save their work and continue later
+    Draft mapping save is disabled — data is kept in staging until Submit for Review.
 
     """
 
-    try:
-
-        data = request.get_json()
-
-        session_id = data.get('session_id')
-
-        auto_mapped_accounts = data.get('auto_mapped_accounts', [])
-
-        unmapped_accounts = data.get('unmapped_accounts', [])
-
-        
-
-        if not session_id:
-
-            return jsonify({'success': False, 'error': 'No session ID provided'}), 400
-
-        
-
-        user = get_current_user()
-
-        
-
-        # Get session data
-
-        from services.flexible_balance_sheet_service import flexible_balance_sheet_service
-
-        session_data = flexible_balance_sheet_service.get_session_data(session_id)
-
-        
-
-        if not session_data or not session_data.get('success'):
-
-            return jsonify({'success': False, 'error': 'Session data not found or invalid'}), 404
-
-        
-
-        # Update session with mapping progress
-
-        progress_data = {
-
-            'auto_mapped_accounts': auto_mapped_accounts,
-
-            'unmapped_accounts': unmapped_accounts,
-
-            'saved_at': data.get('saved_at', datetime.now().isoformat()),
-
-            'saved_by': user.username,
-
-            'status': 'in_progress'  # Mark as in progress
-
-        }
-
-        
-
-        # Save progress to session metadata
-
-        flexible_balance_sheet_service.update_session_metadata(session_id, {
-
-            'mapping_progress': progress_data,
-
-            'last_saved_by': user.id,
-
-            'last_saved_at': datetime.now().isoformat()
-
-        })
-
-        
-
-        return jsonify({
-
-            'success': True,
-
-            'message': 'Mapping progress saved successfully',
-
-            'saved_at': progress_data['saved_at']
-
-        })
-
-
-
-    except Exception as e:
-
-        print(f"Error saving mapping progress: {str(e)}")
-
-        return jsonify({'success': False, 'error': f'Failed to save mapping progress: {str(e)}'}), 500
-
+    return jsonify({
+        'success': False,
+        'error': 'Saving mapping drafts is not supported. Complete mapping and use Submit for Review.',
+    }), 410
 
 
 @app.route('/api/processing', methods=['POST'])
-
 @login_required
-
 def process_grap_mapping():
-
-    """
-
-    Process GRAP mapping for uploaded financial documents
-
-    This endpoint is called after successful file upload to perform account mapping
-
-    """
-
+    """Deprecated alias — use POST /api/universal/process-grap-mapping."""
     try:
-
-        print(" GRAP processing endpoint called")
-
-        
-
-        # Get request data
-
-        data = request.get_json()
-
+        data = request.get_json() or {}
         if not data:
-
             return jsonify({'success': False, 'error': 'No data provided'}), 400
-
-        
-
-        session_id = data.get('session_id')
-
-        if not session_id:
-
-            return jsonify({'success': False, 'error': 'Session ID required'}), 400
-
-        
-
-        print(f" Processing session: {session_id}")
-
-        
-
-        # Get current user
-
         current_user = get_current_user()
-
         if not current_user:
-
             return jsonify({'success': False, 'error': 'User not authenticated'}), 401
-
-        
-
-        # Import the universal GRAP service for processing all document types
-
-        from services.universal_grap_service import universal_grap_service
-
-        
-
-        # Process GRAP mapping for any document type
-
-        result = universal_grap_service.process_grap_mapping(session_id, current_user.id)
-
-        
-
-        if result['success']:
-
-            print(f" GRAP processing completed for session: {session_id}")
-
-            return jsonify(result)
-
-        else:
-
-            print(f" GRAP processing failed: {result.get('error', 'Unknown error')}")
-
-            return jsonify(result), 400
-
-            
-
+        from controllers.handlers.grap_processing import process_grap_mapping_request
+        return process_grap_mapping_request(
+            data.get('session_id'),
+            current_user.id,
+            data.get('document_type'),
+        )
     except Exception as e:
-
-        print(f" Error in GRAP processing: {str(e)}")
-
-        import traceback
-
-        print(f"Traceback: {traceback.format_exc()}")
-
-        return jsonify({
-
-            'success': False,
-
-            'error': f'Error processing GRAP mapping: {str(e)}'
-
-        }), 500
-
-
-
-
-
-@app.route('/debug')
-
-def debug_page():
-
-    """
-
-    Simple debug page for testing
-
-    """
-
-    from flask import session
-
-    user = get_current_user()
-
-    return render_template('debug.html', user=user, session=session)
-
-
-
-
-
-# Make user functions available in templates
-
-@app.context_processor
-
-def inject_user():
-
-    return {
-
-        'current_user': get_current_user(),
-
-        'get_role_description': get_role_description,
-
-        'get_role_color': get_role_color
-
-    }
+        return jsonify({'success': False, 'error': str(e)}), 500

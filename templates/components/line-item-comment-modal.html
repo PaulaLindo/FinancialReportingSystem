@@ -1,17 +1,15 @@
-<!-- Line Item Comment Modal Component -->
-<!-- For Finance Manager to add comments on specific financial statement line items -->
-<div id="lineItemCommentModal" class="modal visibility--hidden">
-    <div class="modal-overlay" data-action="close-comment-modal"></div>
-    <div class="modal-content comment-modal-content">
-        <!-- Modal Header -->
+<!-- Line item comment — scoped data-action values (must not collide with statement review / main.js) -->
+<div id="lineItemCommentModal" class="line-item-comment-modal visibility--hidden" aria-hidden="true">
+    <div class="line-item-comment-modal__overlay" data-action="close-line-item-comment-modal" aria-label="Close dialog"></div>
+    <div class="line-item-comment-modal__panel comment-modal-content" role="dialog" aria-modal="true" aria-labelledby="lineItemCommentTitle">
         <div class="modal-header">
             <div class="modal-title-section">
-                <h3 class="modal-title">Add Line Item Comment</h3>
+                <h3 class="modal-title" id="lineItemCommentTitle">Add Line Item Comment</h3>
                 <div class="modal-subtitle">
-                    <span id="commentAccountInfo" class="account-info">Account: Loading...</span>
+                    <span id="commentAccountInfo" class="account-info">Account: Loading…</span>
                 </div>
             </div>
-            <button type="button" class="modal-close" data-action="close-comment-modal" aria-label="Close modal">
+            <button type="button" class="modal-close" data-action="close-line-item-comment-modal" aria-label="Close modal">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -19,9 +17,7 @@
             </button>
         </div>
 
-        <!-- Modal Body -->
         <div class="modal-body">
-            <!-- Account Information -->
             <div class="account-details-section">
                 <div class="account-info-grid">
                     <div class="info-item">
@@ -43,39 +39,35 @@
                 </div>
             </div>
 
-            <!-- Comment Types -->
             <div class="comment-type-section">
                 <h4 class="section-title">Comment Type</h4>
                 <div class="comment-type-options">
                     <label class="comment-type-option">
-                        <input type="radio" name="commentType" value="calculation" class="comment-type-radio" checked>
+                        <input type="radio" name="lineItemCommentType" value="calculation" class="comment-type-radio" checked>
                         <span class="comment-type-label">
                             <span class="type-icon">🧮</span>
                             <span class="type-text">Calculation Issue</span>
                         </span>
                         <span class="type-description">Problem with formula or calculation logic</span>
                     </label>
-                    
                     <label class="comment-type-option">
-                        <input type="radio" name="commentType" value="mapping" class="comment-type-radio">
+                        <input type="radio" name="lineItemCommentType" value="mapping" class="comment-type-radio">
                         <span class="comment-type-label">
                             <span class="type-icon">📍</span>
                             <span class="type-text">Mapping Issue</span>
                         </span>
                         <span class="type-description">Incorrect GRAP category mapping</span>
                     </label>
-                    
                     <label class="comment-type-option">
-                        <input type="radio" name="commentType" value="data" class="comment-type-radio">
+                        <input type="radio" name="lineItemCommentType" value="data" class="comment-type-radio">
                         <span class="comment-type-label">
                             <span class="type-icon">📊</span>
                             <span class="type-text">Data Issue</span>
                         </span>
                         <span class="type-description">Source data problem or discrepancy</span>
                     </label>
-                    
                     <label class="comment-type-option">
-                        <input type="radio" name="commentType" value="general" class="comment-type-radio">
+                        <input type="radio" name="lineItemCommentType" value="general" class="comment-type-radio">
                         <span class="comment-type-label">
                             <span class="type-icon">💬</span>
                             <span class="type-text">General Comment</span>
@@ -85,25 +77,21 @@
                 </div>
             </div>
 
-            <!-- Comment Input -->
             <div class="comment-input-section">
                 <h4 class="section-title">Comment Details</h4>
                 <div class="comment-form">
                     <div class="form-group">
-                        <label for="commentSubject" class="form-label">Subject</label>
-                        <input type="text" id="commentSubject" class="form-input" placeholder="Brief subject for the comment">
+                        <label for="commentSubject" class="form-label">Subject (optional)</label>
+                        <input type="text" id="commentSubject" class="form-input" placeholder="Brief subject for the comment" autocomplete="off">
                     </div>
-                    
                     <div class="form-group">
-                        <label for="commentText" class="form-label">Comment</label>
-                        <textarea id="commentText" class="form-textarea" rows="4" placeholder="Detailed comment explaining the issue or observation..."></textarea>
+                        <label for="commentText" class="form-label">Comment <span class="text-muted">(required to save)</span></label>
+                        <textarea id="commentText" class="form-textarea" rows="4" placeholder="Describe the issue or observation…"></textarea>
                     </div>
-                    
                     <div class="form-group">
                         <label for="correctionSuggestion" class="form-label">Suggested Correction (Optional)</label>
                         <textarea id="correctionSuggestion" class="form-textarea" rows="3" placeholder="Suggest how this should be corrected..."></textarea>
                     </div>
-                    
                     <div class="form-group">
                         <label for="urgencyLevel" class="form-label">Urgency Level</label>
                         <select id="urgencyLevel" class="form-select">
@@ -112,14 +100,13 @@
                             <option value="high">High - Critical issue, must be addressed immediately</option>
                         </select>
                     </div>
+                    <p class="form-hint text-muted" id="lineItemCommentActionHint">Type in <strong>Comment</strong> to enable Save / Approve / Reject actions.</p>
                 </div>
             </div>
 
-            <!-- Previous Comments -->
             <div class="previous-comments-section" id="previousCommentsSection">
                 <h4 class="section-title">Previous Comments</h4>
                 <div class="comments-list" id="previousCommentsList">
-                    <!-- Previous comments will be loaded here -->
                     <div class="no-comments">
                         <p>No previous comments for this line item.</p>
                     </div>
@@ -127,19 +114,18 @@
             </div>
         </div>
 
-        <!-- Modal Footer -->
         <div class="modal-footer">
             <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" data-action="close-comment-modal">
+                <button type="button" class="btn btn-secondary" data-action="close-line-item-comment-modal">
                     Cancel
                 </button>
-                <button type="button" class="btn btn-warning" data-action="save-comment-only">
+                <button type="button" class="btn btn-warning" data-action="save-line-item-comment" disabled>
                     💾 Save Comment
                 </button>
-                <button type="button" class="btn btn-danger" data-action="reject-with-comment">
+                <button type="button" class="btn btn-danger" data-action="reject-with-line-item-comment" disabled>
                     ✗ Reject with Comment
                 </button>
-                <button type="button" class="btn btn-success" data-action="approve-with-comment">
+                <button type="button" class="btn btn-success" data-action="approve-with-line-item-comment" disabled>
                     ✓ Approve with Comment
                 </button>
             </div>

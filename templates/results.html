@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<div class="results-page">
+<div class="page page--results results-page">
     <div class="results-header">
         <div class="container-content">
             <h1>Processing Results</h1>
@@ -55,8 +55,15 @@
                     </div>
                 </div>
                 <div class="results-actions">
-                    {% if current_user and current_user.can_generate_pdf() %}
-                    <button class="btn btn-primary" id="downloadPdf">Download PDF</button>
+                    {% if current_user and current_user.can_download_pdf() %}
+                    <div class="pdf-gate-wrap pdf-gate-wrap--blocked" data-pdf-gate-wrap data-pdf-gate-mode="download">
+                        <p class="pdf-gate-notice" data-pdf-gate-notice>
+                            Checking whether this reporting period is locked…
+                        </p>
+                        <button class="btn btn-primary pdf-gate-action pdf-gate-action--hidden" id="downloadPdf" data-pdf-gate-action type="button" disabled>
+                            Download PDF
+                        </button>
+                    </div>
                     {% endif %}
                     <button class="btn btn-secondary" id="fullscreenBtn">Full Screen</button>
                 </div>
@@ -116,7 +123,14 @@
                 <h2>Next Steps</h2>
                 <div class="action-buttons grid-auto-fit">
                     {% if current_user and current_user.can_generate_pdf() %}
-                    <button id="generatePdfBtn" class="btn btn-primary btn-lg" type="button">Generate PDF Report</button>
+                    <div class="pdf-gate-wrap pdf-gate-wrap--blocked" data-pdf-gate-wrap data-pdf-gate-mode="generate">
+                        <p class="pdf-gate-notice" data-pdf-gate-notice>
+                            Checking whether this reporting period is locked…
+                        </p>
+                        <button id="generatePdfBtn" class="btn btn-primary btn-lg pdf-gate-action pdf-gate-action--hidden" data-pdf-gate-action type="button" disabled>
+                            Generate PDF Report
+                        </button>
+                    </div>
                     {% endif %}
                     {% if current_user and current_user.can_upload() %}
                     <button id="uploadAnotherBtn" class="btn btn-secondary" type="button">Upload Another Balance Sheet</button>
@@ -132,5 +146,6 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/pdf-period-gate.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pdf-preview.js') }}"></script>
 {% endblock %}

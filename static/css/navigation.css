@@ -2,18 +2,8 @@
 /* Varydian Financial Reporting System */
 
 /* ======================================== */
-/* CONTAINER CLASSES */
-/* ======================================== */
-
-.container-content {
-    max-width: var(--container-2xl);
-    margin: 0 auto;
-    padding: 0 var(--fluid-space-md);
-    position: relative;
-}
-
-/* ======================================== */
 /* NAVIGATION CONTAINER */
+/* (.container-content lives in layout.css) */
 /* ======================================== */
 
 .navbar {
@@ -26,8 +16,8 @@
 
 /* Override container constraint for navbar */
 .navbar .container-content {
-    max-width: none; /* Remove max-width constraint */
-    padding: 0 var(--fluid-space-sm); /* Adjust padding */
+    max-width: none;
+    padding: 0 clamp(var(--fluid-space-md), 3vw, var(--fluid-space-xl));
 }
 
 /* Navigation Header - Flexbox Layout */
@@ -39,11 +29,7 @@
     min-width: 0; /* Allow flex items to shrink */
 }
 
-/* User section positioned independently in nav-header */
-.navbar .nav-header .nav-user-section {
-    margin-left: auto; /* Push to the far right */
-    flex-shrink: 0; /* Prevent shrinking */
-}
+/* User block sits inside .nav-desktop-menu (see .nav-desktop-menu .nav-user-section) */
 
 /* ======================================== */
 /* NAVIGATION BRAND */
@@ -65,7 +51,7 @@
 
 .nav-brand-text {
     display: grid;
-    gap: var(--fluid-space-4xs);
+    gap: var(--fluid-space-3xs);
 }
 
 .nav-brand h2 {
@@ -150,12 +136,12 @@
 .nav-desktop-menu {
     display: flex;
     align-items: center;
-    gap: var(--fluid-space-md); /* Increased gap */
-    flex: 4; /* Take maximum available space */
-    min-width: 0; /* Allow flex items to shrink */
-    overflow: hidden;
-    justify-content: flex-start; /* Align navigation to the left */
-    margin-left: var(--fluid-space-6xl); /* Push navigation more to the right */
+    gap: var(--fluid-space-md);
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: visible;
+    justify-content: space-between;
+    margin-left: var(--fluid-space-lg);
 }
 
 /* ======================================== */
@@ -303,12 +289,19 @@
 /* USER SECTION - DESKTOP */
 /* ======================================== */
 
-.nav-user-section {
+.nav-desktop-menu .nav-user-section {
     display: flex;
     align-items: center;
-    gap: var(--fluid-space-sm); /* Increased gap between user info and logout */
-    flex-shrink: 0; /* Prevent user section from shrinking */
-    min-width: clamp(85px, 13vw, 160px); /* Slightly increased width for larger button */
+    gap: var(--fluid-space-sm);
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.nav-user-section .btn.btn-sm {
+    min-width: unset;
+    width: auto;
+    white-space: nowrap;
+    padding-inline: var(--fluid-space-md);
 }
 
 .nav-user-info {
@@ -564,11 +557,11 @@
 /* Emergency breakpoint for very small screens with many tabs */
 @media (max-width: 1200px) {
     .nav-desktop-menu .nav-menu {
-        gap: var(--fluid-space-4xs); /* Ultra minimal gap */
+        gap: var(--fluid-space-3xs); /* Ultra minimal gap */
     }
     
     .nav-desktop-menu .nav-menu a {
-        padding: var(--fluid-space-4xs) var(--fluid-space-3xs); /* Ultra minimal padding */
+        padding: var(--fluid-space-3xs) var(--fluid-space-3xs); /* Ultra minimal padding */
         min-height: clamp(24px, 3vw, 28px); /* Even smaller height */
         min-width: clamp(40px, 5vw, 60px); /* Ultra small minimum */
         max-width: clamp(60px, 8vw, 90px); /* Ultra small maximum */
@@ -580,11 +573,11 @@
 /* Ultra emergency breakpoint for extremely crowded navigation */
 @media (max-width: 1000px) {
     .nav-desktop-menu .nav-menu {
-        gap: var(--fluid-space-4xs); /* Ultra minimal gap */
+        gap: var(--fluid-space-3xs); /* Ultra minimal gap */
     }
     
     .nav-desktop-menu .nav-menu a {
-        padding: var(--fluid-space-4xs) var(--fluid-space-3xs); /* Ultra minimal padding */
+        padding: var(--fluid-space-3xs) var(--fluid-space-3xs); /* Ultra minimal padding */
         min-height: clamp(22px, 2.5vw, 26px); /* Smallest possible height */
         min-width: clamp(35px, 4.5vw, 55px); /* Smallest possible width */
         max-width: clamp(55px, 7vw, 85px); /* Smallest maximum */
@@ -652,10 +645,12 @@
     .nav-desktop-menu {
         display: flex;
         align-items: center;
-        gap: var(--fluid-space-md); /* Increased gap */
-        flex: 4; /* Take maximum available space */
-        justify-content: flex-start; /* Align navigation to the left */
-        margin-left: var(--fluid-space-6xl); /* Push navigation more to the right */
+        gap: var(--fluid-space-md);
+        flex: 1 1 auto;
+        min-width: 0;
+        justify-content: space-between;
+        margin-left: var(--fluid-space-lg);
+        overflow: visible;
     }
     
     /* Desktop user info sizing and positioning */
@@ -691,12 +686,6 @@
         text-align: center;
     }
     
-    /* User section positioned on far right - higher specificity */
-    .navbar .nav-header .nav-user-section {
-        margin-left: auto; /* Push to the far right */
-        flex-shrink: 0; /* Prevent shrinking */
-    }
-        
     /* Desktop navigation button standardization */
     .nav-menu a {
         padding: var(--fluid-space-sm) var(--fluid-space-md); /* Increased padding */
@@ -722,10 +711,28 @@
         display: flex;
         flex-direction: row;
         align-items: center;
-        gap: var(--fluid-space-xs); /* Further reduced gap */
-        flex: 1;
-        min-width: 0; /* Allow flex items to shrink */
+        gap: var(--fluid-space-xs);
+        flex: 1 1 auto;
+        min-width: 0;
+        flex-wrap: wrap;
+        overflow: visible;
+    }
+}
+
+/* Tight desktop: keep logout visible — trim link padding before clipping user block */
+@media (min-width: 1024px) and (max-width: 1280px) {
+    .nav-desktop-menu .nav-menu a {
+        padding: var(--fluid-space-xs) var(--fluid-space-sm);
+        min-width: unset;
+        max-width: none;
+        font-size: var(--text-xs);
+    }
+
+    .nav-user-name {
+        max-width: 7rem;
         overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 }
 

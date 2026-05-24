@@ -18,7 +18,7 @@ from scripts.seed_grap_accounts import seed_grap_accounts
 
 def check_environment():
     """Check if environment variables are set"""
-    required_vars = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']
+    required_vars = ['SUPABASE_URL', 'SUPABASE_SECRET_KEY']
     missing_vars = []
     
     for var in required_vars:
@@ -142,7 +142,7 @@ def show_usage():
     print("  3. Supabase client configured")
     print("\nEnvironment Variables Required:")
     print("  - SUPABASE_URL")
-    print("  - SUPABASE_SERVICE_ROLE_KEY")
+    print("  - SUPABASE_SECRET_KEY")
     print("  - SUPABASE_ANON_KEY")
     print("\nFiles Used:")
     print("  - supabase_balance_sheet_schema.sql")

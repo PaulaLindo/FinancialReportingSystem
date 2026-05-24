@@ -1,0 +1,542 @@
+/* Formula transparency modal — responsive layout & polish */
+
+#formulaModal.formula-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal, 1050);
+    box-sizing: border-box;
+    overflow: auto;
+    padding: clamp(0.5rem, 3vw, 1.5rem);
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-overflow-scrolling: touch;
+}
+
+#formulaModal.formula-modal-overlay.visibility--hidden {
+    display: none !important;
+}
+
+#formulaModal.formula-modal-overlay.display-flex {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+#formulaModal .formula-modal-container {
+    width: 100%;
+    max-width: min(56rem, 100%);
+    max-height: min(94vh, 56rem);
+    margin: clamp(0.25rem, 2vw, 1rem) auto;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-primary, #fff);
+    border-radius: var(--radius-xl, 1rem);
+    border: 1px solid var(--border-primary, #e2e8f0);
+    box-shadow: var(--shadow-xl, 0 24px 48px rgba(15, 23, 42, 0.18));
+    color: var(--text-primary, #0f172a);
+}
+
+/* —— Header —— */
+#formulaModal .formula-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--fluid-space-md);
+    padding: clamp(1rem, 3vw, 1.5rem) clamp(1rem, 3vw, 1.75rem);
+    border-bottom: 1px solid var(--border-primary, #e2e8f0);
+    background: linear-gradient(180deg, var(--bg-secondary, #f8fafc) 0%, var(--bg-primary, #fff) 100%);
+    flex-shrink: 0;
+}
+
+#formulaModal .formula-modal-title-section {
+    flex: 1;
+    min-width: 0;
+}
+
+#formulaModal .formula-modal-title {
+    margin: 0 0 var(--fluid-space-xs);
+    font-size: clamp(1.05rem, 2.8vw, 1.35rem);
+    font-weight: var(--font-bold, 700);
+    line-height: 1.3;
+    color: var(--text-primary);
+    word-break: break-word;
+}
+
+#formulaModal .formula-modal-subtitle {
+    margin: 0;
+}
+
+#formulaModal .audit-reference {
+    display: block;
+    font-size: clamp(0.75rem, 1.8vw, 0.875rem);
+    line-height: 1.5;
+    color: var(--text-secondary, #475569);
+    word-break: break-word;
+}
+
+#formulaModal .formula-modal-close {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-full, 999px);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+#formulaModal .formula-modal-close:hover {
+    background: var(--bg-tertiary, #f1f5f9);
+    color: var(--text-primary);
+    border-color: var(--primary-300, #93c5fd);
+}
+
+/* —— Body —— */
+#formulaModal .formula-modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: clamp(1rem, 3vw, 1.5rem);
+    font-size: clamp(0.875rem, 1.8vw, 1rem);
+    line-height: 1.55;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.25rem, 3vw, 2rem);
+}
+
+#formulaModal .formula-section {
+    background: var(--bg-secondary, #f8fafc);
+    border: 1px solid var(--border-primary, #e2e8f0);
+    border-radius: var(--radius-lg, 0.75rem);
+    padding: clamp(1rem, 2.5vw, 1.25rem);
+}
+
+#formulaModal .formula-section-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fluid-space-sm);
+    margin-bottom: var(--fluid-space-md);
+    padding-bottom: var(--fluid-space-sm);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+#formulaModal .formula-section-title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fluid-space-xs);
+    margin: 0;
+    font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+    font-weight: var(--font-semibold, 600);
+    color: var(--text-primary);
+}
+
+#formulaModal .formula-section-title svg {
+    flex-shrink: 0;
+    color: var(--primary-600, #2563eb);
+}
+
+#formulaModal .formula-section-badge {
+    padding: 0.2em 0.65em;
+    border-radius: var(--radius-full, 999px);
+    font-size: var(--fluid-text-xs, 0.75rem);
+    font-weight: var(--font-semibold, 600);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--primary-100, #dbeafe);
+    color: var(--primary-800, #1e40af);
+}
+
+/* Variables grid */
+#formulaModal .variables-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--fluid-space-md);
+}
+
+@media (min-width: 600px) {
+    #formulaModal .variables-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    #formulaModal .variables-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+#formulaModal .variable-item {
+    padding: var(--fluid-space-md);
+    background: var(--bg-primary, #fff);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#formulaModal .variable-item:hover {
+    border-color: var(--primary-200, #bfdbfe);
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(37, 99, 235, 0.08));
+}
+
+#formulaModal .variable-label {
+    font-weight: var(--font-semibold, 600);
+    font-size: var(--fluid-text-sm, 0.875rem);
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+#formulaModal .variable-detail {
+    margin: 0 0 0.5rem;
+    font-size: clamp(0.75rem, 1.6vw, 0.8125rem);
+    line-height: 1.45;
+    color: var(--text-secondary, #64748b);
+}
+
+#formulaModal .variable-value {
+    font-weight: var(--font-semibold, 600);
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(0.875rem, 1.8vw, 0.9375rem);
+    color: var(--primary-800, #1e40af);
+    word-break: break-all;
+    padding: 0.35rem 0.5rem;
+    background: var(--primary-50, #eff6ff);
+    border-radius: var(--radius-sm);
+    margin-bottom: 0.35rem;
+}
+
+#formulaModal a.variable-source-link,
+#formulaModal button.variable-source-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+    color: var(--primary-700, #1d4ed8);
+    font-size: clamp(0.75rem, 1.6vw, 0.8125rem);
+    font-weight: var(--font-medium, 500);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+#formulaModal a.variable-source-link:hover,
+#formulaModal button.variable-source-link:hover {
+    background: var(--primary-50, #eff6ff);
+    border-color: var(--primary-300, #93c5fd);
+}
+
+/* Calculation flow */
+#formulaModal .calculation-flow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fluid-space-lg);
+}
+
+#formulaModal .formula-display {
+    padding: var(--fluid-space-md);
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--primary-300, #93c5fd);
+}
+
+#formulaModal .formula-label {
+    font-size: var(--fluid-text-xs, 0.75rem);
+    font-weight: var(--font-semibold, 600);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted, #64748b);
+    margin-bottom: 0.35rem;
+}
+
+#formulaModal .formula-expression {
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text-primary);
+    font-size: clamp(0.875rem, 1.8vw, 0.9375rem);
+    line-height: 1.5;
+}
+
+#formulaModal .calculation-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+#formulaModal .calculation-step {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    column-gap: var(--fluid-space-md);
+    row-gap: var(--fluid-space-xs);
+    align-items: start;
+    padding: var(--fluid-space-md) 0;
+    margin-left: 1.25rem;
+    border-left: 2px solid var(--primary-200, #bfdbfe);
+}
+
+#formulaModal .calculation-step:last-of-type {
+    border-left-color: var(--success-300, #86efac);
+}
+
+#formulaModal .step-number {
+    grid-column: 1;
+    grid-row: 1;
+    position: relative;
+    left: -1.35rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full, 999px);
+    background: var(--primary-600, #2563eb);
+    color: var(--white, #fff);
+    font-size: 0.8125rem;
+    font-weight: var(--font-bold, 700);
+    line-height: 1;
+    box-shadow: 0 0 0 3px var(--bg-secondary, #f8fafc);
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+#formulaModal .step-content {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    padding-bottom: var(--fluid-space-sm);
+}
+
+#formulaModal .step-formula {
+    font-size: clamp(0.8125rem, 1.7vw, 0.9rem);
+    color: var(--text-primary);
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+#formulaModal .step-result {
+    margin-top: 0.25rem;
+    font-size: clamp(0.875rem, 1.8vw, 0.9375rem);
+    font-weight: var(--font-semibold, 600);
+    font-variant-numeric: tabular-nums;
+    color: var(--primary-700, #1d4ed8);
+}
+
+#formulaModal .step-arrow {
+    display: none;
+    grid-column: 1 / -1;
+}
+
+#formulaModal .calculation-final {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: center;
+    gap: var(--fluid-space-sm) var(--fluid-space-md);
+    margin-top: var(--fluid-space-lg);
+    padding: var(--fluid-space-lg);
+    background: linear-gradient(135deg, var(--primary-600, #2563eb), var(--primary-700, #1d4ed8));
+    border-radius: var(--radius-lg);
+    color: var(--white, #fff);
+    text-align: center;
+}
+
+#formulaModal .final-label {
+    font-size: var(--fluid-text-sm, 0.875rem);
+    font-weight: var(--font-medium, 500);
+    opacity: 0.95;
+}
+
+#formulaModal .final-value {
+    font-size: clamp(1.15rem, 3vw, 1.5rem);
+    font-weight: var(--font-bold, 700);
+    font-variant-numeric: tabular-nums;
+}
+
+/* —— Footer —— */
+#formulaModal .formula-modal-footer {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--fluid-space-md);
+    padding: clamp(1rem, 3vw, 1.25rem) clamp(1rem, 3vw, 1.5rem);
+    border-top: 1px solid var(--border-primary);
+    background: var(--bg-secondary, #f8fafc);
+}
+
+#formulaModal .auditor-seal {
+    display: flex;
+    align-items: center;
+    gap: var(--fluid-space-sm);
+    padding: var(--fluid-space-sm) var(--fluid-space-md);
+    background: var(--bg-primary);
+    border: 1px solid var(--success-200, #bbf7d0);
+    border-radius: var(--radius-md);
+    align-self: center;
+}
+
+@media (min-width: 768px) {
+    #formulaModal .auditor-seal {
+        align-self: flex-start;
+    }
+}
+
+#formulaModal .seal-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-full, 999px);
+    background: var(--success-100, #dcfce7);
+    color: var(--success-700, #15803d);
+}
+
+#formulaModal .seal-title {
+    font-size: var(--fluid-text-xs, 0.75rem);
+    font-weight: var(--font-semibold, 600);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+#formulaModal .seal-status {
+    font-size: clamp(0.8125rem, 1.8vw, 0.875rem);
+    font-weight: var(--font-semibold, 600);
+    color: var(--success-700, #15803d);
+}
+
+#formulaModal .modal-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--fluid-space-sm);
+    width: 100%;
+}
+
+@media (min-width: 640px) {
+    #formulaModal .formula-modal-footer {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    #formulaModal .modal-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: auto;
+        flex: 1 1 auto;
+    }
+}
+
+@media (min-width: 1024px) {
+    #formulaModal .modal-actions {
+        justify-content: flex-end;
+    }
+}
+
+#formulaModal .processing-status-indicator {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem 0.5rem;
+    width: 100%;
+    padding: 0.35rem 0;
+    font-size: var(--fluid-text-sm, 0.875rem);
+}
+
+@media (min-width: 640px) {
+    #formulaModal .processing-status-indicator {
+        width: auto;
+        flex: 1 1 100%;
+        justify-content: flex-start;
+    }
+}
+
+@media (min-width: 900px) {
+    #formulaModal .processing-status-indicator {
+        flex: 0 1 auto;
+    }
+}
+
+#formulaModal .status-label {
+    color: var(--text-secondary);
+}
+
+#formulaModal .status-value {
+    font-weight: var(--font-semibold, 600);
+}
+
+#formulaModal .status-value.status-review {
+    color: var(--warning-700, #b45309);
+}
+
+#formulaModal .modal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: clamp(0.8125rem, 1.8vw, 0.875rem);
+    font-weight: var(--font-semibold, 600);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    white-space: nowrap;
+}
+
+@media (max-width: 639px) {
+    #formulaModal .modal-btn {
+        width: 100%;
+        white-space: normal;
+    }
+}
+
+#formulaModal .modal-btn-primary {
+    background: linear-gradient(135deg, var(--primary-600, #2563eb), var(--primary-700, #1d4ed8));
+    color: var(--white, #fff);
+    box-shadow: var(--shadow-sm);
+}
+
+#formulaModal .modal-btn-primary:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+#formulaModal .modal-btn-secondary {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--border-primary);
+}
+
+#formulaModal .modal-btn-secondary:hover {
+    background: var(--bg-tertiary, #f1f5f9);
+    border-color: var(--primary-300, #93c5fd);
+}
+
+#formulaModal .modal-btn-close {
+    background: var(--bg-tertiary, #f1f5f9);
+    color: var(--text-secondary);
+    border-color: var(--border-primary);
+}
+
+#formulaModal .modal-btn-close:hover {
+    color: var(--text-primary);
+}

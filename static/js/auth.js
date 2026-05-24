@@ -244,10 +244,11 @@ class AuthenticationModule {
     redirectByRole(role) {
         const roleRoutes = {
             'SYSTEM_ADMIN': '/admin',
-            'CFO': '/dashboard',
-            'FINANCE_MANAGER': '/approvals',
+            'CFO': '/finance-manager/review-queue',
+            'FINANCE_MANAGER': '/finance-manager/review-queue',
             'ASSET_MANAGER': '/upload',
-            'FINANCIAL_CLERK': '/approvals',
+            'FINANCE_CLERK': '/dashboard',
+            'FINANCIAL_CLERK': '/dashboard',
             'AUDITOR': '/reports'
         };
         

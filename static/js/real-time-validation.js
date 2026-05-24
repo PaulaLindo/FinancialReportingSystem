@@ -81,23 +81,25 @@ class RealTimeValidator {
             style.textContent = `
                 #realTimeProgress {
                     position: fixed;
-                    top: 20px;
-                    right: 20px;
+                    top: var(--fluid-space-lg, 1.25rem);
+                    left: 50%;
+                    right: auto;
+                    transform: translateX(-50%) translateY(-12px);
                     background: var(--white);
                     border: 1px solid var(--border-light);
-                    border-radius: var(--radius-md);
-                    padding: var(--fluid-space-md);
-                    box-shadow: var(--shadow-lg);
-                    z-index: 1000;
-                    min-width: 300px;
+                    border-radius: var(--radius-lg);
+                    padding: var(--fluid-space-md) var(--fluid-space-lg);
+                    box-shadow: var(--shadow-xl);
+                    z-index: 10050;
+                    min-width: min(20rem, 88vw);
+                    max-width: min(32rem, 92vw);
                     opacity: 0;
-                    transform: translateY(-20px);
-                    transition: all 0.3s ease;
+                    transition: opacity 0.28s ease, transform 0.28s ease;
                 }
                 
                 #realTimeProgress.show {
                     opacity: 1;
-                    transform: translateY(0);
+                    transform: translateX(-50%) translateY(0);
                 }
                 
                 .real-time-progress .progress-bar {
@@ -468,10 +470,10 @@ class RealTimeValidator {
         
         progressContainer.classList.add('show');
         
-        // Auto-hide after 3 seconds
+        // Auto-hide after 8 seconds (processing messages need time to read)
         setTimeout(() => {
             progressContainer.classList.remove('show');
-        }, 3000);
+        }, 8000);
     }
 
     hideProgress() {

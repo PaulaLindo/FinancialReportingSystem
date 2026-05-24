@@ -6,10 +6,16 @@
 // Initialize mapping data from sessionStorage or template
 window.mappingData = null;
 
+function normalizeMappingSessionId(raw) {
+    const s = String(raw == null ? '' : raw).trim();
+    if (!s || s === 'None' || s === 'null' || s === 'undefined') return '';
+    return s;
+}
+
 // Check if this is a review session (from upload processing)
 const urlParams = new URLSearchParams(window.location.search);
 const isReview = urlParams.get('review') === 'true';
-const sessionId = urlParams.get('session_id') || window.sessionId;
+const sessionId = normalizeMappingSessionId(urlParams.get('session_id') || window.sessionId);
 
 // Get mapping review data from sessionStorage if available
 if (isReview && sessionStorage.getItem('mappingReviewData')) {

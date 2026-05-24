@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Submission history{% if current_user and current_user.role == 'CFO' %} — CFO{% else %} — Finance Manager{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page page--fm-history fm-history-page">
+    <div class="container-content fm-settled-history-section">
+        <header class="content-page-header">
+            <h1>Submission history</h1>
+            {% if current_user and current_user.role == 'CFO' %}
+            <p>CFO final decisions only. Status badges show whether the Finance Manager or CFO acted. Pending items remain on <strong>Review</strong>.</p>
+            {% else %}
+            <p>Decisions by the Finance Manager and CFO. Status badges show who approved or rejected. Pending items remain on <strong>Review</strong>.</p>
+            {% endif %}
+        </header>
+
+        <div class="queue-filters">
+            <div class="filter-group">
+                <label for="fmHistoryStatusFilter" class="filter-label">Status</label>
+                <select id="fmHistoryStatusFilter" class="filter-select" data-user-role="{{ current_user.role if current_user else '' }}">
+                    <!-- Options populated by finance-manager-history.js per role -->
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="fmHistorySearchInput" class="filter-label">Search</label>
+                <input type="text" id="fmHistorySearchInput" class="search-input" placeholder="ID, creator, filename…">
+            </div>
+            <div class="filter-actions">
+                <button type="button" class="btn btn-secondary btn-sm" data-action="refresh-fm-history">Refresh</button>
+            </div>
+        </div>
+
+        <div id="fmHistoryContainer" class="queue-items">
+            <div class="queue-loading">
+                <div class="loading-spinner"></div>
+                <p>Loading history…</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+{% if current_user %}
+window.currentUserRole = '{{ current_user.role }}';
+window.currentUserCanDownloadPdf = {{ 'true' if current_user.can_download_pdf() else 'false' }};
+{% endif %}
+</script>
+<script src="{{ url_for('static', filename='js/finance-manager-history.js') }}"></script>
+{% endblock %}

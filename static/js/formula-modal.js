@@ -3,6 +3,19 @@
  * Handles formula breakdown display for CFO and AUDITOR roles
  */
 
+/** Registered ledger/source URLs only — omit per-variable buttons when `source` is not listed (e.g. session metadata). */
+const FORMULA_SOURCE_LEDGER_URLS = {
+    asset_sub_ledger: '/assets/sub-ledger',
+    depreciation_schedule: '/assets/depreciation-schedule',
+    asset_register: '/assets/register',
+    asset_policy: '/policies/asset-management',
+    loan_register: '/liabilities/loan-register',
+    loan_agreement: '/liabilities/loan-agreements',
+    loan_schedule: '/liabilities/loan-schedules',
+    impairment_test: '/assets/impairment-tests',
+    general_ledger: '/accounting/general-ledger',
+};
+
 class FormulaModalController {
     constructor() {
         this.currentData = null;
@@ -12,7 +25,24 @@ class FormulaModalController {
         this.currentBalanceSheetId = null;
         this.currentProcessingState = null;
         this.currentAccess = null;
+        /** Set when loading universal session formula breakdown (same-origin API / statement links). */
+        this.currentUniversalDocumentType = null;
         this.initializeEventListeners();
+    }
+
+    /** Safe text for HTML body interpolation */
+    _escapeHtml(s) {
+        if (s == null || s === '') return '';
+        const d = document.createElement('div');
+        d.textContent = String(s);
+        return d.innerHTML;
+    }
+
+    /** Safe double-quoted attribute (paths only — reject scheme-relative URLs) */
+    _safeHrefAttr(href) {
+        const h = String(href || '').trim();
+        if (!h.startsWith('/') || h.startsWith('//')) return '';
+        return h.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
     }
 
     initializeEventListeners() {
@@ -90,8 +120,52 @@ class FormulaModalController {
         this.modal.addEventListener('keydown', (e) => {
             if (e.key === 'Tab' && this.isOpen) {
                 this.trapFocus(e);
+                return;
+            }
+            if ((e.key === 'Enter' || e.key === ' ') && this.isOpen) {
+                const vlink = e.target.closest('a.variable-source-link');
+                if (vlink && vlink.getAttribute('href')?.startsWith('/')) {
+                    e.preventDefault();
+                    vlink.click();
+                }
             }
         });
+
+        /** Plain-click opens same-origin targets via window.open so the tab may close + focus opener on return. */
+        this.modal.addEventListener('click', (e) => this._onVariableSourceLinkClick(e));
+    }
+
+    /**
+     * @param {MouseEvent} e
+     */
+    _onVariableSourceLinkClick(e) {
+        const link = e.target.closest('a.variable-source-link');
+        if (!link || !this.modal.contains(link)) return;
+        const href = link.getAttribute('href');
+        if (!href || !href.startsWith('/')) return;
+        if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        try {
+            const abs = new URL(href, window.location.origin);
+            if (abs.origin !== window.location.origin) {
+                window.open(abs.href, '_blank', 'noopener,noreferrer');
+                return;
+            }
+            if (abs.pathname === '/approvals') {
+                const sp = abs.searchParams;
+                if (sp.get('review') === 'statement' && !sp.get('returnTo')) {
+                    const fsr = window.financialStatementReview;
+                    const rt =
+                        fsr && typeof fsr.currentReturnToForAuxiliaryTab === 'function'
+                            ? fsr.currentReturnToForAuxiliaryTab()
+                            : null;
+                    if (rt) sp.set('returnTo', rt);
+                }
+            }
+            window.open(abs.href, '_blank');
+        } catch (_) {
+            window.open(href, '_blank', 'noopener,noreferrer');
+        }
     }
 
     async openForCell(cellElement) {
@@ -201,7 +275,7 @@ class FormulaModalController {
         document.getElementById('modalTitle').textContent = `Calculation Breakdown: ${itemName}`;
         
         // Build audit reference with processing state
-        let auditText = `${data.grapReference} Asset Class: ${data.assetClass} | Period: ${period}`;
+        let auditText = `Review context: ${data.assetClass} | Framework: ${data.grapReference} | Period: ${period}`;
         
         // Add processing status if available
         if (data.processingStatus) {
@@ -225,11 +299,9 @@ class FormulaModalController {
         // Update formula
         document.getElementById('formulaExpression').textContent = data.formula;
         
-        // Update calculation steps
-        this.updateCalculationSteps(data.steps);
-        
-        // Update final result
-        document.getElementById('finalValue').textContent = data.finalResult;
+        // Update calculation steps (recreates #finalValue inside this container)
+        const showFinalBand = data.showFinalBand !== false;
+        this.updateCalculationSteps(data.steps, data.finalResult, { showFinalBand });
         
         // Add mapped accounts section if available
         if (data.mappedAccounts && data.mappedAccounts.length > 0) {
@@ -277,7 +349,13 @@ class FormulaModalController {
         };
         return modeMap[mode] || mode;
     }
-    
+
+    formatModalNumber(num) {
+        const n = parseFloat(num);
+        if (Number.isNaN(n)) return String(num);
+        return n.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
     addMappedAccountsSection(mappedAccounts) {
         // Check if section already exists
         if (document.querySelector('.mapped-accounts-section')) {
@@ -308,7 +386,7 @@ class FormulaModalController {
                         <div class="mapping-arrow">→</div>
                         <div class="mapped-grap-item">${mapping.grap_line_item}</div>
                         <div class="mapping-info">
-                            <small>Mapped by ${mapping.mapped_by} on ${new Date(mapping.mapped_at).toLocaleDateString()}</small>
+                            <small>Mapped by ${mapping.mapped_by} on ${VarydianUtils.formatDateTime(mapping.mapped_at)}</small>
                         </div>
                     </div>
                 `).join('')}
@@ -349,7 +427,7 @@ class FormulaModalController {
                         <div class="validation-line-item">${validation.line_item}</div>
                         <div class="validation-details">${validation.details}</div>
                         <div class="validation-meta">
-                            <small>Validated by ${validation.validated_by} on ${new Date(validation.validated_at).toLocaleDateString()}</small>
+                            <small>Validated by ${validation.validated_by} on ${VarydianUtils.formatDateTime(validation.validated_at)}</small>
                         </div>
                     </div>
                 `).join('')}
@@ -442,7 +520,7 @@ class FormulaModalController {
                         <line x1="16" y1="17" x2="8" y2="17"/>
                         <polyline points="10,9 9,9 8,9"/>
                     </svg>
-                    View Raw Balance Sheet Data
+                    View raw session
                 `;
             }
         }
@@ -519,7 +597,7 @@ class FormulaModalController {
             <div class="audit-seal-content">
                 <div class="audit-seal-title">AUDIT VERIFIED</div>
                 <div class="audit-seal-subtitle">Final Period Locked</div>
-                <div class="audit-seal-timestamp">${new Date().toLocaleDateString()}</div>
+                <div class="audit-seal-timestamp">${VarydianUtils.formatDateTime(new Date())}</div>
             </div>
             <div class="audit-seal-stamp">
                 <div class="stamp-text">AUDIT</div>
@@ -538,36 +616,68 @@ class FormulaModalController {
         const grid = document.getElementById('variablesGrid');
         if (!grid) return;
 
-        grid.innerHTML = variables.map(variable => `
-            <div class="variable-item">
-                <div class="variable-label">${variable.name}</div>
-                <div class="variable-value">${variable.value}</div>
-                <button type="button" class="variable-source-link" 
-                        onclick="window.formulaModalController.viewSourceLedger('${variable.source}', '${variable.name}')"
-                        aria-label="View ${variable.sourceLabel}">
+        grid.innerHTML = variables.map((variable) => {
+            const src = variable.source || '';
+            const hrefRaw = variable.linkHref && variable.linkLabel ? String(variable.linkHref) : '';
+            const safeHref = this._safeHrefAttr(hrefRaw);
+            const labelAttr = String(variable.linkLabel || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+            const link =
+                safeHref && variable.linkLabel
+                    ? `<a href="${safeHref}" class="variable-source-link"
+                        aria-label="${labelAttr}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path>
                         <polyline points="15,3 21,3 21,9"></polyline>
                         <line x1="10" y1="14" x2="21" y2="3"></line>
                     </svg>
-                    ${variable.sourceLabel}
-                </button>
-            </div>
-        `).join('');
+                    ${this._escapeHtml(variable.linkLabel)}
+                </a>`
+                    : '';
+
+            const hasLedgerLink = Boolean(FORMULA_SOURCE_LEDGER_URLS[src]);
+            const safeName = String(variable.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            const ledgerBtn =
+                !link && hasLedgerLink
+                    ? `<button type="button" class="variable-source-link"
+                        onclick="window.formulaModalController.viewSourceLedger('${src}', '${safeName}')"
+                        aria-label="Open ${variable.sourceLabel || src} source">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path>
+                        <polyline points="15,3 21,3 21,9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                    ${this._escapeHtml(variable.sourceLabel || variable.source || 'Source')}
+                </button>`
+                    : '';
+
+            const action = link || ledgerBtn;
+
+            return `
+            <div class="variable-item">
+                <div class="variable-label">${this._escapeHtml(variable.name)}</div>
+                ${variable.detail ? `<p class="variable-detail">${this._escapeHtml(variable.detail)}</p>` : ''}
+                <div class="variable-value">${this._escapeHtml(variable.value)}</div>
+                ${action}
+            </div>`;
+        }).join('');
     }
 
-    updateCalculationSteps(steps) {
+    updateCalculationSteps(steps, finalResult = 'N/A', opts = {}) {
         const stepsContainer = document.getElementById('calculationSteps');
         if (!stepsContainer) return;
 
-        const stepsHTML = steps.map((step, index) => `
+        const showFinalBand = opts.showFinalBand !== false;
+
+        const stepList = Array.isArray(steps) ? steps : [];
+        const esc = (html) => String(html || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const stepsHTML = stepList.map((step, index) => `
             <div class="calculation-step">
                 <div class="step-number">${index + 1}</div>
                 <div class="step-content">
-                    <div class="step-formula">${step.formula}</div>
-                    <div class="step-result">= ${step.result}</div>
+                    <div class="step-formula">${esc(step.formula)}</div>
+                    <div class="step-result">= ${esc(step.result)}</div>
                 </div>
-                ${index < steps.length - 1 ? `
+                ${index < stepList.length - 1 ? `
                     <div class="step-arrow">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -578,17 +688,153 @@ class FormulaModalController {
             </div>
         `).join('');
 
-        stepsContainer.innerHTML = stepsHTML + `
-            <div class="calculation-final">
-                <div class="final-label">Final Result:</div>
-                <div class="final-value">${this.currentData?.finalResult || 'N/A'}</div>
-            </div>
-        `;
+        stepsContainer.innerHTML = stepsHTML;
+
+        if (!showFinalBand) {
+            return;
+        }
+
+        const finalBlock = document.createElement('div');
+        finalBlock.className = 'calculation-final';
+        const labelEl = document.createElement('div');
+        labelEl.className = 'final-label';
+        labelEl.textContent = 'Final Result:';
+        const valueEl = document.createElement('div');
+        valueEl.className = 'final-value';
+        valueEl.id = 'finalValue';
+        const fv = finalResult != null && finalResult !== '' ? String(finalResult) : 'N/A';
+        valueEl.textContent = fv;
+        finalBlock.appendChild(labelEl);
+        finalBlock.appendChild(valueEl);
+        stepsContainer.appendChild(finalBlock);
+    }
+
+    showSyntheticReviewLine(sessionId, accountCode, grapCode, displayAmount) {
+        if (!this.modal) return;
+        this.setProcessingContext(sessionId, 'review');
+        const itemName = accountCode ? `Account ${accountCode}` : 'Line item';
+        const period = this.getCurrentReportingPeriod();
+        const data = {
+            grapReference: grapCode || 'GRAP',
+            assetClass: 'Financial statement review',
+            formula: 'Mapped trial balance amounts are classified to GRAP codes and aggregated into statement line items.',
+            variables: [
+                { name: 'Account code', value: accountCode || '—', source: 'tb', sourceLabel: 'Trial balance' },
+                { name: 'GRAP code', value: grapCode || '—', source: 'mapping', sourceLabel: 'Mapping' }
+            ],
+            steps: [
+                { formula: 'Source balance (from mapped TB)', result: displayAmount || '—' }
+            ],
+            finalResult: displayAmount || '—',
+            accessMode: 'review',
+            processingStatus: 'review'
+        };
+        this.updateModalContent(data, itemName, displayAmount || '—', period, grapCode || '');
+        this.show();
+    }
+
+    showReviewSessionCalculations(review, sessionId) {
+        if (!this.modal) return;
+        this.setProcessingContext(sessionId, 'review');
+        const period = this.getCurrentReportingPeriod();
+        const sd = review.statementData;
+        const ct = review.currentTransaction;
+
+        const variables = [
+            {
+                name: 'Document upload session',
+                detail: 'Stored record for this submission (upload & mapping)—not your login session.',
+                value: sessionId,
+                source: 'session',
+                sourceLabel: 'Submission record',
+            },
+            { name: 'Document type', value: (ct && ct.transaction_type) || '—', source: 'session', sourceLabel: 'Type' },
+            { name: 'File', value: (ct && ct.filename) || '—', source: 'session', sourceLabel: 'Upload' },
+        ];
+        if (sd && sd.period) {
+            variables.push({ name: 'Period', value: String(sd.period), source: 'session', sourceLabel: 'Reporting' });
+        }
+        const lineCount = sd
+            ? (sd.lines || []).length + (sd.positionLines || []).length + (sd.performanceLines || []).length
+            : 0;
+        if (lineCount) {
+            variables.push({ name: 'Statement lines (rendered)', value: String(lineCount), source: 'session', sourceLabel: 'GRAP view' });
+        }
+        const mapCount = (sd && sd.mappings && sd.mappings.length) || 0;
+        if (mapCount) {
+            variables.push({ name: 'Account mappings', value: String(mapCount), source: 'mapping', sourceLabel: 'Trial balance' });
+        }
+
+        const calcs = (sd && sd.calculations) || [];
+        const steps = calcs.map((c) => ({
+            formula: `${c.description} — ${c.formula || 'derived'}`,
+            result: typeof c.result === 'number' && !Number.isNaN(c.result)
+                ? `R${this.formatModalNumber(c.result)}`
+                : String(c.result ?? '—')
+        }));
+
+        let finalResult = '—';
+        const surplus = calcs.find((c) => c && c.id === 'surplus' && typeof c.result === 'number');
+        if (surplus) {
+            finalResult = `R${this.formatModalNumber(surplus.result)} (surplus / deficit)`;
+        } else if (calcs.length) {
+            const last = calcs[calcs.length - 1];
+            finalResult = typeof last.result === 'number' && !Number.isNaN(last.result)
+                ? `R${this.formatModalNumber(last.result)}`
+                : String(last.result ?? '—');
+        } else if (steps.length) {
+            finalResult = steps[steps.length - 1].result;
+        }
+
+        const data = {
+            grapReference: 'GRAP',
+            assetClass: 'Live session review',
+            formula: 'Figures below are computed from the session payload returned by /api/universal/session (statement totals, sums of flattened lines, mapping counts, and database row counts). Line-level GRAP detail is on the Financial statements and Account Mappings tabs.',
+            variables,
+            steps: steps.length ? steps : [
+                { formula: 'No derived calculation rows — session may not yet include financial_statements or mapping metadata', result: '—' }
+            ],
+            finalResult,
+            accessMode: 'review',
+            processingStatus: 'review'
+        };
+        this.updateModalContent(data, 'Session calculations (from loaded data)', finalResult, period, '');
+        this.show();
+    }
+
+    showSyntheticSessionCalculations(sessionId) {
+        if (!this.modal) return;
+        this.setProcessingContext(sessionId, 'review');
+        const period = this.getCurrentReportingPeriod();
+        const data = {
+            grapReference: 'GRAP',
+            assetClass: 'Session',
+            formula: 'Statement totals are built from all mapped accounts for this upload session (see Account Mappings tab).',
+            variables: [
+                {
+                    name: 'Document upload session',
+                    detail: 'Stored record for this submission—not your login session.',
+                    value: sessionId,
+                    source: 'session',
+                    sourceLabel: 'Submission record',
+                },
+            ],
+            steps: [
+                { formula: 'Review mapped accounts and GRAP categories', result: 'See Mappings tab' }
+            ],
+            finalResult: '—',
+            accessMode: 'review',
+            processingStatus: 'review'
+        };
+        this.updateModalContent(data, 'Session calculations', '—', period, '');
+        this.show();
     }
 
     show() {
         if (!this.modal) return;
-        
+
+        this.modal.classList.remove('visibility--hidden');
+        this.modal.classList.remove('display-none');
         this.modal.classList.add('display-flex');
         this.isOpen = true;
         document.body.classList.add('overflow-hidden');
@@ -605,8 +851,10 @@ class FormulaModalController {
 
     close() {
         if (!this.modal) return;
-        
-        this.modal.classList.add('display-none');
+
+        this.modal.classList.add('visibility--hidden');
+        this.modal.classList.remove('display-flex');
+        this.modal.classList.remove('display-none');
         this.isOpen = false;
         document.body.classList.remove('overflow-hidden');
         
@@ -686,103 +934,149 @@ class FormulaModalController {
             this.formulaData.clear();
         }
     }
+
+    /**
+     * Load formula modal content from GET /api/universal/session/<id>/formula-breakdown
+     * (Supabase-backed session summary on the server).
+     */
+    async loadUniversalSessionBreakdown(sessionId, documentType, opts = {}) {
+        if (!this.modal) {
+            return;
+        }
+        const scope = opts.scope || 'session';
+        const params = new URLSearchParams({ document_type: documentType, scope });
+        if (opts.calcId != null && String(opts.calcId).trim() !== '') {
+            params.set('calc_id', String(opts.calcId));
+        }
+        if (opts.accountCode) {
+            params.set('account_code', String(opts.accountCode));
+        }
+        if (opts.grapCode) {
+            params.set('grap_code', String(opts.grapCode));
+        }
+        this.setProcessingContext(sessionId, 'review');
+        this.currentUniversalDocumentType = documentType;
+        this.showLoading();
+        this.show();
+        const url = `/api/universal/session/${encodeURIComponent(sessionId)}/formula-breakdown?${params.toString()}`;
+        const response = await fetch(url);
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            const msg = (result && result.error) || `HTTP ${response.status}`;
+            this.showError(msg);
+            throw new Error(msg);
+        }
+        const data = result.data;
+        const period = this.getCurrentReportingPeriod();
+        const itemName = (data && data.itemName) ? data.itemName : 'Calculation';
+        const currentValue = data && data.finalResult != null && data.finalResult !== ''
+            ? String(data.finalResult)
+            : '—';
+        this.updateModalContent(data, itemName, currentValue, period, '');
+    }
     
     clearProcessingContext() {
         // Clear processing context and revert to legacy mode
         this.currentBalanceSheetId = null;
         this.currentProcessingState = null;
         this.currentAccess = null;
+        this.currentUniversalDocumentType = null;
     }
 
     // Action methods
     viewSourceLedger(sourceType, variableName) {
-        // Create a new modal or navigate to source
-        const sourceUrls = {
-            'asset_sub_ledger': '/assets/sub-ledger',
-            'depreciation_schedule': '/assets/depreciation-schedule',
-            'asset_register': '/assets/register',
-            'asset_policy': '/policies/asset-management',
-            'loan_register': '/liabilities/loan-register',
-            'loan_agreement': '/liabilities/loan-agreements',
-            'loan_schedule': '/liabilities/loan-schedules',
-            'impairment_test': '/assets/impairment-tests',
-            'general_ledger': '/accounting/general-ledger'
-        };
-
-        const url = sourceUrls[sourceType];
+        const url = FORMULA_SOURCE_LEDGER_URLS[sourceType];
         if (url) {
-            // Open in new tab or modal
             window.open(url, '_blank', 'width=1200,height=800,scrollbars=yes');
-        } else {
-            alert(`Source ledger for ${sourceType} is not available in this demo.`);
+            return;
         }
+        console.warn('[formula-modal] No source ledger URL for:', sourceType, variableName);
     }
 
     viewRawBalanceSheet() {
-        // Navigate to balance sheet or open in modal
+        if (
+            this.currentProcessingState === 'review'
+            && this.currentBalanceSheetId
+            && this.currentUniversalDocumentType
+        ) {
+            const q = new URLSearchParams({ document_type: this.currentUniversalDocumentType });
+            const u = `/api/universal/session/${encodeURIComponent(this.currentBalanceSheetId)}?${q.toString()}`;
+            window.open(u, '_blank');
+            return;
+        }
         const bsUrl = '/accounting/balance-sheet';
         window.open(bsUrl, '_blank', 'width=1200,height=800,scrollbars=yes');
     }
 
-showLoading() {
-    if (!this.modal) return;
-    
-    document.getElementById('modalTitle').textContent = 'Loading...';
-    document.getElementById('auditReference').textContent = 'Loading formula data...';
-    document.getElementById('variablesGrid').innerHTML = '<div class="loading-spinner">Loading formula data...</div>';
-    document.getElementById('formulaExpression').textContent = 'Loading...';
-    document.getElementById('calculationSteps').innerHTML = '<div class="loading-spinner">Loading calculation steps...</div>';
-}
+    exportFormulaBreakdown() {
+        const d = this.currentData;
+        if (!d) {
+            showAlert('Export Failed', 'Open a calculation breakdown first.');
+            return;
+        }
+        const exportData = {
+            itemName: d.itemName,
+            period: d.period,
+            formula: d.formula,
+            result: d.result,
+            finalResult: d.finalResult,
+            variables: Array.isArray(d.variables) ? d.variables : [],
+            steps: Array.isArray(d.steps) ? d.steps : [],
+            grapReference: d.grapReference,
+            assetClass: d.assetClass,
+            auditReference:
+                document.getElementById('auditReference')?.textContent?.trim()
+                || d.auditReference
+                || '',
+            processingStatus: d.processingStatus,
+            accessMode: d.accessMode,
+            noteReference: d.noteReference,
+            auditTrail: Array.isArray(d.auditTrail) ? d.auditTrail : [],
+            timestamp: new Date().toISOString(),
+            generatedBy: typeof window.currentUserFullName === 'string' ? window.currentUserFullName : '',
+        };
 
-showError(message) {
-    if (!this.modal) return;
-    
-    document.getElementById('modalTitle').textContent = 'Error';
-    document.getElementById('auditReference').textContent = 'Unable to load data';
-    document.getElementById('variablesGrid').innerHTML = `<div class="error-message">${message}</div>`;
-    document.getElementById('formulaExpression').textContent = 'N/A';
-    document.getElementById('calculationSteps').innerHTML = `<div class="error-message">${message}</div>`;
-}
-
-exportFormulaBreakdown() {
-    // Create PDF export request
-    const exportData = {
-        itemName: this.currentData.itemName,
-        formula: this.currentData.formula,
-        result: this.currentData.result,
-        auditReference: this.currentData.auditReference,
-        timestamp: new Date().toISOString()
-    };
-
-    // Send to backend for PDF generation
-    fetch('/api/export/formula-breakdown-pdf', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify(exportData)
-    })
-        .then(response => {
-            if (response.ok) {
+        fetch('/api/formula/export/formula-breakdown-pdf', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify(exportData),
+        })
+            .then((response) => {
+                const ct = response.headers.get('Content-Type') || '';
+                if (!response.ok) {
+                    return response.json().then((body) => {
+                        throw new Error(body.error || `HTTP ${response.status}`);
+                    }).catch(() => {
+                        throw new Error(`HTTP ${response.status}`);
+                    });
+                }
+                if (!ct.includes('pdf')) {
+                    return response.json().then((body) => {
+                        throw new Error(body.error || 'Server did not return a PDF');
+                    });
+                }
                 return response.blob();
-            }
-            throw new Error('PDF export failed');
-        })
-        .then(blob => {
-            // Download the PDF
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `formula-breakdown-${this.currentData.itemName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        })
-        .catch(error => {
-            alert('PDF export failed. Please try again.');
-        });
+            })
+            .then((blob) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const base = String(d.itemName || 'breakdown')
+                    .toLowerCase()
+                    .replace(/\s+/g, '-')
+                    .replace(/[^a-z0-9_-]/gi, '');
+                a.href = url;
+                a.download = `formula-breakdown-${base || 'breakdown'}-${Date.now()}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch((error) => {
+                showAlert('Export Failed', error.message || 'PDF export failed. Please try again.');
+            });
     }
 }
 
@@ -807,9 +1101,69 @@ function viewRawBalanceSheet() {
 
 function exportBreakdownPDF() {
     if (window.formulaModalController) {
-        window.formulaModalController.exportBreakdownPDF();
+        window.formulaModalController.exportFormulaBreakdown();
     }
 }
 
 // Initialize the controller when DOM is ready
 window.formulaModalController = new FormulaModalController();
+
+/** Adapter for financial-statement-review.js */
+window.formulaModal = {
+    loadFormulaData(sessionId) {
+        const c = window.formulaModalController;
+        if (!c || !sessionId) {
+            return;
+        }
+        const review = window.financialStatementReview;
+        const docType = review && review._documentType;
+        if (docType) {
+            c.loadUniversalSessionBreakdown(sessionId, docType, { scope: 'session' }).catch(() => {
+                if (review && review.statementData) {
+                    c.showReviewSessionCalculations(review, sessionId);
+                } else {
+                    c.showSyntheticSessionCalculations(sessionId);
+                }
+            });
+            return;
+        }
+        if (review && review.statementData) {
+            c.showReviewSessionCalculations(review, sessionId);
+            return;
+        }
+        c.showSyntheticSessionCalculations(sessionId);
+    },
+    loadLineItemFormula(accountCode, grapCode) {
+        const c = window.formulaModalController;
+        if (!c) {
+            return;
+        }
+        const review = window.financialStatementReview;
+        const sessionId = review && (review._sessionId || (review.currentTransaction && review.currentTransaction.transaction_id));
+        const docType = review && review._documentType;
+        let displayAmount = '—';
+        if (review && typeof review.findAccountData === 'function') {
+            const line = review.findAccountData(accountCode);
+            if (line && line.amount != null) {
+                displayAmount = 'R' + parseFloat(line.amount).toLocaleString('en-ZA', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+        }
+        if (sessionId && docType) {
+            c.loadUniversalSessionBreakdown(sessionId, docType, {
+                scope: 'line',
+                accountCode,
+                grapCode
+            }).catch(() => {
+                c.showSyntheticReviewLine(sessionId, accountCode, grapCode, displayAmount);
+            });
+            return;
+        }
+        c.showSyntheticReviewLine(sessionId, accountCode, grapCode, displayAmount);
+    },
+    showModal() {
+        window.formulaModalController && window.formulaModalController.show();
+    }
+};

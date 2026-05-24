@@ -16,11 +16,16 @@ class SupabaseSessionManager:
     
     def __init__(self):
         """Initialize Supabase client"""
+        from utils.supabase_client import get_supabase_secret_key
+
         self.supabase_url = os.environ.get('SUPABASE_URL')
-        self.supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
-        
+        self.supabase_key = get_supabase_secret_key()
+
         if not self.supabase_url or not self.supabase_key:
-            raise ValueError("Supabase credentials not found in environment variables")
+            raise ValueError(
+                "Supabase credentials not found. Set SUPABASE_URL and "
+                "SUPABASE_SECRET_KEY (service role JWT)."
+            )
         
         self.client = create_client(self.supabase_url, self.supabase_key)
         self.session_lifetime = timedelta(hours=1)  # 1 hour sessions

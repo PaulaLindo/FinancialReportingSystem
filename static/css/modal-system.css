@@ -1,0 +1,385 @@
+/* Modal System Styles - Replaces browser-native dialogs */
+
+/* Modal Overlay — scoped to ModalSystem host so upload page #confirmModal is unaffected */
+#modalSystem > .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    animation: modalFadeIn 0.3s ease-out forwards;
+}
+
+/* Modal Container */
+#modalSystem > .modal-overlay > .modal-container {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    max-width: 90vw;
+    max-height: min(90vh, 640px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.9) translateY(20px);
+    animation: modalSlideIn 0.3s ease-out forwards;
+    border: 1px solid var(--gray-200);
+}
+
+/* Modal Sizes */
+.modal-prompt {
+    width: clamp(320px, 50vw, 500px);
+}
+
+.modal-confirm {
+    width: clamp(320px, 45vw, 450px);
+}
+
+.modal-alert {
+    width: clamp(320px, 42vw, 440px);
+}
+
+/* Modal Header */
+.modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--fluid-space-md);
+    padding: var(--fluid-space-lg) var(--fluid-space-xl);
+    border-bottom: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    flex-shrink: 0;
+}
+
+.modal-title {
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: var(--heading-md, 1.125rem);
+    font-weight: 600;
+    color: var(--gray-900);
+    line-height: 1.35;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    padding: var(--fluid-space-sm);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    color: var(--gray-500);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: -0.125rem;
+}
+
+.modal-close:hover {
+    background: var(--gray-200);
+    color: var(--gray-700);
+}
+
+.modal-close:focus {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
+}
+
+/* Modal Body */
+.modal-body {
+    padding: var(--fluid-space-lg) var(--fluid-space-xl);
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.modal-message {
+    margin: 0;
+    font-size: var(--body-text-sm, 0.9375rem);
+    color: var(--gray-700);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.modal-input {
+    width: 100%;
+    padding: var(--fluid-space-md);
+    border: 2px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    font-size: var(--body-text-base);
+    font-family: inherit;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background: var(--white);
+}
+
+.modal-input:focus {
+    outline: none;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.modal-input::placeholder {
+    color: var(--gray-500);
+}
+
+/* Modal Footer */
+.modal-footer {
+    display: flex;
+    gap: var(--fluid-space-md);
+    padding: var(--fluid-space-md) var(--fluid-space-xl);
+    border-top: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    justify-content: flex-end;
+    flex-shrink: 0;
+}
+
+/* Modal Buttons */
+.modal-confirm,
+.modal-ok {
+    background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+    color: var(--white);
+    border: none;
+    padding: var(--fluid-space-md) var(--fluid-space-lg);
+    border-radius: var(--radius-md);
+    font-size: var(--body-text-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 80px;
+}
+
+.modal-confirm:hover,
+.modal-ok:hover {
+    background: linear-gradient(135deg, var(--primary-700) 0%, var(--primary-800) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.modal-cancel {
+    background: var(--gray-200);
+    color: var(--gray-700);
+    border: none;
+    padding: var(--fluid-space-md) var(--fluid-space-lg);
+    border-radius: var(--radius-md);
+    font-size: var(--body-text-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 80px;
+}
+
+.modal-cancel:hover {
+    background: var(--gray-300);
+    transform: translateY(-1px);
+}
+
+/* Focus styles for all modal buttons */
+.modal-confirm:focus,
+.modal-ok:focus,
+.modal-cancel:focus {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: scale(0.9) translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Toast Notifications — top center (prefer VarydianUtils.showToast when available) */
+.toast-container {
+    position: fixed;
+    top: var(--fluid-space-lg);
+    left: 50%;
+    transform: translateX(-50%);
+    right: auto;
+    z-index: 10050;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--fluid-space-md);
+    width: min(32rem, 92vw);
+    max-width: 92vw;
+    pointer-events: none;
+}
+
+.toast {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    padding: var(--fluid-space-md) var(--fluid-space-lg);
+    border: 1px solid var(--gray-200);
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(-10px);
+    animation: toastSlideIn 0.28s ease-out forwards;
+    transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.toast-hiding {
+    transform: translateY(-8px);
+    opacity: 0;
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fluid-space-md);
+}
+
+.toast-message {
+    flex: 1;
+    font-size: var(--body-text-sm);
+    color: var(--gray-700);
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    padding: var(--fluid-space-xs);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--gray-500);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.toast-close:hover {
+    background: var(--gray-200);
+    color: var(--gray-700);
+}
+
+/* Toast Types */
+.toast-success {
+    border-left: 4px solid var(--success-600);
+}
+
+.toast-error {
+    border-left: 4px solid var(--error-600);
+}
+
+.toast-info {
+    border-left: 4px solid var(--primary-600);
+}
+
+/* Toast Animation */
+@keyframes toastSlideIn {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .modal-container {
+        max-width: 95vw;
+        margin: var(--fluid-space-md);
+    }
+    
+    .modal-prompt {
+        width: 95vw;
+    }
+    
+    .modal-confirm {
+        width: 95vw;
+    }
+    
+    .modal-alert {
+        width: 95vw;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding-left: var(--fluid-space-lg);
+        padding-right: var(--fluid-space-lg);
+    }
+    
+    .toast-container {
+        top: var(--fluid-space-md);
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: min(32rem, 94vw);
+    }
+    
+    .toast {
+        min-width: auto;
+        max-width: none;
+    }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+    .modal-footer {
+        flex-direction: column;
+    }
+    
+    .modal-confirm,
+    .modal-ok,
+    .modal-cancel {
+        width: 100%;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .modal-overlay,
+    .modal-container,
+    .toast {
+        animation: none;
+        transition: none;
+    }
+    
+    .modal-confirm:hover,
+    .modal-ok:hover,
+    .modal-cancel:hover {
+        transform: none;
+    }
+}
+
+/* High Contrast Support */
+@media (prefers-contrast: high) {
+    .modal-container {
+        border: 2px solid var(--gray-900);
+    }
+    
+    .modal-input {
+        border: 2px solid var(--gray-900);
+    }
+    
+    .toast {
+        border: 2px solid var(--gray-900);
+    }
+}

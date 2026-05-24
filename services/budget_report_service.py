@@ -160,10 +160,12 @@ class BudgetReportService(FinancialDocumentService):
                 else:
                     processed_data[field_name] = value
         
-        # Calculate variance if not provided but we have budget and actual
-        if variance is None and budget_amount is not None and actual_amount is not None:
-            variance = actual_amount - budget_amount
-        
+        from services.budget_variance_service import resolve_line_variance
+
+        variance = resolve_line_variance(budget_amount, actual_amount, variance)
+        if budget_amount is not None and actual_amount is not None:
+            processed_data["variance"] = float(variance)
+
         # Use account_description if not set
         if not account_description:
             account_description = f"Account {account_code}" if account_code else "Unknown Account"
@@ -486,17 +488,24 @@ class BudgetReportService(FinancialDocumentService):
             column_mapping = session.metadata.get('column_mapping', {})
             
             for row in data_rows:
+                if hasattr(row, 'is_total_row') and getattr(row, 'is_total_row', False):
+                    continue
+                if hasattr(row, 'is_subtotal_row') and getattr(row, 'is_subtotal_row', False):
+                    continue
+
                 budget_amount = Decimal('0.00')
                 actual_amount = Decimal('0.00')
-                
-                # Get budget amount
-                if 'budget_amount' in column_mapping:
-                    budget_amount = Decimal(str(row.get(column_mapping['budget_amount'], '0')))
-                
-                # Get actual amount
-                if 'actual_amount' in column_mapping:
-                    actual_amount = Decimal(str(row.get(column_mapping['actual_amount'], '0')))
-                
+
+                if isinstance(row, dict):
+                    if 'budget_amount' in column_mapping:
+                        budget_amount = Decimal(str(row.get(column_mapping.get('budget_amount'), '0') or '0'))
+                    if 'actual_amount' in column_mapping:
+                        actual_amount = Decimal(str(row.get(column_mapping.get('actual_amount'), '0') or '0'))
+                else:
+                    # BudgetReportDataRow from Supabase — use typed columns
+                    budget_amount = Decimal(str(getattr(row, 'budget_amount', 0) or '0'))
+                    actual_amount = Decimal(str(getattr(row, 'actual_amount', 0) or '0'))
+
                 total_budget += budget_amount
                 total_actual += actual_amount
             
@@ -568,6 +577,111 @@ class BudgetReportService(FinancialDocumentService):
         except Exception as e:
             logger.error(f"Error analyzing budget performance: {str(e)}")
             return {'success': False, 'error': f'Error analyzing budget performance: {str(e)}'}
+
+    def get_session_summary(self, session_id: str) -> Dict[str, Any]:
+        """
+        Extend base summary with budget totals and persisted line data so the
+        statement review UI and formula-breakdown API can render real figures.
+        """
+        base = super().get_session_summary(session_id)
+        if not isinstance(base, dict) or not base.get('success'):
+            return base
+
+        try:
+            session = self.model.get_session(session_id)
+            if not session:
+                return base
+
+            def dec_float(val) -> float:
+                if val is None:
+                    return 0.0
+                if isinstance(val, Decimal):
+                    return float(val)
+                try:
+                    return float(val)
+                except (TypeError, ValueError):
+                    return 0.0
+
+            base['fiscal_year'] = int(getattr(session, 'fiscal_year', 0) or 0)
+            base['budget_type'] = getattr(session, 'budget_type', '') or ''
+            base['department'] = getattr(session, 'department', '') or ''
+            base['reporting_period'] = getattr(session, 'reporting_period', '') or ''
+            if session.updated_at:
+                base['updated_at'] = session.updated_at.isoformat()
+
+            raw_rows = self.model.get_data_rows(session_id)
+            base['budget_line_count'] = len(raw_rows)
+            explanations = (session.metadata or {}).get('variance_explanations') or {}
+            serialized: List[Dict[str, Any]] = []
+            from services.budget_variance_service import enrich_budget_row, merge_explanations_into_rows
+
+            for r in raw_rows[:2000]:
+                row_dict = {
+                    'row_index': r.row_index,
+                    'account_code': r.account_code or '',
+                    'account_description': r.account_description or '',
+                    'budget_amount': dec_float(r.budget_amount),
+                    'actual_amount': dec_float(r.actual_amount),
+                    'variance': dec_float(r.variance),
+                    'department': r.department or '',
+                    'expense_category': r.expense_category or '',
+                    'mapped_to_grap': r.mapped_to_grap or '',
+                    'mapping_status': getattr(r, 'mapping_status', '') or '',
+                    'is_total_row': bool(r.is_total_row),
+                    'is_subtotal_row': bool(r.is_subtotal_row),
+                }
+                serialized.append(enrich_budget_row(row_dict))
+            base['budget_rows'] = merge_explanations_into_rows(serialized, explanations)
+            base['variance_explanations'] = explanations
+            from services.budget_variance_service import validate_variance_explanations
+            ok, missing, required = validate_variance_explanations(serialized, explanations)
+            base['grap24_variance_complete'] = ok
+            base['grap24_variance_missing'] = missing
+            base['grap24_lines_requiring_explanation'] = len(required)
+
+            from utils.period_lock import session_period_lock_status
+            base.update(session_period_lock_status(session))
+
+            def _sums_from_serialized(rows: List[Dict[str, Any]]) -> tuple:
+                tb = Decimal('0.00')
+                ta = Decimal('0.00')
+                for x in rows:
+                    if x.get('is_total_row') or x.get('is_subtotal_row'):
+                        continue
+                    tb += Decimal(str(x.get('budget_amount') or 0))
+                    ta += Decimal(str(x.get('actual_amount') or 0))
+                return tb, ta
+
+            s_tb = dec_float(session.total_budget)
+            s_ta = dec_float(session.total_actual)
+            d_tb, d_ta = _sums_from_serialized(serialized)
+            if abs(s_tb) < 1e-9 and abs(s_ta) < 1e-9 and (abs(d_tb) > 1e-9 or abs(d_ta) > 1e-9):
+                tv = d_ta - d_tb
+                vp = (tv / d_tb * Decimal('100')) if d_tb != 0 else Decimal('0.00')
+                base['total_budget'] = float(d_tb)
+                base['total_actual'] = float(d_ta)
+                base['total_variance'] = float(tv)
+                base['variance_percentage'] = float(vp)
+                base['totals_derived_from_budget_rows'] = True
+            else:
+                base['total_budget'] = s_tb
+                base['total_actual'] = s_ta
+                base['total_variance'] = dec_float(session.total_variance)
+                base['variance_percentage'] = dec_float(session.variance_percentage)
+
+            tr = int(base.get('total_rows') or 0)
+            if tr == 0 and len(raw_rows) > 0:
+                base['total_rows'] = len(raw_rows)
+
+            mapped_ct = len([x for x in serialized if (x.get('mapped_to_grap') or '').strip()])
+            if mapped_ct:
+                base['mapped_accounts_count'] = mapped_ct
+        except Exception as e:
+            logger.warning('get_session_summary (budget_report): %s', e, exc_info=True)
+            base.setdefault('budget_rows', [])
+            base.setdefault('budget_line_count', 0)
+
+        return base
 
 
 # Import regex for budget info extraction

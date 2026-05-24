@@ -6,14 +6,87 @@ Non-destructive edit history and change tracking system
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 import json
+import logging
+import os
+import uuid as uuid_mod
 
+AUDIT_EVENTS_TABLE = "app_audit_events"
+logger = logging.getLogger(__name__)
+
+
+def _json_safe(obj: Any) -> Any:
+    if obj is None:
+        return None
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    if isinstance(obj, (str, int, float, bool)):
+        return obj
+    if isinstance(obj, dict):
+        return {str(k): _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_safe(x) for x in obj]
+    return str(obj)
+
+
+def _db_audit_row_to_record(row: Dict[str, Any]) -> Dict[str, Any]:
+    payload = row.get("payload") or {}
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except Exception:
+            payload = {}
+    rec = {**payload} if isinstance(payload, dict) else {}
+    rec["audit_id"] = row.get("audit_id") or rec.get("audit_id")
+    ts = row.get("created_at")
+    rec["timestamp"] = rec.get("timestamp") or ts
+    if row.get("user_id") is not None and not rec.get("user_id"):
+        rec["user_id"] = row.get("user_id")
+    rec["_stored_id"] = row.get("id")
+    return rec
+
+
+def _coerce_uuid(user_id: Optional[str]) -> Optional[str]:
+    if not user_id or user_id == "system":
+        return None
+    try:
+        uuid_mod.UUID(str(user_id))
+        return str(user_id)
+    except Exception:
+        return None
 class AuditTrailModel:
-    """Audit trail model for tracking all system changes"""
-    
+    """Audit trail — in-process buffer plus durable Supabase ``app_audit_events`` when configured."""
+
     def __init__(self):
-        self.audit_log = []
-        self.change_history = {}
-        
+        self.audit_log: List[Dict[str, Any]] = []
+        self.change_history: Dict[str, List] = {}
+        self._svc = None
+        try:
+            from utils.supabase_service_client import get_service_supabase_client
+
+            self._svc = get_service_supabase_client()
+        except Exception:
+            self._svc = None
+
+    def _persist_audit_event(self, change_record: Dict[str, Any]) -> None:
+        if not self._svc:
+            return
+        uid = _coerce_uuid(change_record.get("user_id"))
+        payload = dict(change_record)
+        row = {
+            "audit_id": str(change_record.get("audit_id", ""))[:128],
+            "entity_type": str(change_record.get("entity_type", "unknown"))[:200],
+            "entity_id": str(change_record.get("entity_id", ""))[:512],
+            "action": str(change_record.get("action", ""))[:100],
+            "user_id": uid,
+            "reason": ((change_record.get("reason") or "")[:8000]),
+            "payload": _json_safe(payload),
+            "ip_address": (str(change_record.get("ip_address") or "")[:128] or None),
+            "user_agent": ((str(change_record.get("user_agent") or "")[:500]) or None),
+        }
+        try:
+            self._svc.table(AUDIT_EVENTS_TABLE).insert(row).execute()
+        except Exception as ex:
+            logger.warning("Persist audit event failed (%s): %s", row.get("audit_id"), ex)
     def log_change(self, entity_type: str, entity_id: str, action: str, 
                   old_data: Dict = None, new_data: Dict = None, 
                   user_id: str = 'system', reason: str = '', 
@@ -22,7 +95,7 @@ class AuditTrailModel:
                   approval_status: str = None, finalized_by: str = None) -> Dict[str, Any]:
         """Log a change in the audit trail"""
         change_record = {
-            'audit_id': f"AUD_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            'audit_id': f"AUD_{uuid_mod.uuid4().hex[:16]}",
             'timestamp': datetime.now().isoformat(),
             'entity_type': entity_type,
             'entity_id': entity_id,
@@ -55,7 +128,9 @@ class AuditTrailModel:
             self.change_history[entity_id] = []
         
         self.change_history[entity_id].append(change_record)
-        
+
+        self._persist_audit_event(change_record)
+
         return change_record
     
     def log_file_upload(self, filename: str, file_size: int, user_id: str = 'system',
@@ -191,39 +266,66 @@ class AuditTrailModel:
         )
     
     def get_entity_history(self, entity_type: str, entity_id: str = None) -> List[Dict[str, Any]]:
-        """Get complete change history for an entity"""
+        """Complete change history for an entity."""
+        if self._svc:
+            try:
+                q = self._svc.table(AUDIT_EVENTS_TABLE).select("*").eq("entity_type", entity_type)
+                if entity_id:
+                    q = q.eq("entity_id", str(entity_id))
+                res = q.order("created_at", desc=False).limit(5000).execute()
+                return [_db_audit_row_to_record(r) for r in (res.data or [])]
+            except Exception as ex:
+                logger.warning("Audit DB read entity_history failed: %s", ex)
         if entity_id:
-            # Get history for specific entity
-            return [record for record in self.audit_log 
-                   if record['entity_type'] == entity_type and record['entity_id'] == entity_id]
-        else:
-            # Get all history for entity type
-            return [record for record in self.audit_log if record['entity_type'] == entity_type]
-    
+            return [
+                r
+                for r in self.audit_log
+                if r["entity_type"] == entity_type and r["entity_id"] == entity_id
+            ]
+        return [r for r in self.audit_log if r["entity_type"] == entity_type]
+
     def get_user_activity(self, user_id: str, start_date: str = None, end_date: str = None) -> List[Dict[str, Any]]:
-        """Get all activity for a specific user"""
-        user_activity = [record for record in self.audit_log if record['user_id'] == user_id]
-        
-        # Filter by date range if provided
+        """All activity attributed to ``user_id``."""
+        uuid_filter = _coerce_uuid(user_id)
+        if self._svc and uuid_filter:
+            try:
+                q = self._svc.table(AUDIT_EVENTS_TABLE).select("*").eq("user_id", uuid_filter)
+                res = q.order("created_at", desc=True).limit(5000).execute()
+                rows = [_db_audit_row_to_record(r) for r in (res.data or [])]
+                if start_date:
+                    rows = [r for r in rows if (r.get("timestamp") or "") >= start_date]
+                if end_date:
+                    rows = [r for r in rows if (r.get("timestamp") or "") <= end_date]
+                return rows
+            except Exception as ex:
+                logger.warning("Audit DB read user_activity failed: %s", ex)
+        user_activity = [record for record in self.audit_log if record["user_id"] == user_id]
         if start_date:
-            user_activity = [record for record in user_activity if record['timestamp'] >= start_date]
+            user_activity = [record for record in user_activity if record["timestamp"] >= start_date]
         if end_date:
-            user_activity = [record for record in record in user_activity if record['timestamp'] <= end_date]
-        
+            user_activity = [record for record in user_activity if record["timestamp"] <= end_date]
         return user_activity
-    
+
     def get_system_activity(self, start_date: str = None, end_date: str = None) -> List[Dict[str, Any]]:
-        """Get all system activity within date range"""
-        system_activity = self.audit_log.copy()
-        
-        # Filter by date range if provided
+        """System-wide activity."""
+        if self._svc:
+            try:
+                q = self._svc.table(AUDIT_EVENTS_TABLE).select("*")
+                # PostgREST filter by ISO string when provided
+                if start_date:
+                    q = q.gte("created_at", start_date)
+                if end_date:
+                    q = q.lte("created_at", end_date)
+                res = q.order("created_at", desc=True).limit(10000).execute()
+                return [_db_audit_row_to_record(r) for r in (res.data or [])]
+            except Exception as ex:
+                logger.warning("Audit DB read system_activity failed: %s", ex)
+        system_activity = list(self.audit_log)
         if start_date:
-            system_activity = [record for record in system_activity if record['timestamp'] >= start_date]
+            system_activity = [r for r in system_activity if r["timestamp"] >= start_date]
         if end_date:
-            system_activity = [record for record in system_activity if record['timestamp'] <= end_date]
-        
+            system_activity = [r for r in system_activity if r["timestamp"] <= end_date]
         return system_activity
-    
     def get_audit_summary(self, start_date: str = None, end_date: str = None) -> Dict[str, Any]:
         """Get audit summary for reporting"""
         filtered_logs = self.get_system_activity(start_date, end_date)
@@ -387,9 +489,12 @@ class AuditTrailModel:
             approval_status='approved'
         )
     
-    def log_transaction_rejection(self, transaction_id: str, rejecter_id: str, 
+    def log_transaction_rejection(self, transaction_id: str, rejecter_id: str,
                           rejection_data: Dict) -> Dict[str, Any]:
         """Log transaction rejection"""
+        rd = rejection_data or {}
+        reason_detail = rd.get('reason') or rd.get('summary') or ''
+        audit_reason = f"Transaction rejected: {reason_detail[:500]}" if reason_detail else f'Transaction rejected by {rejecter_id}'
         return self.log_change(
             entity_type='transaction_approval',
             entity_id=transaction_id,
@@ -401,12 +506,11 @@ class AuditTrailModel:
                 'status': 'rejected'
             },
             user_id=rejecter_id,
-            reason=f'Transaction rejected by {rejecter_id}',
+            reason=audit_reason,
             approver_id=rejecter_id,
             approval_status='rejected'
         )
-    
-    def log_transaction_finalization(self, transaction_id: str, finalizer_id: str) -> Dict[str, Any]:
+
         """Log transaction finalization"""
         return self.log_change(
             entity_type='transaction',
@@ -425,32 +529,57 @@ class AuditTrailModel:
         )
     
     def get_approval_chain(self, transaction_id: str) -> List[Dict[str, Any]]:
-        """Get complete approval chain for a transaction"""
+        """Approval-related events for a logical transaction identifier."""
+        if self._svc:
+            try:
+                q = (
+                    self._svc.table(AUDIT_EVENTS_TABLE)
+                    .select("*")
+                    .eq("entity_id", transaction_id)
+                    .in_("entity_type", ["transaction", "transaction_approval"])
+                    .order("created_at")
+                    .limit(2000)
+                )
+                res = q.execute()
+                chain = [_db_audit_row_to_record(r) for r in (res.data or [])]
+                chain.sort(key=lambda x: x.get("timestamp") or "")
+                return chain
+            except Exception as ex:
+                logger.warning("Audit DB approval chain failed: %s", ex)
         chain_logs = []
         for log in self.audit_log:
-            if (log['entity_id'] == transaction_id and 
-                log['entity_type'] in ['transaction', 'transaction_approval']):
+            if log["entity_id"] == transaction_id and log["entity_type"] in ["transaction", "transaction_approval"]:
                 chain_logs.append(log)
-        
-        # Sort by timestamp
-        chain_logs.sort(key=lambda x: x['timestamp'])
+        chain_logs.sort(key=lambda x: x["timestamp"])
         return chain_logs
-    
+
     def get_four_eyes_compliance_report(self, start_date: str = None, end_date: str = None) -> Dict[str, Any]:
         """Generate Four-Eyes compliance report"""
-        # Check if we have any audit data at all
-        if not self.audit_log:
-            raise ValueError("No audit data available. Cannot generate compliance report without transaction history.")
-        
+        source = (
+            self.get_system_activity(start_date, end_date)
+            if self._svc
+            else list(self.audit_log)
+        )
+        if start_date:
+            source = [l for l in source if (l.get("timestamp") or "") >= start_date]
+        if end_date:
+            source = [l for l in source if (l.get("timestamp") or "") <= end_date]
+
+        if not source:
+            raise ValueError(
+                "No audit data available. Cannot generate compliance report without transaction history."
+            )
+
         financial_transactions = []
-        for log in self.audit_log:
-            if log.get('is_financial_transaction') or log['entity_type'] == 'transaction_approval':
-                if start_date and log['timestamp'] < start_date:
+        for log in source:
+            ts = log.get("timestamp") or ""
+            if log.get("is_financial_transaction") or log.get("entity_type") == "transaction_approval":
+                if start_date and ts < start_date:
                     continue
-                if end_date and log['timestamp'] > end_date:
+                if end_date and ts > end_date:
                     continue
                 financial_transactions.append(log)
-        
+
         # Check if we have any financial transactions
         if not financial_transactions:
             raise ValueError("No financial transactions found in audit trail. Cannot generate compliance report without transaction data.")
@@ -548,13 +677,15 @@ class AuditTrailModel:
         
         if query:
             query_lower = query.lower()
-            filtered_logs = [log for log in filtered_logs 
-                          if query_lower in log['entity_type'].lower() or 
-                             query_lower in log['entity_id'].lower() or
-                             query_lower in log['action'].lower() or
-                             query_lower in log['reason'].lower() or
-                             (log['old_data'] and query_lower in str(log['old_data']).lower()) or
-                             (log['new_data'] and query_lower in str(log['new_data']).lower())]
+            filtered_logs = [
+                log for log in filtered_logs
+                if query_lower in (log.get('entity_type') or '').lower()
+                or query_lower in (log.get('entity_id') or '').lower()
+                or query_lower in (log.get('action') or '').lower()
+                or query_lower in (log.get('reason') or '').lower()
+                or (log.get('old_data') and query_lower in str(log['old_data']).lower())
+                or (log.get('new_data') and query_lower in str(log['new_data']).lower())
+            ]
         
         return filtered_logs
 
@@ -564,11 +695,16 @@ class SupabaseAuditTrailModel:
     
     def __init__(self):
         """Initialize Supabase client"""
+        from utils.supabase_client import get_supabase_secret_key
+
         self.supabase_url = os.environ.get('SUPABASE_URL')
-        self.supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
-        
+        self.supabase_key = get_supabase_secret_key()
+
         if not self.supabase_url or not self.supabase_key:
-            raise ValueError("Supabase credentials not found in environment variables")
+            raise ValueError(
+                "Supabase credentials not found. Set SUPABASE_URL and "
+                "SUPABASE_SECRET_KEY (service role JWT)."
+            )
         
         from supabase import create_client
         self.client = create_client(self.supabase_url, self.supabase_key)

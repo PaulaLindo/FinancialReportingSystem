@@ -1,6 +1,18 @@
 """
 Varydian Financial Reporting System - Secure Supabase Service
 Private storage bucket with signed URLs for maximum security
+
+**Legacy database tables (deprecated for new product work):**
+
+Methods that read/write ``balance_sheets``, ``financial_results``, and ``pdf_reports``
+belong to an **older** reporting path (storage metadata + generated PDFs). The current
+flexible pipeline uses ``balance_sheet_sessions`` / ``balance_sheet_data`` and related
+tables from ``models.balance_sheet_models``.
+
+- Prefer **not** adding new callers to ``balance_sheets`` / ``financial_results`` /
+  ``pdf_reports`` unless you are maintaining that legacy flow.
+- Existing callers may remain until migrated; treat this class as **legacy** for those
+  three tables only — storage upload helpers are still valid.
 """
 
 import os
@@ -13,8 +25,14 @@ from supabase import create_client, Client
 from utils.constants import ALLOWED_EXTENSIONS
 
 class SupabaseServiceSecure:
-    """Secure Supabase integration with private storage and signed URLs"""
-    
+    """
+    Secure Supabase integration with private storage and signed URLs.
+
+    **Deprecation:** methods that persist to ``balance_sheets``, ``financial_results``, or
+    ``pdf_reports`` are **legacy** relative to the ``balance_sheet_sessions`` flexible
+    pipeline. See module docstring.
+    """
+
     def __init__(self):
         """Initialize Supabase client with anon key only"""
         # Load environment variables if not already loaded
@@ -64,7 +82,7 @@ class SupabaseServiceSecure:
             return None
     
     def save_balance_sheet(self, file_data: bytes, filename: str, user_id: str) -> Dict[str, Any]:
-        """Save balance sheet to private storage"""
+        """Save balance sheet to private storage (legacy ``balance_sheets`` row; see module docstring)."""
         try:
             # Create storage path
             storage_path = f"balance-sheets/{user_id}/{filename}"
@@ -98,7 +116,7 @@ class SupabaseServiceSecure:
             return {'success': False, 'error': str(e)}
     
     def get_balance_sheet_file(self, record_id: str, user_id: str) -> Dict[str, Any]:
-        """Get balance sheet file with signed URL"""
+        """Get balance sheet file with signed URL (legacy ``balance_sheets`` table)."""
         try:
             # Get record from database
             record = self.client.table('balance_sheets').select('*').eq('id', record_id).execute()
@@ -123,7 +141,7 @@ class SupabaseServiceSecure:
             return {'success': False, 'error': str(e)}
     
     def save_financial_results(self, results: Dict[str, Any], balance_sheet_id: str, user_id: str) -> Dict[str, Any]:
-        """Save financial statement results to database"""
+        """Save financial statement results (legacy ``financial_results`` table)."""
         try:
             record = {
                 'balance_sheet_id': balance_sheet_id,
@@ -144,7 +162,7 @@ class SupabaseServiceSecure:
             return {'success': False, 'error': str(e)}
     
     def save_pdf_report(self, pdf_data: bytes, filename: str, results_id: str, user_id: str) -> Dict[str, Any]:
-        """Save PDF report to private storage"""
+        """Save PDF report (legacy ``pdf_reports`` table)."""
         try:
             # Create storage path
             storage_path = f"pdf-reports/{user_id}/{filename}"
@@ -179,7 +197,7 @@ class SupabaseServiceSecure:
             return {'success': False, 'error': str(e)}
     
     def get_pdf_report(self, record_id: str, user_id: str) -> Dict[str, Any]:
-        """Get PDF report with signed URL"""
+        """Get PDF report with signed URL (legacy ``pdf_reports`` / ``financial_results``)."""
         try:
             # Get PDF record
             pdf_result = self.client.table('pdf_reports').select('*').eq('results_id', record_id).execute()
@@ -204,7 +222,7 @@ class SupabaseServiceSecure:
             return {'success': False, 'error': str(e)}
     
     def get_user_reports(self, user_id: str) -> List[Dict[str, Any]]:
-        """Get all reports for a user (without file URLs for security)"""
+        """List user reports (legacy ``financial_results``)."""
         try:
             result = self.client.table('financial_results').select(
                 '*',
@@ -227,7 +245,7 @@ class SupabaseServiceSecure:
             return []
     
     def delete_report(self, report_id: str, user_id: str) -> Dict[str, Any]:
-        """Delete a report and associated files"""
+        """Delete report and PDF (legacy ``financial_results`` / ``pdf_reports``)."""
         try:
             # Get report data
             report = self.client.table('financial_results').select('*').eq('id', report_id).execute()
@@ -251,7 +269,7 @@ class SupabaseServiceSecure:
             return {'success': False, 'error': str(e)}
     
     def get_storage_stats(self, user_id: str) -> Dict[str, Any]:
-        """Get storage statistics for a user"""
+        """Storage stats (legacy ``balance_sheets`` + ``pdf_reports`` file_size sums)."""
         try:
             # Get balance sheets
             tb_result = self.client.table('balance_sheets').select('file_size').eq('user_id', user_id).execute()

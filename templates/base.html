@@ -38,10 +38,13 @@
                     <ul class="nav-menu">
                         {% if current_user %}
                         <li><a href="/dashboard" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">Dashboard</a></li>
+                        <li><a href="/inbox" class="nav-link nav-inbox {% if request.endpoint == 'inbox_page' %}active{% endif %}" id="navInboxLink"><span>Inbox</span><span class="nav-inbox-badge" aria-live="polite" hidden aria-label="Unread messages"></span></a></li>
                         {% else %}
                         <li><a href="/" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Home</a></li>
                         {% endif %}
-                        {% if current_user and current_user.can_view_all() %}
+                        {% if current_user and current_user.can_review() %}
+                        <li><a href="/finance-manager/history" class="nav-link {% if request.endpoint == 'finance_manager_history' %}active{% endif %}">History</a></li>
+                        {% elif current_user and current_user.can_view_all() %}
                         <li><a href="/reports" class="nav-link {% if request.endpoint == 'reports_page' %}active{% endif %}">File Management</a></li>
                         {% endif %}
                         {% if current_user and current_user.can_upload() %}
@@ -52,10 +55,10 @@
                         <li><a href="/submission-history" class="nav-link {% if request.endpoint == 'submission_history_page' %}active{% endif %}">History</a></li>
                         {% endif %}
                         
-                        {% if current_user and current_user.can_review() %}
-                        <li><a href="/approvals" class="nav-link {% if request.endpoint == 'approvals_page' %}active{% endif %}">Approvals</a></li>
+                        {% if current_user and current_user.role in ['FINANCE_MANAGER', 'CFO'] %}
+                        <li><a href="/finance-manager/review-queue" class="nav-link {% if request.endpoint == 'finance_manager_review_queue' %}active{% endif %}">Review</a></li>
                         {% endif %}
-                        {% if current_user and current_user.can_export() %}
+                        {% if current_user and current_user.can_access_export_center() %}
                         <li><a href="/export" class="nav-link {% if request.endpoint == 'export_page' %}active{% endif %}">Export</a></li>
                         {% endif %}
                         {% if current_user and current_user.can_manage_users() %}
@@ -71,7 +74,7 @@
                             <div class="nav-user-avatar">{{ current_user.full_name[0] }}</div>
                             <div class="nav-user-details">
                                 <span class="nav-user-name">{{ current_user.full_name }}</span>
-                                <span class="nav-user-role nav-user-role--{{ current_user.role.lower() if current_user.role else 'default' }}">{{ current_user.role or 'USER' }}</span>
+                                <span class="nav-user-role nav-user-role--{{ current_user.role.lower() if current_user.role else 'default' }}">{{ current_user.role_label }}</span>
                             </div>
                         </div>
                         <a href="/logout" class="btn btn-secondary btn-sm">Logout</a>
@@ -95,10 +98,13 @@
                 <ul class="nav-menu">
                     {% if current_user %}
                     <li><a href="/dashboard" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">Dashboard</a></li>
+                    <li><a href="/inbox" class="nav-link {% if request.endpoint == 'inbox_page' %}active{% endif %}">Inbox</a></li>
                     {% else %}
                     <li><a href="/" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Home</a></li>
                     {% endif %}
-                    {% if current_user and current_user.can_view_all() %}
+                    {% if current_user and current_user.can_review() %}
+                    <li><a href="/finance-manager/history" class="nav-link {% if request.endpoint == 'finance_manager_history' %}active{% endif %}">History</a></li>
+                    {% elif current_user and current_user.can_view_all() %}
                     <li><a href="/reports" class="nav-link {% if request.endpoint == 'reports_page' %}active{% endif %}">File Management</a></li>
                     {% endif %}
                     {% if current_user and current_user.can_upload() %}
@@ -109,10 +115,10 @@
                     <li><a href="/submission-history" class="nav-link {% if request.endpoint == 'submission_history_page' %}active{% endif %}">History</a></li>
                     {% endif %}
                     
-                    {% if current_user and current_user.can_review() %}
-                    <li><a href="/approvals" class="nav-link {% if request.endpoint == 'approvals_page' %}active{% endif %}">Approvals</a></li>
+                    {% if current_user and current_user.role in ['FINANCE_MANAGER', 'CFO'] %}
+                    <li><a href="/finance-manager/review-queue" class="nav-link {% if request.endpoint == 'finance_manager_review_queue' %}active{% endif %}">Review</a></li>
                     {% endif %}
-                    {% if current_user and current_user.can_export() %}
+                    {% if current_user and current_user.can_access_export_center() %}
                     <li><a href="/export" class="nav-link {% if request.endpoint == 'export_page' %}active{% endif %}">Export</a></li>
                     {% endif %}
                     {% if current_user and current_user.can_manage_users() %}
@@ -128,7 +134,7 @@
                         <div class="nav-user-avatar">{{ current_user.full_name[0] }}</div>
                         <div class="nav-user-details">
                             <p class="nav-user-name">{{ current_user.full_name }}</p>
-                            <p class="nav-user-role">{{ current_user.role }}</p>
+                            <p class="nav-user-role">{{ current_user.role_label }}</p>
                         </div>
                     </div>
                     <a href="/logout" class="btn btn-secondary btn-sm">Logout</a>
@@ -148,26 +154,30 @@
     <main>
         {% block content %}{% endblock %}
     </main>
-    
+
+    {# Full-viewport overlays belong after <main>, not inside <footer>, so they cover the page (fixed + z-index) instead of stacking in the footer flow. #}
+    {% if current_user and (current_user.can_review() or current_user.can_export_audit()) %}
+    {% include 'components/formula-modal.html' %}
+    {% endif %}
+
+    {% if current_user and current_user.can_review() %}
+    {% include 'components/draft-statement-viewer.html' %}
+    {% endif %}
+
+    {% if current_user and current_user.can_view_all() %}
+    {% include 'components/file-details-modal.html' %}
+    {% endif %}
+
     <footer>
         <div class="container-content">
             <p>&copy; 2026 Varydian | Financial Reporting System</p>
-            {% if current_user and current_user.can_export_audit() %}
-            <!-- Formula Transparency Modal Component -->
-            {% include 'components/formula-modal.html' %}
-            {% endif %}
-            
-            {% if current_user and current_user.can_review() %}
-            <!-- Draft Statement Viewer Component -->
-            {% include 'components/draft-statement-viewer.html' %}
-            {% endif %}
-            
-            {% if current_user and current_user.role == 'FINANCE_MANAGER' %}
-            <!-- Line Item Comment Modal Component -->
-            {% include 'components/line-item-comment-modal.html' %}
-            {% endif %}
             
             <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+            {% if current_user %}
+            <script src="{{ url_for('static', filename='js/inbox-nav.js') }}" defer></script>
+            {% endif %}
+            <script src="{{ url_for('static', filename='js/transaction-card-ui.js') }}"></script>
+            <script src="{{ url_for('static', filename='js/modal-system.js') }}"></script>
             <script>
                 // Global user context for JavaScript
                 window.currentUserRole = '{{ current_user.role if current_user else "ANONYMOUS" }}';
@@ -177,16 +187,15 @@
             <script src="{{ url_for('static', filename='js/global-user-context.js') }}"></script>
             <script src="{{ url_for('static', filename='js/main.js') }}"></script>
             <script src="{{ url_for('static', filename='js/navigation-fluid.js') }}"></script>
-            <script src="{{ url_for('static', filename='js/approval-workflow.js') }}"></script>
-            {% if current_user and current_user.role == 'FINANCE_MANAGER' %}
-            <script src="{{ url_for('static', filename='js/finance-manager-dashboard.js') }}"></script>
+            {% if current_user and current_user.can_review() %}
+            <script src="{{ url_for('static', filename='js/grap-standards.js') }}"></script>
+            <script src="{{ url_for('static', filename='js/budget-variance-grap24.js') }}"></script>
             <script src="{{ url_for('static', filename='js/financial-statement-review.js') }}"></script>
-            <script src="{{ url_for('static', filename='js/line-item-comment-system.js') }}"></script>
             {% endif %}
             <script src="{{ url_for('static', filename='js/draft-statement-viewer.js') }}"></script>
             <script src="{{ url_for('static', filename='js/processing-state.js') }}"></script>
             
-            {% if current_user and current_user.can_export_audit() %}
+            {% if current_user and (current_user.can_review() or current_user.can_export_audit()) %}
             <script src="{{ url_for('static', filename='js/formula-modal.js') }}"></script>
             {% endif %}
             

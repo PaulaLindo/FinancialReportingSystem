@@ -1,0 +1,45 @@
+{# File details modal — Pattern C shell (modals-shared.css); used on File Management #}
+<div id="fileDetailsModal" class="file-details-modal element--hidden">
+    <div class="file-details-overlay" data-action="close-file-details-modal"></div>
+    <div class="file-details-content">
+        <div class="file-details-header">
+            <h3>File Details</h3>
+            <button type="button" class="file-details-close" data-action="close-file-details-modal" aria-label="Close">✕</button>
+        </div>
+        <div class="file-details-body">
+            <div class="detail-row">
+                <label>Filename:</label>
+                <span id="detailFilename"></span>
+            </div>
+            <div class="detail-row">
+                <label>Original Filename:</label>
+                <span id="detailOriginalFilename"></span>
+            </div>
+            <div class="detail-row">
+                <label>File Type:</label>
+                <span id="detailFileType"></span>
+            </div>
+            <div class="detail-row">
+                <label>File Size:</label>
+                <span id="detailFileSize"></span>
+            </div>
+            <div class="detail-row">
+                <label>Upload Date:</label>
+                <span id="detailUploadDate"></span>
+            </div>
+            <div class="detail-row">
+                <label>Status:</label>
+                <span id="detailStatus"></span>
+            </div>
+            <div class="detail-row element--hidden" id="detailBalanceSheetRow">
+                <label>Associated Balance Sheet:</label>
+                <span id="detailBalanceSheet"></span>
+            </div>
+        </div>
+        <div class="file-details-footer">
+            <button type="button" id="modalDownloadBtn" class="btn btn-primary">Download File</button>
+            <button type="button" id="modalDeleteBtn" class="btn btn-danger">Delete File</button>
+            <button type="button" class="btn btn-secondary" data-action="close-file-details-modal">Close</button>
+        </div>
+    </div>
+</div>

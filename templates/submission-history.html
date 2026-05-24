@@ -3,147 +3,165 @@
 {% block title %}Submission History - Varydian{% endblock %}
 
 {% block content %}
-<div class="submission-history-page">
+<div class="page page--submission-history submission-history-page submission-history-page--clerk">
     <div class="container-content">
-        <div class="submission-history-header">
-            <h1>📋 My Submission History</h1>
-            <p>View the status of your financial document submissions (Balance Sheets, Income Statements, Budget Reports)</p>
-            
-            <!-- Summary Stats -->
-            <div class="submission-stats-summary" id="submissionStatsSummary">
-                <div class="stat-card">
-                    <div class="stat-number" id="totalSubmissionsCount">0</div>
-                    <div class="stat-label">Total Submissions</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{{ stats.submitted_today or 0 }}</div>
-                    <div class="stat-label">Submitted Today</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="pendingSubmissionsCount">0</div>
-                    <div class="stat-label">Pending Review</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="approvedSubmissionsCount">0</div>
-                    <div class="stat-label">Approved</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="rejectedSubmissionsCount">0</div>
-                    <div class="stat-label">Rejected</div>
-                </div>
+        <header class="submission-history-hero">
+            <div class="submission-history-hero__copy">
+                <p class="submission-history-hero__eyebrow">Finance Clerk</p>
+                <h1>My submission history</h1>
+                <p class="submission-history-hero__lead">
+                    Track balance sheets, income statements, and budget reports you have submitted for review.
+                </p>
+            </div>
+            <a href="{{ url_for('upload_page') }}" class="btn btn-primary submission-history-hero__cta">
+                Upload new document
+            </a>
+        </header>
+
+        <div class="submission-stats-summary" id="submissionStatsSummary" aria-label="Submission summary">
+            <div class="stat-card stat-card--total">
+                <div class="stat-number" id="totalSubmissionsCount">{{ stats.total_submissions or 0 }}</div>
+                <div class="stat-label">Total submitted</div>
+            </div>
+            <div class="stat-card stat-card--today">
+                <div class="stat-number" id="submittedTodayCount">{{ stats.submitted_today or 0 }}</div>
+                <div class="stat-label">Submitted today</div>
+            </div>
+            <div class="stat-card stat-card--pending">
+                <div class="stat-number" id="pendingSubmissionsCount">0</div>
+                <div class="stat-label">Pending review</div>
+            </div>
+            <div class="stat-card stat-card--approved">
+                <div class="stat-number" id="approvedSubmissionsCount">0</div>
+                <div class="stat-label">Approved</div>
+            </div>
+            <div class="stat-card stat-card--rejected">
+                <div class="stat-number" id="rejectedSubmissionsCount">0</div>
+                <div class="stat-label">Rejected</div>
             </div>
         </div>
 
-        <!-- Search and Filter -->
-        <div class="queue-filters">
-            <div class="filter-group">
-                <label for="searchInput" class="filter-label">Search:</label>
-                <input type="text" id="searchInput" class="search-input" placeholder="Search by filename..." data-action="search-submissions">
+        <div class="history-toolbar queue-filters">
+            <div class="filter-group filter-group--grow">
+                <label for="searchInput" class="filter-label">Search</label>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search by filename…" data-action="search-submissions">
             </div>
             <div class="filter-group">
-                <label for="statusFilter" class="filter-label">Status:</label>
+                <label for="documentTypeFilter" class="filter-label">Document type</label>
+                <select id="documentTypeFilter" class="filter-select" data-filter="documentType">
+                    <option value="all">All types</option>
+                    <option value="balance_sheet">Balance sheet</option>
+                    <option value="income_statement">Income statement</option>
+                    <option value="budget_report">Budget report</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="statusFilter" class="filter-label">Status</label>
                 <select id="statusFilter" class="filter-select" data-filter="status">
-                    <option value="all">All Status</option>
-                    <option value="uploaded">Uploaded</option>
-                    <option value="processing">Processing</option>
-                    <option value="mapped">Mapped</option>
+                    <option value="all">All status</option>
+                    <option value="pending_review">In review</option>
                     <option value="approved">Approved</option>
                     <option value="rejected">Rejected</option>
-                    <option value="archived">Archived</option>
-                    <option value="draft">Draft</option>
-                    <option value="pending_review">Pending Review</option>
                 </select>
             </div>
             <div class="filter-group">
-                <label for="dateFilter" class="filter-label">Date Range:</label>
+                <label for="dateFilter" class="filter-label">Date range</label>
                 <select id="dateFilter" class="filter-select" data-filter="dateRange">
-                    <option value="all">All Time</option>
+                    <option value="all">All time</option>
                     <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
+                    <option value="week">This week</option>
+                    <option value="month">This month</option>
                 </select>
             </div>
         </div>
 
-        <!-- Loading State -->
+        <p id="historyResultsSummary" class="history-results-summary element--hidden" aria-live="polite"></p>
+
         <div id="loadingState" class="loading-state">
             <div class="loader"></div>
-            <p>Loading your submissions...</p>
+            <p>Loading your submissions…</p>
         </div>
 
-        <!-- Empty State -->
         <div id="emptyState" class="empty-state element--hidden">
-            <div class="empty-icon">📄</div>
-            <h3>No Submissions Found</h3>
-            <p>You haven't submitted any financial documents yet.</p>
-            <a href="{{ url_for('upload_page') }}" class="btn btn-primary">Upload Your First Financial Document</a>
+            <div class="empty-icon" aria-hidden="true">📄</div>
+            <h3>No submissions yet</h3>
+            <p>When you submit a mapped document for review, it will appear here.</p>
+            <a href="{{ url_for('upload_page') }}" class="btn btn-primary">Upload your first document</a>
         </div>
 
-        <!-- Submissions List -->
-        <div id="submissionsList" class="submissions-list element--hidden">
-            <!-- Submissions will be populated here -->
-        </div>
+        <div id="submissionsList" class="submissions-list submissions-list--cards element--hidden"></div>
 
-        <!-- Pagination -->
         <div id="paginationControls" class="pagination-controls element--hidden">
-            <button id="prevPageBtn" class="btn btn-secondary" disabled>Previous</button>
+            <button id="prevPageBtn" class="btn btn-secondary" type="button" disabled>Previous</button>
             <span id="pageInfo">Page 1 of 1</span>
-            <button id="nextPageBtn" class="btn btn-secondary" disabled>Next</button>
+            <button id="nextPageBtn" class="btn btn-secondary" type="button" disabled>Next</button>
         </div>
     </div>
 </div>
 
-<!-- Submission Details Modal -->
 <div id="submissionDetailsModal" class="submission-details-modal element--hidden">
     <div class="submission-details-overlay"></div>
     <div class="submission-details-content">
         <div class="submission-details-header">
-            <h3>Submission Details</h3>
-            <button id="modalCloseBtn" class="btn-close" data-action="close-submission-details-modal">&times;</button>
+            <div class="submission-details-header__copy">
+                <h3 id="detailModalTitle">Submission details</h3>
+                <p id="detailModalSubtitle" class="submission-details-subtitle"></p>
+            </div>
+            <button id="modalCloseBtn" class="btn-close" type="button" data-action="close-submission-details-modal" aria-label="Close">&times;</button>
         </div>
         <div class="submission-details-body">
-            <div class="detail-group">
-                <label>Filename:</label>
-                <span id="detailFilename">-</span>
+            <div class="submission-details-status-row">
+                <span id="detailStatus" class="submission-status">—</span>
+                <span id="detailDocumentType" class="submission-doc-badge">—</span>
             </div>
-            <div class="detail-group">
-                <label>Status:</label>
-                <span id="detailStatus">-</span>
-            </div>
-            <div class="detail-group">
-                <label>Submitted:</label>
-                <span id="detailSubmissionDate">-</span>
-            </div>
-            <div class="detail-group">
-                <label>Mapped Accounts:</label>
-                <span id="detailMappedAccounts">-</span>
-            </div>
-            <div class="detail-group">
-                <label>Review Notes:</label>
-                <span id="detailReviewNotes">-</span>
-            </div>
-            <div class="detail-group">
-                <label>Locked:</label>
-                <span id="detailLocked">-</span>
+            <dl class="submission-details-grid">
+                <div class="detail-group">
+                    <dt>Filename</dt>
+                    <dd id="detailFilename">—</dd>
+                </div>
+                <div class="detail-group">
+                    <dt>Submitted</dt>
+                    <dd id="detailSubmissionDate">—</dd>
+                </div>
+                <div class="detail-group">
+                    <dt>Mapped accounts</dt>
+                    <dd id="detailMappedAccounts">—</dd>
+                </div>
+                <div class="detail-group">
+                    <dt>Editing</dt>
+                    <dd id="detailLocked">—</dd>
+                </div>
+                <div id="detailReviewNotesGroup" class="detail-group detail-group--full element--hidden">
+                    <dt>Review notes</dt>
+                    <dd id="detailReviewNotes">—</dd>
+                </div>
+            </dl>
+            <div id="detailRejectionBlock" class="detail-rejection-block element--hidden">
+                <h4>Rejection reason</h4>
+                <p id="detailRejectionReason" class="detail-rejection-reason"></p>
             </div>
         </div>
         <div class="submission-details-footer">
-            <button id="modalCloseFooterBtn" class="btn btn-secondary" data-action="close-submission-details-modal">Close</button>
+            <button type="button" id="modalOpenMappingBtn" class="btn btn-primary element--hidden" data-action="open-mapping-correction">
+                Open correction workspace
+            </button>
+            <button type="button" id="modalCloseFooterBtn" class="btn btn-secondary" data-action="close-submission-details-modal">Close</button>
         </div>
     </div>
 </div>
 
-<!-- Submission Item Template -->
 <template id="submissionItemTemplate">
-    <div class="submission-item" data-submission-id="">
-        <div class="submission-icon">
+    <article class="submission-item submission-card" data-submission-id="">
+        <div class="submission-icon" aria-hidden="true">
             <div class="icon-balance-sheet element--visible"></div>
             <div class="icon-income-statement element--hidden"></div>
             <div class="icon-budget-report element--hidden"></div>
-            <div class="icon-pdf-report element--hidden"></div>
         </div>
         <div class="submission-info">
-            <div class="submission-name"></div>
+            <div class="submission-card__head">
+                <div class="submission-name"></div>
+                <span class="submission-doc-badge"></span>
+            </div>
             <div class="submission-meta">
                 <span class="submission-date"></span>
                 <span class="submission-status"></span>
@@ -151,16 +169,17 @@
             </div>
         </div>
         <div class="submission-actions">
-            <button class="btn btn-sm btn-outline btn-view-details" title="View Details">
-                <span class="btn-icon">👁️</span>
-                View
+            <button type="button" class="btn btn-sm btn-primary btn-open-mapping element--hidden" title="Correct mapping and resubmit">
+                Correct
+            </button>
+            <button type="button" class="btn btn-sm btn-outline btn-view-details" title="View details">
+                Details
             </button>
         </div>
-    </div>
+    </article>
 </template>
 
 <script>
-    // Constants for submission history
     const WorkflowErrorMessages = {
         INVALID_DATE: 'Invalid Date'
     };

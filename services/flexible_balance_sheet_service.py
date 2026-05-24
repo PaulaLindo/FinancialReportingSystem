@@ -70,7 +70,16 @@ class FlexibleBalanceSheetService:
                 r'(?i)total'
             ]
         }
-    
+
+    def get_model(self):
+        """Return persistence model (matches IncomeStatementService / BudgetReportService)."""
+        return self.model
+
+    @staticmethod
+    def _ephemeral_metadata(**extra) -> Dict[str, Any]:
+        from utils.session_workflow import new_ephemeral_session_metadata
+        return new_ephemeral_session_metadata(**extra)
+
     def process_upload(self, file_path: str, user_id: str, filename: str, period_id: Optional[str] = None) -> Dict:
         """
         Process uploaded balance sheet file with optional period validation
@@ -80,7 +89,11 @@ class FlexibleBalanceSheetService:
         print(f"👤 user_id: {user_id}")
         print(f"📄 filename: {filename}")
         
+        session = None
         try:
+            from services.cleanup_service import CleanupService
+            CleanupService().cleanup_user_ephemeral_sessions(user_id)
+
             # Step 1: Create session
             print("📋 Step 1: Creating session...")
             session = self._create_session(file_path, user_id, filename)
@@ -160,6 +173,12 @@ class FlexibleBalanceSheetService:
             print(f"💥 Exception in process_upload: {str(e)}")
             import traceback
             print(f"📚 Full traceback: {traceback.format_exc()}")
+            if session and getattr(session, 'id', None):
+                try:
+                    from services.cleanup_service import CleanupService
+                    CleanupService().cleanup_specific_session(session.id)
+                except Exception as cleanup_err:
+                    print(f"⚠️ Staging cleanup after failed upload: {cleanup_err}")
             return {
                 'success': False,
                 'error': str(e)
@@ -180,10 +199,9 @@ class FlexibleBalanceSheetService:
             status='uploaded',
             file_size_bytes=file_size,
             checksum_md5=checksum,
-            metadata={
-                'upload_source': 'web_interface',
-                'processing_stage': 'initial_upload'
-            }
+            metadata=self._ephemeral_metadata(
+                processing_stage='initial_upload',
+            )
         )
         
         session_id = self.model.create_session(session)
@@ -817,63 +835,20 @@ class FlexibleBalanceSheetService:
             return {'success': False, 'error': f'GRAP mapping failed: {str(e)}'}
     
     def _generate_financial_statements(self, mapped_accounts: List[Dict]) -> Dict:
-        """Generate financial statements from mapped accounts"""
+        """Generate financial statements from mapped accounts (SFP equation–aware)."""
         try:
-            # Group accounts by GRAP categories
-            assets = []
-            liabilities = []
-            revenue = []
-            expenses = []
-            equity = []
-            
-            for account in mapped_accounts:
-                grap_code = account.get('grap_code', '')
-                net_balance = account.get('net_balance', 0)
-                
-                if grap_code.startswith('CA') or grap_code.startswith('NCA'):
-                    assets.append(account)
-                elif grap_code.startswith('CL') or grap_code.startswith('NCL'):
-                    liabilities.append(account)
-                elif grap_code.startswith('RV'):
-                    revenue.append(account)
-                elif grap_code.startswith('EX'):
-                    expenses.append(account)
-                elif grap_code.startswith('EQ'):
-                    equity.append(account)
-            
-            # Calculate totals
-            total_assets = sum(acc.get('net_balance', 0) for acc in assets)
-            total_liabilities = sum(acc.get('net_balance', 0) for acc in liabilities)
-            total_revenue = sum(acc.get('net_balance', 0) for acc in revenue)
-            total_expenses = sum(acc.get('net_balance', 0) for acc in expenses)
-            total_equity = sum(acc.get('net_balance', 0) for acc in equity)
-            
+            from services.statement_validation_service import group_mapped_accounts_for_statements
+
+            grouped = group_mapped_accounts_for_statements(mapped_accounts)
+            sfp = grouped.get("statement_of_financial_position") or {}
+            sfper = grouped.get("statement_of_financial_performance") or {}
             return {
-                'statement_of_financial_position': {
-                    'assets': {
-                        'accounts': assets,
-                        'total': total_assets
-                    },
-                    'liabilities': {
-                        'accounts': liabilities,
-                        'total': total_liabilities
-                    },
-                    'equity': {
-                        'accounts': equity,
-                        'total': total_equity
-                    }
+                "statement_of_financial_position": {
+                    "assets": sfp.get("assets") or {"accounts": [], "total": 0},
+                    "liabilities": sfp.get("liabilities") or {"accounts": [], "total": 0},
+                    "equity": sfp.get("equity") or {"accounts": [], "total": 0},
                 },
-                'statement_of_financial_performance': {
-                    'revenue': {
-                        'accounts': revenue,
-                        'total': total_revenue
-                    },
-                    'expenses': {
-                        'accounts': expenses,
-                        'total': total_expenses
-                    },
-                    'surplus': total_revenue - total_expenses
-                }
+                "statement_of_financial_performance": sfper,
             }
         except Exception as e:
             print(f"Error generating financial statements: {str(e)}")
@@ -975,6 +950,7 @@ class FlexibleBalanceSheetService:
             session_data = self.get_session_data(session_id)
             base_summary = {
                 'session_id': session.id,
+                'document_type': getattr(session, 'document_type', None) or 'balance_sheet',
                 'user_id': session.user_id,
                 'filename': session.filename,
                 'status': session.status,
@@ -1029,9 +1005,17 @@ class FlexibleBalanceSheetService:
             # If session has GRAP mapping results (legacy), add financial summary and update mapped count
             if session_data and session_data.get('success') and session.metadata.get('grap_mapping'):
                 try:
-                    # Get mapped accounts from metadata (legacy format)
+                    # Get mapped accounts from metadata (legacy uses mapped_accounts; universal workflow uses mapping_data)
                     grap_mapping = session.metadata.get('grap_mapping', {})
-                    mapped_accounts = grap_mapping.get('mapped_accounts', [])
+                    if not isinstance(grap_mapping, dict):
+                        grap_mapping = {}
+                    raw_mapped = (
+                        session.metadata.get('mapped_data')
+                        or grap_mapping.get('mapped_accounts')
+                        or grap_mapping.get('mapping_data')
+                        or []
+                    )
+                    mapped_accounts = raw_mapped if isinstance(raw_mapped, list) else []
                     
                     # Update mapped accounts count (override if legacy format exists)
                     base_summary['mapped_accounts_count'] = len(mapped_accounts) if mapped_accounts else 0
@@ -1082,7 +1066,23 @@ class FlexibleBalanceSheetService:
                     print(f"Error generating financial summary: {str(e)}")
                     # Return base summary without financial data if there's an error
                     pass
-            
+
+            uid = getattr(session, 'user_id', None)
+            if uid:
+                try:
+                    u = supabase_auth.get_user_by_id(str(uid))
+                    if u:
+                        cn = (u.get('full_name') or u.get('username') or u.get('email') or '').strip()
+                        if cn:
+                            base_summary['creator_name'] = cn
+                except Exception:
+                    pass
+            md = session.metadata or {}
+            if not base_summary.get('creator_name'):
+                base_summary['creator_name'] = (md.get('creator_name') or md.get('submitted_by_name') or '').strip()
+            if not base_summary.get('creator_name'):
+                base_summary['creator_name'] = ''
+
             return base_summary
         except Exception as e:
             return {'error': str(e)}
@@ -1093,22 +1093,15 @@ class FlexibleBalanceSheetService:
             session = self.model.get_session(session_id)
             if not session:
                 return {'success': False, 'error': 'Session not found'}
-            
-            # Update session metadata
-            updated_metadata = session.get('metadata', {})
+
+            base = getattr(session, "metadata", None) or {}
+            updated_metadata = dict(base)
             updated_metadata.update(metadata)
-            
-            # Save to database
-            success = self.model.update_session(session_id, {
-                'metadata': updated_metadata,
-                'updated_at': datetime.now().isoformat()
-            })
-            
-            if success:
-                return {'success': True, 'message': 'Session metadata updated successfully'}
-            else:
-                return {'success': False, 'error': 'Failed to update session metadata'}
-                
+            session.metadata = updated_metadata
+
+            self.model.update_session(session)
+            return {'success': True, 'message': 'Session metadata updated successfully'}
+
         except Exception as e:
             print(f"Error updating session metadata: {str(e)}")
             return {'success': False, 'error': f'Failed to update session metadata: {str(e)}'}

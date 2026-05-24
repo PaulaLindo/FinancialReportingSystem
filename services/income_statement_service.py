@@ -132,8 +132,10 @@ class IncomeStatementService(FinancialDocumentService):
                 if field_name == 'account_code':
                     account_code = value
                     processed_data['account_code'] = value
-                elif field_name == 'category':
+                elif field_name == 'account_desc':
                     account_description = value
+                    processed_data['account_description'] = value
+                elif field_name == 'category':
                     category = value
                     processed_data['category'] = value
                 elif field_name == 'revenue':
@@ -508,6 +510,68 @@ class IncomeStatementService(FinancialDocumentService):
         except Exception as e:
             logger.error(f"Error calculating financial summary: {str(e)}")
             return {'success': False, 'error': f'Error calculating financial summary: {str(e)}'}
+
+    def get_session_summary(self, session_id: str) -> Dict[str, Any]:
+        """Extend base summary with income totals and persisted upload rows for review UI."""
+        base = super().get_session_summary(session_id)
+        if not isinstance(base, dict) or not base.get('success'):
+            return base
+
+        try:
+            model = self.get_model()
+            session = model.get_session(session_id)
+            if not session:
+                return base
+
+            def dec_float(val) -> float:
+                if val is None:
+                    return 0.0
+                if isinstance(val, Decimal):
+                    return float(val)
+                try:
+                    return float(val)
+                except (TypeError, ValueError):
+                    return 0.0
+
+            base['total_revenue'] = dec_float(session.total_revenue)
+            base['total_expenses'] = dec_float(session.total_expenses)
+            base['net_income'] = dec_float(session.net_income)
+            base['gross_profit'] = dec_float(session.gross_profit)
+            base['operating_income'] = dec_float(session.operating_income)
+            base['fiscal_year'] = int(getattr(session, 'fiscal_year', 0) or 0)
+            base['reporting_period'] = getattr(session, 'reporting_period', '') or ''
+            if session.updated_at:
+                base['updated_at'] = session.updated_at.isoformat()
+
+            raw_rows = model.get_data_rows(session_id)
+            base['income_line_count'] = len(raw_rows)
+            serialized = []
+            for r in raw_rows[:2000]:
+                serialized.append({
+                    'row_index': r.row_index,
+                    'account_code': r.account_code or '',
+                    'account_description': r.account_description or '',
+                    'amount': dec_float(r.amount),
+                    'net_balance': dec_float(r.net_balance),
+                    'revenue_amount': dec_float(r.revenue_amount),
+                    'expense_amount': dec_float(r.expense_amount),
+                    'category': r.category or '',
+                    'period': r.period or '',
+                    'mapped_to_grap': r.mapped_to_grap or '',
+                    'mapping_status': getattr(r, 'mapping_status', '') or '',
+                    'is_total_row': bool(r.is_total_row),
+                    'is_subtotal_row': bool(r.is_subtotal_row),
+                })
+            base['income_rows'] = serialized
+            mapped_ct = len([x for x in serialized if (x.get('mapped_to_grap') or '').strip()])
+            if mapped_ct:
+                base['mapped_accounts_count'] = mapped_ct
+        except Exception as e:
+            logger.warning('get_session_summary (income_statement): %s', e, exc_info=True)
+            base.setdefault('income_rows', [])
+            base.setdefault('income_line_count', 0)
+
+        return base
 
 
 # Import regex for period extraction

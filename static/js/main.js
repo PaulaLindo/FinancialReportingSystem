@@ -482,7 +482,6 @@ class EventDelegationSystem {
         this.registerHandler('view-source-ledger', this.handleViewSourceLedger.bind(this));
         this.registerHandler('view-raw-balance-sheet', this.handleViewRawBalanceSheet.bind(this));
         this.registerHandler('export-breakdown-pdf', this.handleExportBreakdownPDF.bind(this));
-
         // Draft statement viewer handlers
         this.registerHandler('refresh-draft-statement', this.handleRefreshDraftStatement.bind(this));
         this.registerHandler('export-draft-statement', this.handleExportDraftStatement.bind(this));

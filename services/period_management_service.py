@@ -1,6 +1,12 @@
 """
 Period Management Service
 Business logic for financial period management and workflow operations
+
+**Uses:** ``financial_periods`` through ``models.period_models.period_model`` (not the
+``periods`` table used by ``models.workflow_models`` for submission workflow).
+
+When adding features that tie uploads to a calendar period, prefer this service and
+``financial_periods`` unless you explicitly need ``WorkflowModel`` / ``submissions``.
 """
 
 from datetime import datetime, timedelta
@@ -108,6 +114,9 @@ class PeriodManagementService:
             # Check if period is open
             if period.status != PeriodStatus.OPEN.value:
                 return False, f"Period is {period.status}. Uploads not allowed."
+
+            if getattr(period, "is_locked", False) or (period.metadata or {}).get("is_locked"):
+                return False, f"Period '{period.name}' is locked. No uploads or edits are permitted."
             
             # Check if period is within date range
             now = datetime.now()
@@ -230,6 +239,28 @@ class PeriodManagementService:
         except Exception as e:
             logger.error(f"Error closing period: {str(e)}")
             raise Exception(f"Failed to close period: {str(e)}")
+
+    def lock_period(self, period_id: str, locked_by: str) -> FinancialPeriod:
+        """Lock a period after CFO finalization."""
+        try:
+            period = self.model.get_period(period_id)
+            if not period:
+                raise Exception("Period not found")
+            if getattr(period, "is_locked", False) or (period.metadata or {}).get("is_locked"):
+                logger.info(f"Period {period.name} is already locked")
+                return period
+            period = self.model.lock_period(period_id, locked_by)
+            logger.info(f"Locked period {period.name} by {locked_by}")
+            return period
+        except Exception as e:
+            logger.error(f"Error locking period: {str(e)}")
+            raise Exception(f"Failed to lock period: {str(e)}")
+
+    def is_period_locked(self, period_id: str) -> bool:
+        period = self.model.get_period(period_id)
+        if not period:
+            return False
+        return bool(getattr(period, "is_locked", False) or (period.metadata or {}).get("is_locked"))
 
     def get_dashboard_data(self) -> Dict[str, Any]:
         """Get dashboard data for finance clerks"""

@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block content %}
+<div class="page page--dashboard">
 
     <div class="hero">
         <div class="hero-content fade-in-up">
@@ -19,97 +20,23 @@
             </div>
             {% else %}
             <div class="hero-actions">
+                {% if current_user.can_review() %}
+                <a href="/finance-manager/review-queue" class="btn btn-primary">View Queue</a>
+                <a href="/about" class="btn btn-secondary">Learn More</a>
+                {% else %}
                 <a href="/reports" class="btn btn-primary">View Reports</a>
                 <a href="/about" class="btn btn-secondary">Learn More</a>
+                {% endif %}
             </div>
             {% endif %}
         </div>
     </div>
 
-    {% if current_user.role == 'FINANCE_MANAGER' %}
-    <!-- Finance Manager Approvals Queue -->
-    <div class="section approvals-queue-section">
-        <div class="container-content">
-            <div class="section-header">
-                <h2 class="section-title">Approvals Queue - Clerk Submissions</h2>
-            </div>
-
-            <!-- Queue Statistics -->
-            <div class="queue-stats">
-                <span class="stat-item">
-                    <span class="stat-value" id="pendingCount">0</span>
-                    <span class="stat-label">Pending</span>
-                </span>
-                <span class="stat-item">
-                    <span class="stat-value" id="highPriorityCount">0</span>
-                    <span class="stat-label">High Priority</span>
-                </span>
-                <span class="stat-item">
-                    <span class="stat-value" id="todayCount">0</span>
-                    <span class="stat-label">Today</span>
-                </span>
-            </div>
-
-            <!-- Queue Filters -->
-            <div class="queue-filters">
-                <div class="filter-group">
-                    <label for="queueSearchInput" class="filter-label">Search:</label>
-                    <input type="text" id="queueSearchInput" class="search-input" placeholder="Search by ID, creator, reason..." data-action="search-queue">
-                </div>
-                <div class="filter-group">
-                    <label for="submissionTypeFilter" class="filter-label">Submission Type:</label>
-                    <select id="submissionTypeFilter" class="filter-select" data-filter="submissionType">
-                        <option value="all">All Submissions</option>
-                        <option value="financial_statements">Financial Statements</option>
-                        <option value="journal_entries">Journal Entries</option>
-                        <option value="asset_impairment">Asset Impairment</option>
-                        <option value="budget_adjustment">Budget Adjustment</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="priorityFilter" class="filter-label">Priority:</label>
-                    <select id="priorityFilter" class="filter-select" data-filter="priority">
-                        <option value="all">All Priority</option>
-                        <option value="high">High Priority</option>
-                        <option value="normal">Normal Priority</option>
-                        <option value="low">Low Priority</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="dateFilter" class="filter-label">Date Range:</label>
-                    <select id="dateFilter" class="filter-select" data-filter="dateRange">
-                        <option value="all">All Time</option>
-                        <option value="today">Today</option>
-                        <option value="week">This Week</option>
-                        <option value="month">This Month</option>
-                    </select>
-                </div>
-                <div class="filter-actions">
-                    <button class="btn btn-secondary btn-sm" data-action="refresh-queue">
-                        🔄 Refresh
-                    </button>
-                    <a href="/approvals" class="btn btn-primary btn-sm">
-                        📋 View All Approvals
-                    </a>
-                </div>
-            </div>
-
-            <!-- Queue Items -->
-            <div class="queue-items" id="approvalsQueue">
-                <div class="queue-loading">
-                    <div class="loading-spinner"></div>
-                    <p>Loading Clerk submissions...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
     {% if current_user.role == 'FINANCE_CLERK' %}
     <!-- Finance Clerk Dashboard Content -->
-    <div class="dashboard-content">
+    <div class="dashboard-content dashboard-clerk container-content">
         <!-- Quick Stats -->
-        <div class="quick-stats">
+        <div class="quick-stats dashboard-quick-stats" aria-label="Period summary">
             <div class="stat-card">
                 <div class="stat-number">{{ stats.open_periods or 0 }}</div>
                 <div class="stat-label">Open Periods</div>
@@ -129,7 +56,7 @@
         </div>
 
         <!-- Task List Section -->
-        <div class="task-list-section">
+        <div class="task-list-section dashboard-panel">
             <div class="section-header">
                 <h2 class="section-title">
                     <span class="section-icon">📋</span>
@@ -191,7 +118,7 @@
                             <div class="task-info">
                                 <div class="task-info-item">
                                     <span class="task-info-icon">📅</span>
-                                    <span>{{ period.start_date }} - {{ period.end_date }}</span>
+                                    <span>{{ period.start_date | display_datetime }} - {{ period.end_date | display_datetime }}</span>
                                 </div>
                                 <div class="task-info-item">
                                     <span class="task-info-icon">📊</span>
@@ -199,12 +126,12 @@
                                 </div>
                                 <div class="task-info-item {% if period.is_urgent %}urgent-deadline{% endif %}">
                                     <span class="task-info-icon">⏰</span>
-                                    <span>Due: {{ period.due_date }}</span>
+                                    <span>Due: {{ period.due_date | display_datetime }}</span>
                                 </div>
                                 {% if period.last_upload %}
                                 <div class="task-info-item">
                                     <span class="task-info-icon">🕐</span>
-                                    <span>Last upload: {{ period.last_upload }}</span>
+                                    <span>Last upload: {{ period.last_upload | display_datetime }}</span>
                                 </div>
                                 {% endif %}
                             </div>
@@ -214,10 +141,18 @@
                             {% set uploaded = period.uploaded_count or 0 %}
                             {% set required = period.required_count or 1 %}
                             {% set progress = (uploaded / required) * 100 %}
-                            <div class="progress-bar">
-                                <div class="progress-fill">{{ progress }}%</div>
+                            {% set progress_width = [progress, 100]|min %}
+                            <div class="task-progress__label">
+                                <span class="progress-text">{{ progress|round(0)|int }}% Complete</span>
                             </div>
-                            <span class="progress-text">{{ progress|int }}% Complete</span>
+                            <div class="progress-bar task-progress__bar"
+                                role="progressbar"
+                                aria-valuenow="{{ progress|round(0)|int }}"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-label="Upload progress for {{ period.name }}">
+                                <div class="progress-fill task-progress__fill" style="width: {{ progress_width|round(0) }}%;"></div>
+                            </div>
                         </div>
                         
                         <div class="task-actions">
@@ -235,7 +170,6 @@
                             
                             {% if (period.uploaded_count or 0) > 0 %}
                                 <a href="/reports?period={{ period.id }}" class="btn-view">
-                                    <span>👁️</span>
                                     View Reports
                                 </a>
                             {% endif %}
@@ -253,6 +187,101 @@
                     </p>
                 </div>
             {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if current_user.can_upload() %}
+    <div class="section">
+        <div class="container-content">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Upload Balance Sheet</h3>
+                    <p>Import your Balance Sheet from Pastel or Excel (CSV, XLSX supported)</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Automatic Mapping</h3>
+                    <p>System intelligently maps accounts to GRAP categories</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Generate Reports</h3>
+                    <p>Click one button to generate complete financial statements</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Download PDF</h3>
+                    <p>Receive GRAP-compliant PDF ready for AGSA submission</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% elif current_user.role == 'FINANCE_MANAGER' %}
+    <div class="section">
+        <div class="container-content">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Review Queue</h3>
+                    <p>Open pending submissions from finance clerks awaiting your review</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Statement Review</h3>
+                    <p>Verify GRAP mappings, formulas, budget variances, and line-item comments</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Approve or Reject</h3>
+                    <p>Forward to the CFO for finalization, or reject with a mandatory reason for correction</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Submission History</h3>
+                    <p>Track settled FM and CFO decisions — status badges show who approved or rejected</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% elif current_user.role == 'CFO' %}
+    <div class="section">
+        <div class="container-content">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Review Queue</h3>
+                    <p>Submissions approved by the Finance Manager, ready for your final review</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Statement Review</h3>
+                    <p>Validate financial statements, GRAP 24 variance explanations, and supporting detail</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Finalize or Reject</h3>
+                    <p>Final approval locks the reporting period; rejection returns work to the clerk with reason</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Export &amp; PDF</h3>
+                    <p>After finalization, generate GRAP-compliant PDFs for audit and AGSA submission</p>
+                </div>
+            </div>
         </div>
     </div>
     {% endif %}
@@ -276,7 +305,7 @@
                 </div>
                 {% endif %}
                 
-                {% if current_user.can_view_all() %}
+                {% if current_user.can_view_all() and current_user.role not in ['FINANCE_MANAGER', 'CFO'] %}
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">
@@ -295,28 +324,32 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">
-                            <div class="feature-icon">✅</div>
-                            Pending Approvals
+                            <div class="feature-icon">📜</div>
+                            Submission history
                         </div>
                     </div>
                     <div class="card-body">
-                        <p>Review and approve pending transactions requiring your attention</p>
-                        <a href="/approvals" class="btn btn-warning">Review Approvals</a>
+                        <p>Settled submissions and audit trail — open when you need context outside the active review queue.</p>
+                        <a href="/finance-manager/history" class="btn btn-secondary">Open history</a>
                     </div>
                 </div>
                 {% endif %}
                 
-                {% if current_user.can_export() %}
+                {% if current_user.can_access_export_center() %}
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">
                             <div class="feature-icon">📤</div>
-                            Export Center
+                            {% if current_user.can_export() %}Export Center{% else %}Finalized exports{% endif %}
                         </div>
                     </div>
                     <div class="card-body">
+                        {% if current_user.can_export() %}
                         <p>Export financial data and generate compliance reports for audit purposes</p>
-                        <a href="/export" class="btn btn-info">Export Data</a>
+                        {% else %}
+                        <p>Download CFO-finalized PDF statements for approved, locked reporting periods</p>
+                        {% endif %}
+                        <a href="/export" class="btn btn-info">{% if current_user.can_export() %}Export Data{% else %}Open exports{% endif %}</a>
                     </div>
                 </div>
                 {% endif %}
@@ -352,39 +385,7 @@
         </div>
     </div>
 
-    {% if current_user.can_upload() %}
-    <div class="section">
-        <div class="container-content">
-            <h2 class="section-title">How It Works</h2>
-            <div class="steps-grid">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <h3>Upload Balance Sheet</h3>
-                    <p>Import your Balance Sheet from Pastel or Excel (CSV, XLSX supported)</p>
-                </div>
-                <div class="step-arrow">→</div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <h3>Automatic Mapping</h3>
-                    <p>System intelligently maps accounts to GRAP categories</p>
-                </div>
-                <div class="step-arrow">→</div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <h3>Generate Reports</h3>
-                    <p>Click one button to generate complete financial statements</p>
-                </div>
-                <div class="step-arrow">→</div>
-                <div class="step">
-                    <div class="step-number">4</div>
-                    <h3>Download PDF</h3>
-                    <p>Receive GRAP-compliant PDF ready for AGSA submission</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
+</div>
 {% block extra_js %}
 {% if current_user.role == 'FINANCE_CLERK' %}
 <script>

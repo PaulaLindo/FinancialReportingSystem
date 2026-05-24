@@ -1,0 +1,42 @@
+/* Scoped responsive tweaks — mapping, FM history, statement review pages */
+
+.page--fm-history {
+    min-height: 100vh;
+    background: var(--bg-secondary);
+    padding: var(--fluid-space-lg) 0 var(--fluid-space-2xl);
+}
+
+@media (max-width: 768px) {
+    .page--mapping .mapping-container {
+        padding: var(--fluid-space-md);
+    }
+
+    .page--mapping .mapping-header {
+        text-align: center;
+    }
+
+    .page--fm-history .queue-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .page--statement .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .page--statement.financial-statement-container,
+    .page--statement .financial-statement-container {
+        padding: var(--fluid-space-md);
+    }
+}
+
+@media (min-width: 1024px) {
+    .page--fm-history .container-content {
+        max-width: var(--container-4xl);
+    }
+
+    .page--mapping .mapping-container {
+        max-width: var(--container-5xl);
+        margin: 0 auto;
+    }
+}

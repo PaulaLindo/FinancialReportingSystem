@@ -10,6 +10,7 @@ from typing import Dict, Any, List
 from models.balance_sheet_models import balance_sheet_model
 from models.budget_report_models import budget_report_model
 from models.income_statement_models import income_statement_model
+from utils.session_workflow import session_is_ephemeral_staging, session_submitted_for_review
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +158,49 @@ class CleanupService:
                 'cleaned_count': 0
             }
     
+    def cleanup_user_ephemeral_sessions(
+        self, user_id: str, keep_session_id: str | None = None
+    ) -> Dict[str, Any]:
+        """
+        Delete in-progress staging sessions for a user (not yet submitted for review).
+        Keeps one active session when keep_session_id is set.
+        """
+        cleaned = 0
+        errors: List[str] = []
+        models = [
+            balance_sheet_model,
+            budget_report_model,
+            income_statement_model,
+        ]
+        try:
+            for model in models:
+                try:
+                    sessions = model.get_user_sessions(user_id, limit=200)
+                except Exception as exc:
+                    errors.append(f'{model}: {exc}')
+                    continue
+                for session in sessions:
+                    sid = getattr(session, 'id', None)
+                    if not sid or sid == keep_session_id:
+                        continue
+                    if session_submitted_for_review(session):
+                        continue
+                    if not session_is_ephemeral_staging(session):
+                        continue
+                    if self._delete_session_from_model(model, sid):
+                        cleaned += 1
+                    else:
+                        errors.append(f'Failed to delete {sid}')
+            return {
+                'success': len(errors) == 0,
+                'cleaned_count': cleaned,
+                'errors': errors,
+                'message': f'Removed {cleaned} staging session(s)',
+            }
+        except Exception as e:
+            self.logger.error(f'cleanup_user_ephemeral_sessions failed: {e}')
+            return {'success': False, 'error': str(e), 'cleaned_count': cleaned}
+
     def cleanup_specific_session(self, session_id: str) -> Dict[str, Any]:
         """
         Clean up a specific session (immediate cleanup for current uploads)

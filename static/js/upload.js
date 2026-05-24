@@ -170,6 +170,8 @@ class UploadService {
 
             closeBtn: document.getElementById('closeBtn'),
 
+            actionButtonGroup: document.getElementById('uploadActionButtons'),
+
 
 
             processingLoader: document.getElementById('processingLoader'),
@@ -214,7 +216,11 @@ class UploadService {
 
             balanceIndicator: document.getElementById('balanceIndicator'),
 
-            balanceHeader: document.querySelector('.balance-header h4'),
+            indicatorIcon: document.querySelector('#balanceIndicator .indicator-icon'),
+
+            balanceHeader: document.getElementById('balanceCheckTitle') || document.querySelector('.balance-header h4'),
+
+            balanceCheckFootnote: document.getElementById('balanceCheckFootnote'),
 
             totalDebits: document.getElementById('totalDebits'),
 
@@ -275,6 +281,93 @@ class UploadService {
         }
 
 
+
+    }
+
+
+
+    getSelectedDocumentType() {
+
+        return window.documentTypeSelector ? window.documentTypeSelector.getSelectedType() : 'balance_sheet';
+
+    }
+
+    getUploadProcessButtonLabel(documentType, state, balanceData) {
+        const dt = documentType || this.getSelectedDocumentType();
+        const bd = balanceData || {};
+        if (state === 'checking') return 'Checking upload…';
+        if (state === 'locked') return 'Locked — under review';
+        if (state === 'balanced') return 'Continue to mapping';
+        if (state === 'unbalanced') {
+            if (dt === 'budget_report') return 'Budget/actual lines required — cannot continue';
+            if (dt === 'balance_sheet') return 'Trial balance not balanced — cannot continue';
+            if (dt === 'income_statement') {
+                return bd.debit_credit_balanced === false
+                    ? 'Trial balance not balanced — cannot continue'
+                    : 'Revenue/expense lines required — cannot continue';
+            }
+            return 'Upload check failed — cannot continue';
+        }
+        return 'Continue to mapping';
+    }
+
+
+
+    getUploadBalanceCopy(documentType, balanceData, isBalanced) {
+
+        if (window.GrapStandards && GrapStandards.uploadBalanceCopy) {
+
+            return GrapStandards.uploadBalanceCopy(documentType, balanceData, isBalanced);
+
+        }
+
+        return {
+
+            sectionTitle: 'Upload validation',
+
+            checkingMessage: 'Validating upload…',
+
+            successMessage: 'Upload validated',
+
+            failureMessage: 'Upload validation failed',
+
+            footnote: 'GRAP checks apply after mapping.',
+
+        };
+
+    }
+
+
+
+    applyBalanceCheckChrome(documentType, balanceData, isBalanced) {
+
+        const copy = this.getUploadBalanceCopy(documentType, balanceData, isBalanced);
+
+        if (this.elements.balanceHeader) {
+
+            this.elements.balanceHeader.textContent = `🔍 ${copy.sectionTitle}`;
+
+        }
+
+        if (this.elements.balanceCheckFootnote) {
+
+            if (copy.footnote) {
+
+                this.elements.balanceCheckFootnote.textContent = copy.footnote;
+
+                this.elements.balanceCheckFootnote.hidden = false;
+
+            } else {
+
+                this.elements.balanceCheckFootnote.textContent = '';
+
+                this.elements.balanceCheckFootnote.hidden = true;
+
+            }
+
+        }
+
+        return copy;
 
     }
 
@@ -654,9 +747,13 @@ class UploadService {
 
             this.elements.confirmRemove.addEventListener('click', () => {
 
+                this.hideConfirmModal();
 
-
-                this.executeFileRemoval();
+                if (this.state.sessionId) {
+                    this.executeCloseUpload();
+                } else {
+                    this.executeFileRemoval();
+                }
 
 
 
@@ -701,6 +798,8 @@ class UploadService {
 
 
         this.hideFileInfo();
+
+        this.hideConfirmModal();
 
 
 
@@ -1201,17 +1300,9 @@ class UploadService {
 
 
             const data = await VarydianUtils.safeFetch('/api/universal/upload', {
-
-
-
                 method: 'POST',
-
-
-
-                body: formData
-
-
-
+                body: formData,
+                timeout: VarydianUtils.CONFIG.API.UPLOAD_TIMEOUT
             });
 
 
@@ -1219,6 +1310,11 @@ class UploadService {
             
 
 
+
+            if (data.format_mismatch) {
+                await this.handleDocumentTypeMismatch(data);
+                return;
+            }
 
             if (data.success) {
 
@@ -1244,8 +1340,8 @@ class UploadService {
 
 
 
-                // Add delay to ensure database transaction is complete
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Brief pause so row inserts are visible before balance validation
+                await new Promise(resolve => setTimeout(resolve, 300));
 
                 // Process all document types through balance checking first
                 const documentType = window.documentTypeSelector ? window.documentTypeSelector.getSelectedType() : 'balance_sheet';
@@ -1253,12 +1349,10 @@ class UploadService {
 
 
 
+            } else if (data.format_mismatch) {
+                await this.handleDocumentTypeMismatch(data);
             } else {
-
                 throw new Error(data.error || 'Upload failed');
-
-
-
             }
 
 
@@ -1269,17 +1363,20 @@ class UploadService {
 
         } catch (error) {
 
-
-
-            // Provide more user-friendly error messages for upload
+            if (error.responseData?.format_mismatch) {
+                await this.handleDocumentTypeMismatch(error.responseData);
+                return;
+            }
 
             let errorMessage = error.message || 'Upload failed';
 
-            
+            if (error.responseData?.error && !errorMessage.includes('HTTP error')) {
+                errorMessage = error.responseData.error;
+            }
 
-            // Handle specific error messages from our enhanced backend
-
-            if (errorMessage.includes('HTTP error! status: 500')) {
+            if (errorMessage.includes('aborted') || error.name === 'AbortError') {
+                errorMessage = 'Upload timed out or was interrupted. Please wait for the current upload to finish and try again.';
+            } else if (errorMessage.includes('HTTP error! status: 500')) {
 
                 errorMessage = '❌ Server error during upload. Please try again or contact support if the problem persists.';
 
@@ -1601,6 +1698,17 @@ class UploadService {
 
         this.state.sessionId = data.session_id;
 
+        if (window.PdfPeriodGate && data.session_id) {
+            const docType = window.documentTypeSelector
+                ? window.documentTypeSelector.getSelectedType()
+                : (data.document_type || 'balance_sheet');
+            PdfPeriodGate.saveContext({
+                session_id: data.session_id,
+                document_type: docType,
+            });
+            PdfPeriodGate.init();
+        }
+
 
 
         // Store file path for local files or record ID for Supabase files
@@ -1635,7 +1743,7 @@ class UploadService {
 
 
 
-            processBtn.textContent = 'Checking Balance...';
+            processBtn.textContent = this.getUploadProcessButtonLabel(this.getSelectedDocumentType(), 'checking');
 
 
 
@@ -1702,26 +1810,21 @@ class UploadService {
 
 
             const data = await VarydianUtils.safeFetch('/api/universal/validate-balance', {
-
                 method: 'POST',
-
-                headers: {
-
-                    'Content-Type': 'application/json'
-
-                },
-
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-
                     session_id: this.state.sessionId,
-
                     document_type: documentType
-
-                })
-
+                }),
+                timeout: VarydianUtils.CONFIG.API.UPLOAD_TIMEOUT
             });
 
 
+
+            if (data.format_mismatch) {
+                await this.handleDocumentTypeMismatch(data);
+                return;
+            }
 
             if (data.success) {
 
@@ -1734,11 +1837,16 @@ class UploadService {
 
                 console.log('🔍 Final balanceData:', balanceData);
 
+                if (data.session_discarded) {
+                    this.state.sessionId = null;
+                }
                 this.displayBalanceCheck(balanceData);
 
             } else {
 
-                this.showError('Balance check failed: ' + data.error);
+                this.showError('Balance check failed: ' + (data.error || 'Unknown error'));
+                await this.discardEphemeralSession();
+                this.resetBalanceCheckUi('Balance check failed — try again');
 
             }
 
@@ -1748,12 +1856,69 @@ class UploadService {
 
             console.error('Balance check error:', error);
 
-            // Don't show error to user for balance check failure, just log it
+            if (error.responseData?.format_mismatch) {
+                await this.handleDocumentTypeMismatch(error.responseData);
+                return;
+            }
+
+            const inferred = this.inferDocumentTypeMismatchFromContext();
+            if (inferred) {
+                await this.handleDocumentTypeMismatch(inferred);
+                return;
+            }
+
+            let msg = error.message || 'Balance check failed';
+            if (msg.includes('aborted') || error.name === 'AbortError') {
+                msg = 'Balance check timed out. Please try uploading again.';
+            }
+            this.showError(msg.includes('HTTP error') ? 'Balance check failed. Please try again.' : msg);
+            await this.discardEphemeralSession();
+            this.resetBalanceCheckUi('Balance check failed — try again');
 
         }
 
 
 
+    }
+
+    /**
+     * Reset process button after a failed balance check (avoids frozen "Checking Balance..." state).
+     */
+    resetBalanceCheckUi(buttonLabel) {
+        const processBtn = this.elements.processBtn;
+        if (processBtn) {
+            processBtn.disabled = false;
+            processBtn.classList.remove('balance-disabled');
+            processBtn.textContent = buttonLabel || this.getUploadProcessButtonLabel(documentType, 'balanced');
+        }
+        if (this.elements.balanceCheckSection) {
+            this.elements.balanceCheckSection.classList.add('balance-check-hidden');
+        }
+    }
+
+    async discardEphemeralSession() {
+        const sessionId = this.state.sessionId;
+        if (!sessionId) {
+            return;
+        }
+        const documentType = window.documentTypeSelector
+            ? window.documentTypeSelector.getSelectedType()
+            : 'balance_sheet';
+        try {
+            await VarydianUtils.safeFetch('/api/universal/discard-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    document_type: documentType,
+                }),
+            });
+        } catch (_err) {
+            // Session may already have been removed server-side
+        }
+        this.state.sessionId = null;
+        this.state.uploadedFilePath = null;
+        this.state.uploadedFileRecordId = null;
     }
 
 
@@ -1864,7 +2029,11 @@ class UploadService {
 
 
 
-        if (statusText) statusText.textContent = 'Checking balance...';
+        const documentType = this.getSelectedDocumentType();
+
+        const copy = this.applyBalanceCheckChrome(documentType, null, false);
+
+        if (statusText) statusText.textContent = copy.checkingMessage;
 
 
 
@@ -1961,7 +2130,9 @@ class UploadService {
         }
 
         // Get current document type
-        const documentType = window.documentTypeSelector ? window.documentTypeSelector.getSelectedType() : 'balance_sheet';
+        const documentType = this.getSelectedDocumentType();
+
+        const copy = this.applyBalanceCheckChrome(documentType, balanceData, balanceData.is_balanced);
 
         // Show balance check section
         balanceCheckSection.classList.add('visible');
@@ -1980,13 +2151,15 @@ class UploadService {
             if (creditsLabel) creditsLabel.textContent = 'Total Expenses:';
             if (differenceLabel) differenceLabel.textContent = 'Net Income:';
         } else if (documentType === 'balance_sheet') {
+            const isBudgetStyle = balanceData.balance_type === 'budget_vs_actual';
             totalDebits.textContent = `R ${(balanceData.total_debits || 0).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             totalCredits.textContent = `R ${(balanceData.total_credits || 0).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            balanceDifference.textContent = `R ${(balanceData.balance_difference || 0).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            
-            if (debitsLabel) debitsLabel.textContent = 'Total Debits:';
-            if (creditsLabel) creditsLabel.textContent = 'Total Credits:';
-            if (differenceLabel) differenceLabel.textContent = 'Difference:';
+            const diff = balanceData.difference ?? balanceData.balance_difference ?? balanceData.variance ?? 0;
+            balanceDifference.textContent = `R ${Math.abs(diff).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+            if (debitsLabel) debitsLabel.textContent = isBudgetStyle ? 'Total Budget:' : 'Total Debits:';
+            if (creditsLabel) creditsLabel.textContent = isBudgetStyle ? 'Total Actual:' : 'Total Credits:';
+            if (differenceLabel) differenceLabel.textContent = isBudgetStyle ? 'Variance:' : 'Difference:';
         } else if (documentType === 'budget_report') {
             const budgetText = `R ${(balanceData.total_budget || 0).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             const actualText = `R ${(balanceData.total_actual || 0).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -2068,15 +2241,7 @@ class UploadService {
 
 
             if (statusText) {
-                if (documentType === 'balance_sheet') {
-                    statusText.textContent = 'Balance sheet is balanced';
-                } else if (documentType === 'income_statement') {
-                    statusText.textContent = 'Income statement validated';
-                } else if (documentType === 'budget_report') {
-                    statusText.textContent = balanceData.is_balanced ? 'Budget report is balanced' : 'Budget variance detected';
-                } else {
-                    statusText.textContent = 'Document validated';
-                }
+                statusText.textContent = copy.successMessage;
             }
 
 
@@ -2122,20 +2287,13 @@ class UploadService {
 
 
             if (statusText) {
-                if (documentType === 'balance_sheet') {
-                    statusText.textContent = `Not balanced: Difference R ${balanceData.balance_difference.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                } else if (documentType === 'income_statement') {
-                    statusText.textContent = 'Income statement requires review';
-                } else if (documentType === 'budget_report') {
-                    // For budget reports, check if variance is within acceptable tolerance (0.01)
-                    const variance = balanceData.variance || 0;
-                    if (Math.abs(variance) < 0.01) {
-                        statusText.textContent = 'Budget report is balanced';
-                    } else {
-                        statusText.textContent = `Budget variance detected: R ${Math.abs(variance).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                    }
+                const diff = balanceData.difference ?? balanceData.balance_difference ?? balanceData.variance ?? 0;
+                if (documentType === 'balance_sheet' && balanceData.balance_type !== 'budget_vs_actual') {
+                    statusText.textContent = `${copy.failureMessage} — difference R ${Math.abs(diff).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                } else if (documentType === 'budget_report' || balanceData.balance_type === 'budget_vs_actual') {
+                    statusText.textContent = `${copy.failureMessage}: R ${Math.abs(diff).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                 } else {
-                    statusText.textContent = 'Document requires review';
+                    statusText.textContent = copy.failureMessage;
                 }
             }
 
@@ -2154,7 +2312,7 @@ class UploadService {
         // Check if process button exists
         if (processBtn) {
             // Check if the document can be submitted based on balance status
-            const canSubmit = balanceData.is_balanced || (documentType === 'income_statement'); // Income statements are always submittable
+            const canSubmit = balanceData.is_balanced;
 
             if (canSubmit) {
 
@@ -2162,7 +2320,7 @@ class UploadService {
 
                 processBtn.classList.remove('balance-disabled');
 
-                processBtn.textContent = 'Submit for Review';
+                processBtn.textContent = this.getUploadProcessButtonLabel(documentType, 'balanced');
                     
 
                 // Ensure the process button is visible
@@ -2182,14 +2340,11 @@ class UploadService {
 
                 processBtn.classList.add('balance-disabled');
 
-                // Update button text based on document type
-                if (documentType === 'budget_report') {
-                    processBtn.textContent = 'Budget Variance Detected - Cannot Process';
-                } else {
-                    processBtn.textContent = 'Balance Sheet Not Balanced - Cannot Process';
-                }
+                processBtn.textContent = this.getUploadProcessButtonLabel(documentType, 'unbalanced', balanceData);
 
-                // Show options for unbalanced balance sheet
+                if (documentType === 'balance_sheet') {
+                    this.discardEphemeralSession();
+                }
                 this.showUnbalancedOptions(balanceData);
             }
         } else {
@@ -2230,13 +2385,17 @@ class UploadService {
             
             const balanceData = await VarydianUtils.safeFetch('/api/universal/validate-balance', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody),
+                timeout: VarydianUtils.CONFIG.API.UPLOAD_TIMEOUT
             });
                 
             console.log('🔍 Balance validation result:', balanceData);
+
+            if (balanceData.format_mismatch) {
+                await this.handleDocumentTypeMismatch(balanceData);
+                return;
+            }
 
             if (!balanceData.success) {
                 console.log('❌ Balance validation failed:', balanceData);
@@ -2252,15 +2411,23 @@ class UploadService {
             if (documentType === 'balance_sheet') {
                 if (!balanceCheck.is_balanced) {
                     canProceed = false;
-                    errorMessage = `Balance sheet is not balanced. Difference: R ${Math.abs(balanceCheck.difference).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    const diff = balanceCheck.difference ?? balanceCheck.balance_difference ?? 0;
+                    errorMessage = `Trial balance not balanced (debits ≠ credits). Difference: R ${Math.abs(diff).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. GRAP 1 (SFP) is checked after mapping.`;
                 }
             } else if (documentType === 'income_statement') {
-                // Income statements are always valid for processing
-                console.log('✅ Income statement validation passed');
+                if (!balanceCheck.is_balanced) {
+                    canProceed = false;
+                    if (balanceCheck.debit_credit_balanced === false) {
+                        const diff = balanceCheck.difference ?? balanceCheck.balance_difference ?? 0;
+                        errorMessage = `Trial balance not balanced (debits ≠ credits). Difference: R ${Math.abs(diff).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`;
+                    } else {
+                        errorMessage = 'Income statement must include at least one revenue or expense line before continuing.';
+                    }
+                }
             } else if (documentType === 'budget_report') {
                 if (!balanceCheck.is_balanced) {
                     canProceed = false;
-                    errorMessage = `Budget report variance detected: R ${Math.abs(balanceCheck.variance).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    errorMessage = 'Budget report must include budget and actual line amounts before continuing.';
                 }
             }
 
@@ -2308,10 +2475,13 @@ class UploadService {
 
 
 
+            const documentTypeForProcess = window.documentTypeSelector
+                ? window.documentTypeSelector.getSelectedType()
+                : 'balance_sheet';
+
             const requestBody = {
-
-                session_id: this.state.sessionId
-
+                session_id: this.state.sessionId,
+                document_type: documentTypeForProcess,
             };
 
             
@@ -2320,7 +2490,8 @@ class UploadService {
 
             
 
-            const data = await VarydianUtils.safeFetch('/api/processing', {
+            const data = await VarydianUtils.safeFetch('/api/universal/process-grap-mapping', {
+                timeout: VarydianUtils.CONFIG.API.UPLOAD_TIMEOUT,
 
 
 
@@ -2371,6 +2542,7 @@ class UploadService {
                 const mappingData = {
 
                     session_id: this.state.sessionId,
+                    document_type: documentTypeForProcess,
 
                     mapped_accounts: data.mapped_accounts || [],
 
@@ -2580,106 +2752,50 @@ class UploadService {
 
     async closeUpload() {
 
-        // Check if there's a file to remove
-
         if (!this.state.sessionId) {
-
-            this.showError('No file uploaded to remove');
-
+            this.returnToUpload();
             return;
-
         }
 
+        this.showConfirmModal();
+        return;
+
+    }
 
 
-        // Show loading state on close button
+
+    /**
+     * Reset upload UI so the clerk can pick another file (session may already be discarded).
+     */
+    returnToUpload() {
+
+        this.hideConfirmModal();
+        this.hideUnbalancedOptions();
+        this.state.sessionId = null;
+        this.state.uploadedFilePath = null;
+        this.state.uploadedFileRecordId = null;
+        this.resetUploadState();
+
+    }
+
+    async executeCloseUpload() {
 
         const closeBtn = this.elements.closeBtn;
-
         if (closeBtn) {
-
             closeBtn.disabled = true;
-
-            closeBtn.textContent = 'Closing...';
-
-            closeBtn.classList.add('btn-loading');
-
+            closeBtn.textContent = 'Closing…';
         }
 
-
-
         try {
-
-            console.log('🗑️ Removing uploaded file - Session ID:', this.state.sessionId);
-
-            
-
-            const requestBody = {
-
-                session_id: this.state.sessionId
-
-            };
-
-
-
-            const data = await VarydianUtils.safeFetch('/api/remove-upload', {
-
-                method: 'POST',
-
-                headers: {
-
-                    'Content-Type': 'application/json'
-
-                },
-
-                body: JSON.stringify(requestBody)
-
-            });
-
-
-
-            if (data.success) {
-
-                console.log('✅ File successfully removed');
-
-                
-
-                // Reset the interface for new upload (use existing resetUploadState method)
-
-                this.resetUploadState();
-
-                
-
-            } else {
-
-                console.log('❌ Failed to remove file:', data.error);
-
-                this.showError('Failed to remove uploaded file: ' + (data.error || 'Unknown error'));
-
+            if (this.state.sessionId) {
+                await this.discardEphemeralSession();
             }
-
-
-
-        } catch (error) {
-
-            console.error('Error removing uploaded file:', error);
-
-            this.showError('Failed to remove uploaded file. Please try again.');
-
+            this.returnToUpload();
         } finally {
-
-            // Reset close button state
-
             if (closeBtn) {
-
                 closeBtn.disabled = false;
-
-                closeBtn.textContent = 'Close & Remove File';
-
-                closeBtn.classList.remove('btn-loading');
-
+                closeBtn.textContent = 'Close and upload again';
             }
-
         }
 
     }
@@ -2928,6 +3044,26 @@ class UploadService {
 
     /**
 
+     * Show or hide the primary upload action buttons (Submit / Close).
+
+     * Hidden when #unbalancedOptions is shown to avoid duplicate controls.
+
+     */
+
+    setUploadActionButtonsVisible(visible) {
+
+        const group = this.elements.actionButtonGroup;
+
+        if (!group) return;
+
+        group.style.display = visible ? '' : 'none';
+
+    }
+
+
+
+    /**
+
      * Show options for unbalanced balance sheet
 
      */
@@ -2964,23 +3100,30 @@ class UploadService {
 
         
 
-        const canProceedWithWarning = balanceData.allow_proceed_with_warning;
-
         // Get the correct difference value based on document type
         const documentType = window.documentTypeSelector ? window.documentTypeSelector.getSelectedType() : 'balance_sheet';
+        // Hard block — upload must pass validation for all document types
+        const canProceedWithWarning = false;
         let difference = 0;
         
         if (documentType === 'budget_report') {
             difference = balanceData.variance || 0;
         } else {
-            difference = balanceData.balance_difference || 0;
+            difference = Math.abs(
+                balanceData.difference ?? balanceData.balance_difference ?? balanceData.variance ?? 0
+            );
         }
         
         
         
 
-        // Set appropriate title based on document type
-        const sectionTitle = documentType === 'budget_report' ? 'Budget Report Options' : 'Balance Sheet Options';
+        const copy = this.getUploadBalanceCopy(documentType, balanceData, false);
+        const sectionTitle = documentType === 'budget_report'
+            ? 'Budget report options'
+            : documentType === 'income_statement'
+                ? 'Income statement options'
+                : 'Trial balance options';
+        const diffLabel = documentType === 'budget_report' ? 'Budget variance' : 'Difference';
         
         optionsSection.innerHTML = `
 
@@ -2990,19 +3133,19 @@ class UploadService {
 
                 <p class="unbalanced-message">
 
-                    <strong>${documentType === 'budget_report' ? 'Budget Variance:' : 'Balance Difference:'}</strong> R ${difference.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <strong>${copy.failureMessage}</strong> — ${diffLabel}: R ${difference.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 
                 </p>
 
-                <p class="recommendation">${balanceData.recommendation || 'Please check your balance sheet and try again.'}</p>
+                <p class="recommendation">${balanceData.recommendation || 'Correct the file or choose another document type, then upload again.'}</p>
 
                 
 
                 <div class="unbalanced-actions">
 
-                    <button type="button" class="btn btn-secondary" onclick="uploadService.reuploadFile()">
+                    <button type="button" class="btn btn-secondary" onclick="uploadService.returnToUpload()">
 
-                        Correct & Re-upload
+                        Close and upload again
 
                     </button>
 
@@ -3056,6 +3199,8 @@ class UploadService {
 
         optionsSection.classList.remove('options-hidden');
 
+        this.setUploadActionButtonsVisible(false);
+
     }
 
 
@@ -3076,6 +3221,8 @@ class UploadService {
 
         }
 
+        this.setUploadActionButtonsVisible(true);
+
     }
 
 
@@ -3087,113 +3234,7 @@ class UploadService {
      */
 
     async proceedWithWarning() {
-
-        if (!this.state.uploadedFilePath) {
-
-            this.showError('No file uploaded');
-
-            return;
-
-        }
-
-
-
-        try {
-
-            this.setProcessingState(true, 'Proceeding with warning...', 'Acknowledging balance discrepancy');
-
-
-
-            const requestBody = {
-
-                filepath: this.state.uploadedFilePath,
-
-                proceed_with_warning: true
-
-            };
-
-
-
-            if (this.state.uploadedFileRecordId) {
-
-                requestBody.record_id = this.state.uploadedFileRecordId;
-
-                requestBody.storage_type = 'supabase';
-
-            }
-
-
-
-            const data = await VarydianUtils.safeFetch('/api/proceed-unbalanced', {
-
-                method: 'POST',
-
-                headers: {
-
-                    'Content-Type': 'application/json'
-
-                },
-
-                body: JSON.stringify(requestBody)
-
-            });
-
-
-
-            if (data.success) {
-
-                // Enable the process button and proceed to normal processing
-
-                const processBtn = this.elements.processBtn;
-
-                if (processBtn) {
-
-                    processBtn.disabled = false;
-
-                    processBtn.classList.remove('balance-disabled');
-
-                    processBtn.textContent = 'Process Balance Sheet (With Warning)';
-
-                }
-
-
-
-                // Hide warning options
-
-                this.hideUnbalancedOptions();
-
-
-
-                // Show success message
-
-                this.showSuccess('Proceeding with unbalanced balance sheet. Financial statements may not be accurate.');
-
-
-
-                // Continue with normal processing
-
-                await this.processFileWithBalanceCheck();
-
-
-
-            } else {
-
-                this.showError('Failed to proceed with warning: ' + data.error);
-
-            }
-
-
-
-        } catch (error) {
-
-            this.showError('Error proceeding with warning. Please try again.');
-
-        } finally {
-
-            this.setProcessingState(false);
-
-        }
-
+        this.showError('Upload validation failed. Correct the file and upload again.');
     }
 
 
@@ -3286,7 +3327,7 @@ class UploadService {
 
             processBtn.classList.add('balance-disabled');
 
-            processBtn.textContent = 'Process Balance Sheet';
+            processBtn.textContent = this.getUploadProcessButtonLabel(this.getSelectedDocumentType(), 'idle');
 
         }
 
@@ -3348,7 +3389,7 @@ class UploadService {
 
         // This could open a modal with detailed balance information
 
-        alert('Balance details feature coming soon! This will show a detailed breakdown of the balance sheet accounts and their balances.');
+        showAlert('Feature Coming Soon', 'Balance details feature coming soon! This will show a detailed breakdown of the balance sheet accounts and their balances.');
 
     }
 
@@ -3533,9 +3574,11 @@ class UploadService {
 
 
             const requestBody = {
-
-                results_file: this.state.resultsFile
-
+                results_file: this.state.resultsFile,
+                session_id: this.state.sessionId || null,
+                document_type: window.documentTypeSelector
+                    ? window.documentTypeSelector.getSelectedType()
+                    : null,
             };
 
             const requestBodyString = JSON.stringify(requestBody);
@@ -3596,9 +3639,7 @@ class UploadService {
 
                     // Make the download link visible and functional
 
-                    downloadLink.classList.remove('element--hidden');
-
-                    downloadLink.classList.add('element--visible');
+                    VarydianUtils.showElement(downloadLink);
 
 
 
@@ -3774,7 +3815,7 @@ class UploadService {
 
 
 
-            link.classList.add('element--hidden');
+            VarydianUtils.hideElement(link);
 
 
 
@@ -4176,7 +4217,7 @@ class UploadService {
 
 
 
-            this.elements.processBtn.textContent = 'Process Balance Sheet';
+            this.elements.processBtn.textContent = this.getUploadProcessButtonLabel(this.getSelectedDocumentType(), 'idle');
 
             
 
@@ -4284,11 +4325,17 @@ class UploadService {
 
         if (this.elements.statusText) {
 
+            const copy = this.getUploadBalanceCopy(this.getSelectedDocumentType(), null, false);
 
+            this.elements.statusText.textContent = copy.checkingMessage;
 
-            this.elements.statusText.textContent = 'Checking balance...';
+        }
 
+        if (this.elements.balanceCheckFootnote) {
 
+            this.elements.balanceCheckFootnote.hidden = true;
+
+            this.elements.balanceCheckFootnote.textContent = '';
 
         }
 
@@ -4777,6 +4824,90 @@ showError(message) {
 
 }
 
+/**
+ * Gentle warning when the file does not match the selected document type.
+ */
+showWarning(message) {
+    const el = this.elements.errorMessage;
+    if (!el) {
+        return;
+    }
+    el.textContent = `⚠️ ${message}`;
+    el.className = 'error-box upload__error-message message message--warning message--visible';
+    el.classList.remove('upload__error-message--hidden', 'error-message--hidden');
+    VarydianUtils.scrollToElement(el, { block: 'center' });
+}
+
+/**
+ * Wrong document type: warn, discard staging session, reset upload UI.
+ */
+/**
+ * Client-side fallback when the server could not validate rows (e.g. 404).
+ */
+inferDocumentTypeMismatchFromContext() {
+    const selected = window.documentTypeSelector
+        ? window.documentTypeSelector.getSelectedType()
+        : 'balance_sheet';
+    const fileInput = this.elements.fileInput;
+    const fileName = (fileInput?.files?.[0]?.name || '').toLowerCase();
+
+    let detected = null;
+    if (fileName.includes('budget') && fileName.includes('report')) {
+        detected = 'budget_report';
+    } else if (fileName.includes('income') && fileName.includes('statement')) {
+        detected = 'income_statement';
+    } else if (fileName.includes('balance') && fileName.includes('sheet')) {
+        detected = 'balance_sheet';
+    }
+
+    if (!detected || detected === selected) {
+        return null;
+    }
+
+    const labels = {
+        balance_sheet: 'Balance Sheet',
+        budget_report: 'Budget Report',
+        income_statement: 'Income Statement',
+    };
+    const selectedLabel = labels[selected] || selected;
+    const detectedLabel = labels[detected] || detected;
+
+    return {
+        format_mismatch: true,
+        error:
+            `This file looks like a ${detectedLabel}, but you selected ${selectedLabel}. `
+            + `Please choose ${detectedLabel} as the document type above, `
+            + `or upload a file that matches ${selectedLabel}.`,
+        session_discarded: false,
+    };
+}
+
+async handleDocumentTypeMismatch(data) {
+    const message = data.error
+        || 'This file does not match the document type you selected. '
+        + 'Please change the document type or upload a matching file.';
+
+    if (!data.session_discarded) {
+        await this.discardEphemeralSession();
+    } else {
+        this.state.sessionId = null;
+        this.state.uploadedFilePath = null;
+        this.state.uploadedFileRecordId = null;
+    }
+
+    this.resetBalanceCheckUi(this.getUploadProcessButtonLabel(this.getSelectedDocumentType(), 'balanced'));
+    if (this.elements.fileInfo) {
+        this.elements.fileInfo.classList.add('file-info--hidden');
+        this.elements.fileInfo.classList.remove('file-info--visible');
+    }
+    if (this.elements.fileInput) {
+        this.elements.fileInput.value = '';
+    }
+    this.manageUploadBoxVisibility(true);
+    this.setProcessingState(false);
+    this.showWarning(message);
+}
+
 
 
 /**
@@ -4786,29 +4917,19 @@ showError(message) {
  */
 
 showInfo(message) {
-
-    if (this.elements.errorMessage) {
-
-        this.elements.errorMessage.textContent = message;
-
-        this.elements.errorMessage.className = 'message message--info message--visible';
-
-        
-
-        // Auto-hide after 3 seconds
-
-        setTimeout(() => {
-
-            if (this.elements.errorMessage) {
-
-                this.elements.errorMessage.classList.remove('message--visible');
-
-            }
-
-        }, 3000);
-
+    if (window.VarydianUtils && typeof VarydianUtils.showToast === 'function') {
+        VarydianUtils.showToast(message, 'info', { duration: 8000 });
+        return;
     }
-
+    if (this.elements.errorMessage) {
+        this.elements.errorMessage.textContent = message;
+        this.elements.errorMessage.className = 'message message--info message--visible';
+        setTimeout(() => {
+            if (this.elements.errorMessage) {
+                this.elements.errorMessage.classList.remove('message--visible');
+            }
+        }, 8000);
+    }
 }
 
 
@@ -4838,22 +4959,15 @@ hideError() {
  */
 
 showSuccess(message) {
-
-    // Use the same error element but with success styling
-
+    if (window.VarydianUtils && typeof VarydianUtils.showToast === 'function') {
+        VarydianUtils.showToast(message, 'success', { duration: 8000 });
+        return;
+    }
     const errorElement = this.elements.errorMessage;
-
-    
-
     if (errorElement) {
-
         errorElement.textContent = message;
-
         errorElement.className = 'error-box error-box--success error-box--visible';
-
-        
-
-        // Auto-hide after 5 seconds
+        // Auto-hide after 8 seconds
 
         setTimeout(() => {
 
@@ -5349,7 +5463,7 @@ async function checkSubmissionStatus() {
 
                             debugLog(`🔒 Applying lock for submission status: ${submission.status}`, 'lock');
 
-                            debugLog(`📅 Submission timestamp: ${new Date(submission.submission_timestamp).toLocaleString()}`, 'info');
+                            debugLog(`📅 Submission timestamp: ${VarydianUtils.formatDateTime(submission.submission_timestamp)}`, 'info');
 
                             if (submission.review_notes) {
 
@@ -5385,7 +5499,7 @@ async function checkSubmissionStatus() {
 
                                         <strong>Status:</strong> ${submission.status}<br>
 
-                                        <strong>Submitted:</strong> ${new Date(submission.submission_timestamp).toLocaleString()}<br>
+                                        <strong>Submitted:</strong> ${VarydianUtils.formatDateTime(submission.submission_timestamp)}<br>
 
                                         ${submission.review_notes ? `<strong>Notes:</strong> ${submission.review_notes}` : ''}
 
@@ -5599,7 +5713,7 @@ async function clearUploadLock() {
 
             // Show restriction message to user
 
-            alert(`Upload Restriction: ${errorData.error}`);
+            showAlert('Upload Restriction', `Upload Restriction: ${errorData.error}`);
 
             return; // Don't proceed with page reload
 

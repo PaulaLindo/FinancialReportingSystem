@@ -10,6 +10,20 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+
+def get_supabase_secret_key():
+    """
+    Service-role JWT (RLS bypass). Set SUPABASE_SECRET_KEY in .env
+    (Supabase Dashboard → Settings → API → service_role).
+    """
+    return os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+
+def get_supabase_service_role_key():
+    """Deprecated alias — use get_supabase_secret_key()."""
+    return get_supabase_secret_key()
+
+
 def create_supabase_client():
     """
     Create Supabase client using anon key only
@@ -36,7 +50,7 @@ def create_supabase_client_with_rls_bypass():
     Defaults to anon key for security
     """
     supabase_url = os.getenv('SUPABASE_URL')
-    supabase_service_key = os.getenv('SUPABASE_SECRET_KEY')
+    supabase_service_key = get_supabase_secret_key()
     supabase_anon_key = os.getenv('SUPABASE_ANON_KEY')
     
     print(f"🔑 Creating client with optional RLS bypass...")
@@ -63,8 +77,14 @@ def create_supabase_client_with_rls_bypass():
 
 def create_admin_supabase_client():
     """
-    Create Supabase client for admin operations
-    Uses anon key only for consistent, secure access
-    Admin operations should work through RLS policies
+    Server-side admin client for writes that must bypass RLS (period lock, sessions, etc.).
+    Prefers service role key; falls back to anon key when service key is not configured.
     """
+    supabase_url = os.getenv('SUPABASE_URL')
+    service_key = get_supabase_secret_key()
+    if supabase_url and service_key:
+        try:
+            return create_client(supabase_url, service_key)
+        except Exception as e:
+            print(f"Service role client failed, falling back to anon key: {e}")
     return create_supabase_client()

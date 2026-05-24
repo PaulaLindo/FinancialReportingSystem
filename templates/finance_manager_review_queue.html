@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Review — pending submissions{% endblock %}
+
+{% block content %}
+<div class="page page--fm-review-queue fm-review-queue-page">
+    <div class="container-content fm-review-queue-section">
+        <header class="content-page-header">
+            <h1>Review</h1>
+            {% if current_user.role == 'CFO' %}
+            <p>Submissions awaiting CFO action: <strong>pending CFO</strong> and <strong>approved by manager</strong> (forwarded for final approval).</p>
+            <p class="content-page-header__lead"><span id="reviewQueueCount" class="review-queue-count" aria-live="polite">—</span> submission(s) awaiting your final approval.</p>
+            {% else %}
+            <p>Submissions with status <strong>pending review</strong>. Open a statement for verification, then approve or reject with a mandatory reason when rejecting.</p>
+            <p class="content-page-header__lead"><span id="reviewQueueCount" class="review-queue-count" aria-live="polite">—</span> submission(s) awaiting your review before they can move to the CFO.</p>
+            {% endif %}
+        </header>
+
+        <div id="fmReviewQueueList" class="queue-items" data-queue-scope="{{ 'cfo' if current_user.role == 'CFO' else 'fm' }}">
+            <div class="queue-loading">
+                <div class="loading-spinner"></div>
+                <p>Loading pending submissions…</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="statementReviewPanel" class="statement-review-panel element--hidden" aria-live="polite">
+    <div class="container-content statement-review-panel__inner">
+        <div class="statement-review-panel__bar">
+            <button type="button" class="btn btn-secondary btn-sm" id="fmReviewQueueBackBtn">← Back to review</button>
+        </div>
+        <div id="statementReviewContent" class="statement-review-content"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/finance-manager-review-queue.js') }}"></script>
+{% endblock %}
+

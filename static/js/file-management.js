@@ -221,17 +221,13 @@ class FileManager {
         const emptyState = document.getElementById('emptyState');
         
         if (this.filteredFiles.length === 0) {
-            filesList.classList.add('element--hidden');
-            filesList.classList.remove('element--visible');
-            emptyState.classList.remove('element--hidden');
-            emptyState.classList.add('element--visible');
+            VarydianUtils.hideElement(filesList);
+            VarydianUtils.showElement(emptyState);
             return;
         }
         
-        filesList.classList.remove('element--hidden');
-        filesList.classList.add('element--visible');
-        emptyState.classList.add('element--hidden');
-        emptyState.classList.remove('element--visible');
+        VarydianUtils.showElement(filesList, 'flex');
+        VarydianUtils.hideElement(emptyState);
         
         // Clear existing files
         filesList.innerHTML = '';
@@ -257,15 +253,11 @@ class FileManager {
         const pdfReportIcon = clone.querySelector('.icon-pdf-report');
         
         if (file.type === 'balance_sheet') {
-            balanceSheetIcon.classList.remove('element--hidden');
-            balanceSheetIcon.classList.add('element--visible');
-            pdfReportIcon.classList.add('element--hidden');
-            pdfReportIcon.classList.remove('element--visible');
+            VarydianUtils.showIcon(balanceSheetIcon);
+            VarydianUtils.hideIcon(pdfReportIcon);
         } else if (file.type === 'pdf_report') {
-            pdfReportIcon.classList.remove('element--hidden');
-            pdfReportIcon.classList.add('element--visible');
-            balanceSheetIcon.classList.add('element--hidden');
-            balanceSheetIcon.classList.remove('element--visible');
+            VarydianUtils.showIcon(pdfReportIcon);
+            VarydianUtils.hideIcon(balanceSheetIcon);
         }
         
         // Set file info
@@ -322,13 +314,13 @@ class FileManager {
             const link = document.createElement('a');
             link.href = downloadUrl;
             link.download = file.original_filename || file.filename;
-            link.classList.add('element--hidden');
+            VarydianUtils.hideElement(link);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             
         } catch (error) {
-            alert('Download failed. Please try again.');
+            showAlert('Download Failed', 'Download failed. Please try again.');
             VarydianUtils.showError(`Failed to download file: ${error.message}`);
         }
     }
@@ -347,44 +339,27 @@ class FileManager {
         // Show/hide balance sheet info
         const balanceSheetRow = document.getElementById('detailBalanceSheetRow');
         if (file.type === 'pdf_report' && file.balance_sheet_id) {
-            balanceSheetRow.classList.remove('element--hidden');
-            balanceSheetRow.classList.add('element--visible');
+            VarydianUtils.showElement(balanceSheetRow, 'flex');
             // Find associated balance sheet
             const balanceSheet = this.files.find(f => f.id === file.balance_sheet_id);
             if (balanceSheet) {
                 document.getElementById('detailBalanceSheet').textContent = balanceSheet.original_filename || balanceSheet.filename;
             }
         } else {
-            balanceSheetRow.classList.add('element--hidden');
-            balanceSheetRow.classList.remove('element--visible');
+            VarydianUtils.hideElement(balanceSheetRow);
         }
         
-        // Show modal
-        const modal = document.getElementById('fileDetailsModal');
-        modal.classList.remove('element--hidden');
-        modal.classList.add('element--visible');
-        
-        // Auto-scroll to modal
-        setTimeout(() => {
-            modal.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-                inline: 'center'
-            });
-        }, 100);
+        VarydianUtils.showElement(document.getElementById('fileDetailsModal'), 'flex');
     }
 
     closeModal() {
-        const modal = document.getElementById('fileDetailsModal');
-        modal.classList.add('element--hidden');
-        modal.classList.remove('element--visible');
+        VarydianUtils.hideElement(document.getElementById('fileDetailsModal'));
         this.selectedFile = null;
     }
 
     async deleteFile(file) {
-        if (!confirm(`Are you sure you want to delete "${file.original_filename || file.filename}"? This action cannot be undone.`)) {
-            return;
-        }
+        const confirmed = await showConfirm('Delete File', `Are you sure you want to delete "${file.original_filename || file.filename}"? This action cannot be undone.`);
+        if (!confirmed) return;
         
         try {
             let deleteUrl;
@@ -417,9 +392,8 @@ class FileManager {
             return;
         }
         
-        if (!confirm(`Download all ${this.filteredFiles.length} files?`)) {
-            return;
-        }
+        const confirmed = await showConfirm('Download All Files', `Download all ${this.filteredFiles.length} files?`);
+        if (!confirmed) return;
         
         try {
             // Download files one by one
@@ -484,15 +458,11 @@ class FileManager {
         const filesList = document.getElementById('filesList');
         
         if (show) {
-            loadingElement.classList.remove('element--hidden');
-            loadingElement.classList.add('element--visible');
-            filesList.classList.add('element--hidden');
-            filesList.classList.remove('element--visible');
+            VarydianUtils.showElement(loadingElement);
+            VarydianUtils.hideElement(filesList);
         } else {
-            loadingElement.classList.add('element--hidden');
-            loadingElement.classList.remove('element--visible');
-            filesList.classList.remove('element--hidden');
-            filesList.classList.add('element--visible');
+            VarydianUtils.hideElement(loadingElement);
+            VarydianUtils.showElement(filesList, 'flex');
         }
     }
 
@@ -501,21 +471,14 @@ class FileManager {
         const filesList = document.getElementById('filesList');
         const errorMessage = document.getElementById('errorMessage');
         
-        errorElement.classList.remove('element--hidden');
-        errorElement.classList.add('element--visible');
-        filesList.classList.add('element--hidden');
-        filesList.classList.remove('element--visible');
+        VarydianUtils.showElement(errorElement);
+        VarydianUtils.hideElement(filesList);
         errorMessage.textContent = message;
     }
 
     hideError() {
-        const errorElement = document.getElementById('filesError');
-        const filesList = document.getElementById('filesList');
-        
-        errorElement.classList.add('element--hidden');
-        errorElement.classList.remove('element--visible');
-        filesList.classList.remove('element--hidden');
-        filesList.classList.add('element--visible');
+        VarydianUtils.hideElement(document.getElementById('filesError'));
+        VarydianUtils.showElement(document.getElementById('filesList'), 'flex');
     }
 
     updatePaginationControls() {
@@ -526,8 +489,7 @@ class FileManager {
         const paginationInfo = document.getElementById('paginationInfo');
 
         if (this.totalPages > 1) {
-            paginationControls.classList.remove('element--hidden');
-            paginationControls.classList.add('element--visible');
+            VarydianUtils.showElement(paginationControls, 'flex');
             
             // Update button states
             prevBtn.disabled = this.currentPage === 1;
@@ -572,8 +534,7 @@ class FileManager {
                 }
             });
         } else {
-            paginationControls.classList.add('element--hidden');
-            paginationControls.classList.remove('element--visible');
+            VarydianUtils.hideElement(paginationControls);
         }
     }
 

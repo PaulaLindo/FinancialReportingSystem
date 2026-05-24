@@ -59,7 +59,7 @@ function exportDraftStatement() {
 function mapAccount(accountCode) {
     // Implementation would open account mapping interface
     // For now, show a simple alert
-    alert(`Account mapping interface for ${accountCode} would be opened here.`);
+    showAlert('Account Mapping', `Account mapping interface for ${accountCode} would be opened here.`);
 }
 
 // Auto-initialize when DOM is ready

@@ -1,0 +1,12 @@
+{
+  "name": "varydian-financial-reporting-system",
+  "private": true,
+  "scripts": {
+    "lint:css": "stylelint \"static/css/**/*.css\"",
+    "lint:css:fix": "stylelint \"static/css/**/*.css\" --fix"
+  },
+  "devDependencies": {
+    "stylelint": "^16.14.1",
+    "stylelint-config-standard": "^37.0.0"
+  }
+}

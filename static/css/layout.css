@@ -827,7 +827,7 @@
     transform: translateY(-4px);
 }
 
-.step-number {
+.steps-grid .step-number {
     display: grid;
     place-items: center;
     width: clamp(48px, 6vw, 60px);
@@ -914,8 +914,8 @@
     opacity: 0.95;
 }
 
-/* Mobile-first responsive adjustments */
-@media (max-width: 768px) {
+/* Stack process steps on tablet/mobile */
+@media (max-width: 1023px) {
     .steps-grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -931,18 +931,29 @@
     }
     
     .steps-grid .step-arrow {
-        --rotation: 90deg; /* Facing Down */
-        margin: var(--fluid-space-md) 0;
+        margin: var(--fluid-space-sm) 0;
         padding: 0;
-        display: block;
-        min-width: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        font-size: 0;
+        line-height: 1;
+        animation: none;
+        transform: none;
+    }
+
+    .steps-grid .step-arrow::before {
+        content: '↓';
         font-size: clamp(1.5rem, 2.5vw, 2rem);
         color: var(--primary-500);
         font-weight: var(--font-bold);
-        opacity: 0.8;
-        text-align: center;
-        width: 100%;
+        opacity: 0.85;
+        line-height: 1;
     }
+}
+
+@media (max-width: 768px) {
     
     .cta-section {
         padding: var(--fluid-space-3xl) 0;
@@ -1018,6 +1029,66 @@ main {
     flex-direction: column;
 }
 
+/* Formula modal + similar overlays: fixed full viewport, above main/footer (markup lives after <main> in base.html) */
+#formulaModal.formula-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal, 1050);
+    box-sizing: border-box;
+    overflow: auto;
+    padding: var(--fluid-space-lg);
+    background: rgba(10, 17, 40, 0.72);
+    backdrop-filter: blur(6px);
+}
+
+#formulaModal.formula-modal-overlay.display-flex {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* Formula modal visual styles: static/css/formula-modal.css */
+
+/* Line-item comment modal: above formula modal; sharp panel (no stacked backdrop blur) */
+#lineItemCommentModal.line-item-comment-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1080;
+    box-sizing: border-box;
+}
+
+#lineItemCommentModal.line-item-comment-modal.visibility--hidden {
+    display: none !important;
+}
+
+#lineItemCommentModal .line-item-comment-modal__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 17, 40, 0.55);
+    backdrop-filter: blur(4px);
+}
+
+#lineItemCommentModal .line-item-comment-modal__panel {
+    position: relative;
+    z-index: 1;
+    max-width: min(640px, 96vw);
+    margin: 3vh auto;
+    max-height: 94vh;
+    overflow: auto;
+    background: var(--bg-primary, #0f172a);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+    color: var(--text-primary, #e2e8f0);
+    filter: none;
+    backdrop-filter: none;
+}
+
+#lineItemCommentModal .line-item-comment-modal__panel .form-hint {
+    font-size: 0.8125rem;
+    margin-top: 0.35rem;
+}
+
 /* ======================================== */
 /* FOOTER LAYOUT */
 /* ======================================== */
@@ -1054,7 +1125,7 @@ footer .footer-note {
 }
 
 /* Desktop footer text size reduction */
-@media (min-width: 769px) {
+@media (min-width: 768px) {
     footer .container-content p {
         font-size: clamp(0.6rem, 1.8vw, 0.7rem);
         color: var(--text-quaternary);

@@ -3,81 +3,132 @@
 {% block title %}Export - Varydian{% endblock %}
 
 {% block content %}
-
-<div class="export-page">
-    <div class="export-header">
-        <div class="container-content">
+<div class="page page--export export-page">
+    <header class="export-header">
+        <div class="container-content export-header__inner">
             <h1>Export Center</h1>
-            <p>Export financial statements in various formats</p>
+            {% if read_only_export %}
+            <p>Download finalized financial statements after CFO approval and period lock.</p>
+            {% else %}
+            <p>Export financial statements in various formats after the reporting period is locked.</p>
+            {% endif %}
         </div>
-    </div>
+    </header>
 
     <div class="export-content">
-        <div class="container-content">
-            <div class="export-options">
-                <h2>Export Options</h2>
-                <div class="export-form">
-                    <div class="admin-action-card">
-                        <h3>📄 PDF Report</h3>
-                        <p>Complete financial statements in PDF format for AGSA submission</p>
-                        {% if current_user and current_user.can_generate_pdf() %}
-                        <button class="btn btn-primary">Generate PDF</button>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="admin-action-card">
-                        <h3>📊 Excel Workbook</h3>
-                        <p>Financial statements in Excel format with detailed calculations</p>
-                        {% if current_user and current_user.can_export() %}
-                        <button class="btn btn-primary">Export to Excel</button>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="admin-action-card">
-                        <h3>📋 CSV Data</h3>
-                        <p>Raw data export for further analysis and reporting</p>
-                        {% if current_user and current_user.can_export_audit() %}
-                        <button class="btn btn-primary">Export CSV</button>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="admin-action-card">
-                        <h3>🗃️ Archive Package</h3>
-                        <p>Complete package with all statements, notes, and supporting documents</p>
-                        {% if current_user and current_user.can_export() %}
-                        <button class="btn btn-primary">Download Archive</button>
-                        {% endif %}
-                    </div>
+        <div class="container-content export-layout">
+            <section class="export-session-picker" aria-labelledby="exportSessionLabel">
+                <div class="export-section-head export-section-head--left">
+                    <h2 id="exportSessionLabel" class="export-section-title">1. Choose submission</h2>
+                    <p class="export-section-desc">Select a CFO-approved submission in a locked reporting period.</p>
                 </div>
-            </div>
+                <label for="exportSessionSelect" class="filter-label export-session-label">Finalized submission</label>
+                <select id="exportSessionSelect" class="filter-select export-session-select">
+                    <option value="">Loading…</option>
+                </select>
+                <p class="export-selection-notice" data-export-selection-notice>Select a CFO-approved submission in a locked period.</p>
+            </section>
 
-            <div class="export-history">
-                <h2>Export History</h2>
-                <div class="export-history-list">
-                    <div class="export-history-item">
-                        <div class="export-history-date">January 29, 2026 at 14:30</div>
-                        <div class="export-history-title">Annual Financial Statements 2025</div>
-                        <div class="export-history-status status-complete">PDF • 2.4 MB</div>
-                    </div>
-                    <div class="export-history-item">
-                        <div class="export-history-date">January 28, 2026 at 10:15</div>
-                        <div class="export-history-title">Quarterly Report Q4 2025</div>
-                        <div class="export-history-status status-complete">Excel • 1.8 MB</div>
-                    </div>
-                    <div class="export-history-item">
-                        <div class="export-history-date">January 25, 2026 at 16:45</div>
-                        <div class="export-history-title">Monthly Analysis January 2026</div>
-                        <div class="export-history-status status-complete">CSV • 845 KB</div>
-                    </div>
-                    <div class="export-history-item">
-                        <div class="export-history-date">January 20, 2026 at 09:30</div>
-                        <div class="export-history-title">Complete Archive 2025</div>
-                        <div class="export-history-status status-complete">ZIP • 12.3 MB</div>
-                    </div>
+            <section class="export-options" aria-labelledby="exportOptionsLabel">
+                <div class="export-section-head">
+                    <h2 id="exportOptionsLabel" class="export-section-title">2. Export options</h2>
+                    <p class="export-section-desc">Generate or download official outputs for the selected submission.</p>
                 </div>
-            </div>
+
+                <div class="export-form{% if read_only_export %} export-form--compact{% endif %}">
+                    <article class="export-card export-card--pdf">
+                        <div class="export-card__icon" aria-hidden="true">📄</div>
+                        <div class="export-card__body">
+                            <h3 class="export-card__title">PDF Report</h3>
+                            <p class="export-card__desc">Complete financial statements in PDF format for AGSA submission.</p>
+                        </div>
+                        <div class="export-card__actions">
+                            {% if current_user and current_user.can_generate_pdf() %}
+                            <div class="pdf-gate-wrap pdf-gate-wrap--blocked export-pdf-gate" data-pdf-gate-wrap data-pdf-gate-mode="generate">
+                                <p class="pdf-gate-notice" data-pdf-gate-notice>Select a finalized submission above to generate or download a PDF.</p>
+                                <button type="button" class="btn btn-primary pdf-gate-action pdf-gate-action--hidden" data-export-generate-pdf data-pdf-gate-action disabled>Generate PDF</button>
+                            </div>
+                            {% elif current_user and current_user.can_download_pdf() %}
+                            <div class="pdf-gate-wrap pdf-gate-wrap--blocked export-pdf-gate" data-pdf-gate-wrap data-pdf-gate-mode="download">
+                                <p class="pdf-gate-notice" data-pdf-gate-notice>Select a finalized submission above to generate or download a PDF.</p>
+                                <button type="button" class="btn btn-primary pdf-gate-action pdf-gate-action--hidden" data-export-download-pdf data-pdf-gate-action disabled>Download PDF</button>
+                            </div>
+                            <p class="export-card-hint">Read-only — download PDFs after the CFO generates them.</p>
+                            {% endif %}
+                        </div>
+                    </article>
+
+                    {% if current_user and current_user.can_export() %}
+                    <article class="export-card export-card--excel">
+                        <div class="export-card__icon" aria-hidden="true">📊</div>
+                        <div class="export-card__body">
+                            <h3 class="export-card__title">Excel Workbook</h3>
+                            <p class="export-card__desc">Financial statements in Excel with detailed calculations and mapping sheets.</p>
+                        </div>
+                        <div class="export-card__actions">
+                            <button type="button" class="btn btn-primary" data-export-excel data-export-action disabled>Export to Excel</button>
+                        </div>
+                    </article>
+
+                    <article class="export-card export-card--archive">
+                        <div class="export-card__icon" aria-hidden="true">🗃️</div>
+                        <div class="export-card__body">
+                            <h3 class="export-card__title">Archive Package</h3>
+                            <p class="export-card__desc">ZIP bundle with session JSON, CSV, Excel, and PDF when available.</p>
+                        </div>
+                        <div class="export-card__actions">
+                            <button type="button" class="btn btn-primary" data-export-archive data-export-action disabled>Download Archive</button>
+                        </div>
+                    </article>
+                    {% endif %}
+
+                    {% if current_user and current_user.can_export_audit() %}
+                    <article class="export-card export-card--csv">
+                        <div class="export-card__icon" aria-hidden="true">📋</div>
+                        <div class="export-card__body">
+                            <h3 class="export-card__title">CSV Data</h3>
+                            <p class="export-card__desc">Raw mapped line data for analysis, audit, and external reporting.</p>
+                        </div>
+                        <div class="export-card__actions">
+                            <button type="button" class="btn btn-primary" data-export-csv data-export-action disabled>Export CSV</button>
+                        </div>
+                    </article>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="export-history" aria-labelledby="exportLogLabel">
+                <div class="export-section-head">
+                    <h2 id="exportLogLabel" class="export-section-title">Export log</h2>
+                    {% if read_only_export %}
+                    <p class="export-history-subtitle text-muted" data-export-log-subtitle>PDF generation and download activity for finalized submissions.</p>
+                    {% else %}
+                    <p class="export-history-subtitle text-muted" data-export-log-subtitle>Recent export activity across finalized submissions.</p>
+                    {% endif %}
+                </div>
+                <div id="exportHistoryList" class="export-history-list" data-export-history-list>
+                    <p class="export-history-empty text-muted">Loading export log…</p>
+                </div>
+            </section>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/pdf-period-gate.js') }}"></script>
+<script src="{{ url_for('static', filename='js/export-center.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.ExportCenter) {
+        ExportCenter.init({
+            readOnly: {{ 'true' if read_only_export else 'false' }},
+            readOnlyPdfLog: {{ 'true' if read_only_export else 'false' }},
+            canGeneratePdf: {{ 'true' if current_user and current_user.can_generate_pdf() else 'false' }},
+            canExport: {{ 'true' if current_user and current_user.can_export() else 'false' }},
+            canExportAudit: {{ 'true' if current_user and current_user.can_export_audit() else 'false' }},
+        });
+    }
+});
+</script>
 {% endblock %}

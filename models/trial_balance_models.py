@@ -13,51 +13,13 @@ from decimal import Decimal
 
 from supabase import create_client, Client
 from .supabase_auth_models import supabase_auth
-
-
-@dataclass
-class BalanceSheetSession:
-    """Represents a balance sheet upload session"""
-    id: Optional[str] = None
-    user_id: str = ""
-    filename: str = ""
-    original_filename: str = ""
-    file_type: str = "unknown"
-    file_format: str = "unknown"
-    status: str = "uploaded"
-    total_rows: int = 0
-    total_columns: int = 0
-    file_size_bytes: int = 0
-    checksum_md5: str = ""
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    processed_at: Optional[datetime] = None
-    metadata: Dict = None
-    processing_log: List = None
-    validation_results: Dict = None
-    
-    def __post_init__(self):
-        if self.metadata is None:
-            self.metadata = {}
-        if self.processing_log is None:
-            self.processing_log = []
-        if self.validation_results is None:
-            self.validation_results = {}
-    
-    def to_dict(self) -> Dict:
-        """Convert to dictionary for database operations"""
-        data = asdict(self)
-        # Remove id field if it's None to let database generate UUID
-        if data.get('id') is None:
-            del data['id']
-        # Convert datetime objects to ISO format
-        if self.created_at:
-            data['created_at'] = self.created_at.isoformat()
-        if self.updated_at:
-            data['updated_at'] = self.updated_at.isoformat()
-        if self.processed_at:
-            data['processed_at'] = self.processed_at.isoformat()
-        return data
+from .balance_sheet_models import (
+    BalanceSheetSession,
+    _balance_sheet_session_from_row,
+    _balance_sheet_session_to_db_row,
+    _normalize_balance_sheet_session_status_for_db,
+    _session_statuses_for_query,
+)
 
 
 @dataclass
@@ -293,21 +255,7 @@ class BalanceSheetModel:
             print(f"📄 filename: {session.filename}")
             print(f"📊 status: {session.status}")
             
-            session_data = {
-                'user_id': session.user_id,
-                'filename': session.filename,
-                'original_filename': session.original_filename,
-                'file_type': session.file_type,
-                'file_format': session.file_format,
-                'status': session.status,
-                'total_rows': session.total_rows,
-                'total_columns': session.total_columns,
-                'file_size_bytes': session.file_size_bytes,
-                'checksum_md5': session.checksum_md5,
-                'metadata': session.metadata or {},
-                'processing_log': session.processing_log or [],
-                'validation_results': session.validation_results or {}
-            }
+            session_data = _balance_sheet_session_to_db_row(session, for_update=False)
             
             print(f"📋 Inserting session data into balance_sheet_sessions table...")
             result = self.client.table('balance_sheet_sessions').insert(session_data).execute()
@@ -318,6 +266,9 @@ class BalanceSheetModel:
             if result.data:
                 session_id = result.data[0]['id']
                 session.id = session_id
+                session.status = result.data[0].get(
+                    "status", _normalize_balance_sheet_session_status_for_db(session.status)
+                )
                 print(f"✅ Session created successfully with ID: {session_id}")
                 return session_id
             else:
@@ -336,26 +287,7 @@ class BalanceSheetModel:
         try:
             result = self.client.table('balance_sheet_sessions').select('*').eq('id', session_id).execute()
             if result.data:
-                data = result.data[0]
-                return BalanceSheetSession(
-                    id=data['id'],
-                    user_id=data['user_id'],
-                    filename=data['filename'],
-                    original_filename=data.get('original_filename', ''),
-                    file_type=data.get('file_type', 'unknown'),
-                    file_format=data.get('file_format', 'unknown'),
-                    status=data.get('status', 'uploaded'),
-                    total_rows=data.get('total_rows', 0),
-                    total_columns=data.get('total_columns', 0),
-                    file_size_bytes=data.get('file_size_bytes', 0),
-                    checksum_md5=data.get('checksum_md5', ''),
-                    created_at=datetime.fromisoformat(data['created_at'].replace('Z', '+00:00')) if data.get('created_at') else None,
-                    updated_at=datetime.fromisoformat(data['updated_at'].replace('Z', '+00:00')) if data.get('updated_at') else None,
-                    processed_at=datetime.fromisoformat(data['processed_at'].replace('Z', '+00:00')) if data.get('processed_at') else None,
-                    metadata=data.get('metadata', {}),
-                    processing_log=data.get('processing_log', []),
-                    validation_results=data.get('validation_results', {})
-                )
+                return _balance_sheet_session_from_row(result.data[0])
             return None
         except Exception as e:
             raise Exception(f"Error getting balance sheet session: {str(e)}")
@@ -363,7 +295,10 @@ class BalanceSheetModel:
     def update_session_status(self, session_id: str, status: str, metadata: Dict = None) -> bool:
         """Update session status"""
         try:
-            update_data = {'status': status, 'updated_at': datetime.now().isoformat()}
+            update_data = {
+                'status': _normalize_balance_sheet_session_status_for_db(status),
+                'updated_at': datetime.now().isoformat(),
+            }
             if metadata:
                 update_data['metadata'] = metadata
             
@@ -378,55 +313,25 @@ class BalanceSheetModel:
             result = self.client.table('balance_sheet_sessions').select('*').eq('user_id', user_id).order('created_at', desc=True).limit(limit).execute()
             sessions = []
             for data in result.data:
-                sessions.append(BalanceSheetSession(
-                    id=data['id'],
-                    user_id=data['user_id'],
-                    filename=data['filename'],
-                    original_filename=data.get('original_filename', ''),
-                    file_type=data.get('file_type', 'unknown'),
-                    file_format=data.get('file_format', 'unknown'),
-                    status=data.get('status', 'uploaded'),
-                    total_rows=data.get('total_rows', 0),
-                    total_columns=data.get('total_columns', 0),
-                    file_size_bytes=data.get('file_size_bytes', 0),
-                    checksum_md5=data.get('checksum_md5', ''),
-                    created_at=datetime.fromisoformat(data['created_at'].replace('Z', '+00:00')) if data.get('created_at') else None,
-                    updated_at=datetime.fromisoformat(data['updated_at'].replace('Z', '+00:00')) if data.get('updated_at') else None,
-                    processed_at=datetime.fromisoformat(data['processed_at'].replace('Z', '+00:00')) if data.get('processed_at') else None,
-                    metadata=data.get('metadata', {}),
-                    processing_log=data.get('processing_log', []),
-                    validation_results=data.get('validation_results', {})
-                ))
+                sessions.append(_balance_sheet_session_from_row(data))
             return sessions
         except Exception as e:
             raise Exception(f"Error getting user sessions: {str(e)}")
     
     def get_sessions_by_status(self, status: str, limit: int = 50) -> List[BalanceSheetSession]:
-        """Get sessions by status"""
+        """Get sessions by status (accepts app aliases e.g. draft, unbalanced)."""
         try:
-            result = self.client.table('balance_sheet_sessions').select('*').eq('status', status).order('created_at', desc=True).limit(limit).execute()
-            
+            statuses = _session_statuses_for_query(status)
+            query = self.client.table("balance_sheet_sessions").select("*")
+            if len(statuses) == 1:
+                query = query.eq("status", statuses[0])
+            else:
+                query = query.in_("status", statuses)
+            result = query.order("created_at", desc=True).limit(limit).execute()
+
             sessions = []
             for data in result.data:
-                sessions.append(BalanceSheetSession(
-                    id=data['id'],
-                    user_id=data['user_id'],
-                    filename=data['filename'],
-                    original_filename=data.get('original_filename', ''),
-                    file_type=data.get('file_type', 'unknown'),
-                    file_format=data.get('file_format', 'unknown'),
-                    status=data['status'],
-                    total_rows=data.get('total_rows', 0),
-                    total_columns=data.get('total_columns', 0),
-                    file_size_bytes=data.get('file_size_bytes', 0),
-                    checksum_md5=data.get('checksum_md5', ''),
-                    created_at=datetime.fromisoformat(data['created_at'].replace('Z', '+00:00')) if data.get('created_at') else None,
-                    updated_at=datetime.fromisoformat(data['updated_at'].replace('Z', '+00:00')) if data.get('updated_at') else None,
-                    processed_at=datetime.fromisoformat(data['processed_at'].replace('Z', '+00:00')) if data.get('processed_at') else None,
-                    metadata=data.get('metadata', {}),
-                    processing_log=data.get('processing_log', []),
-                    validation_results=data.get('validation_results', {})
-                ))
+                sessions.append(_balance_sheet_session_from_row(data))
             return sessions
         except Exception as e:
             raise Exception(f"Error getting sessions by status: {str(e)}")

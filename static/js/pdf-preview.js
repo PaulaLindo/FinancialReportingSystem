@@ -22,6 +22,11 @@ class PdfPreviewModule {
         this.cacheElements();
         this.setupEventListeners();
         this.initializePdfPreview();
+        if (window.PdfPeriodGate) {
+            PdfPeriodGate.init().then((availability) => {
+                this.pdfAvailability = availability;
+            });
+        }
     }
 
     /**
@@ -144,8 +149,7 @@ class PdfPreviewModule {
         if (!this.elements.pdfPreview) return;
         
         // Ensure the iframe is visible
-        this.elements.pdfPreview.classList.remove('element--hidden');
-        this.elements.pdfPreview.classList.add('element--visible');
+        VarydianUtils.showElement(this.elements.pdfPreview);
         
         // Add ready class to container
         const container = this.elements.pdfPreview.parentElement;
@@ -203,8 +207,7 @@ class PdfPreviewModule {
     handleFullscreen() {
         const fullscreenContainer = document.getElementById('pdfFullscreen');
         if (fullscreenContainer) {
-            fullscreenContainer.classList.remove('element--hidden');
-            fullscreenContainer.classList.add('element--visible');
+            VarydianUtils.showElement(fullscreenContainer, 'flex');
             document.body.classList.add('body--overflow-hidden');
             document.body.classList.remove('body--overflow-auto');
             
@@ -222,8 +225,7 @@ class PdfPreviewModule {
     closeFullscreen() {
         const fullscreenContainer = document.getElementById('pdfFullscreen');
         if (fullscreenContainer) {
-            fullscreenContainer.classList.add('element--hidden');
-            fullscreenContainer.classList.remove('element--visible');
+            VarydianUtils.hideElement(fullscreenContainer);
             document.body.classList.remove('body--overflow-hidden');
             document.body.classList.add('body--overflow-auto');
         }
@@ -241,22 +243,54 @@ class PdfPreviewModule {
      */
     handleGeneratePdf() {
         if (!this.elements.generatePdfBtn) return;
+
+        if (this.pdfAvailability && !this.pdfAvailability.can_generate_pdf) {
+            this.showSuccessMessage(this.pdfAvailability.reason || 'Period is not locked yet.');
+            return;
+        }
         
         // Show loading state
         this.elements.generatePdfBtn.disabled = true;
         this.elements.generatePdfBtn.textContent = 'Generating...';
-        
-        // Simulate PDF generation
-        setTimeout(() => {
+
+        const ctx = window.PdfPeriodGate ? PdfPeriodGate.readContext() : {};
+        const body = {
+            results_file: window.uploadController?.state?.resultsFile || null,
+            session_id: ctx.session_id,
+            document_type: ctx.document_type,
+        };
+
+        if (!body.results_file) {
             this.elements.generatePdfBtn.disabled = false;
-            this.elements.generatePdfBtn.textContent = 'Generate PDF';
-            
-            // Load the preview
-            this.loadPdfPreview();
-            
-            // Show success message
-            this.showSuccessMessage('PDF generated successfully!');
-        }, 2000);
+            this.elements.generatePdfBtn.textContent = 'Generate PDF Report';
+            this.showSuccessMessage('No results file available for PDF generation.');
+            return;
+        }
+
+        fetch('/api/generate-pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        })
+            .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+            .then(({ ok, data }) => {
+                this.elements.generatePdfBtn.disabled = false;
+                this.elements.generatePdfBtn.textContent = 'Generate PDF Report';
+                if (!ok || !data.success) {
+                    this.showSuccessMessage(data.error || 'PDF generation failed.');
+                    return;
+                }
+                this.loadPdfPreview();
+                this.showSuccessMessage('PDF generated successfully!');
+                if (data.download_url) {
+                    window.open(data.download_url, '_blank');
+                }
+            })
+            .catch(() => {
+                this.elements.generatePdfBtn.disabled = false;
+                this.elements.generatePdfBtn.textContent = 'Generate PDF Report';
+                this.showSuccessMessage('PDF generation failed.');
+            });
     }
 
     /**

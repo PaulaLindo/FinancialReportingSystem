@@ -1,0 +1,177 @@
+/* pages/shared.css - extracted from pages.css */
+/* Pages CSS - Varydian Financial Reporting System */
+/* Page-specific overrides and customizations */
+
+/* ======================================== */
+/* HERO SECTION */
+/* ======================================== */
+
+.hero {
+    background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-800) 100%);
+    color: var(--white);
+    padding: var(--fluid-space-4xl) 0;
+    min-height: clamp(400px, 50vh, 600px);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: var(--container-lg);
+    margin: 0 auto;
+    padding: 0 var(--fluid-space-lg);
+}
+
+.hero-title {
+    font-size: var(--heading-2xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--fluid-space-lg);
+    line-height: 1.2;
+}
+
+.hero-subtitle {
+    font-size: var(--text-lg);
+    font-weight: var(--font-normal);
+    margin-bottom: var(--fluid-space-2xl);
+    opacity: 0.9;
+    line-height: 1.6;
+}
+
+@media (min-width: 1024px) {
+    .hero {
+        min-height: clamp(260px, 32vh, 380px);
+        padding: var(--fluid-space-3xl) 0;
+    }
+
+    .hero-title {
+        font-size: var(--heading-2xl);
+    }
+
+    .hero-subtitle {
+        font-size: var(--text-lg);
+        margin-bottom: var(--fluid-space-xl);
+    }
+}
+
+.hero-actions {
+    display: flex;
+    gap: var(--fluid-space-md);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* ======================================== */
+/* SECTION LAYOUT */
+/* ======================================== */
+
+.section {
+    padding: var(--fluid-space-4xl) 0;
+    background: var(--bg-primary);
+}
+
+.section:nth-child(even) {
+    background: var(--bg-secondary);
+}
+
+/* ======================================== */
+/* PAGE HERO (admin, export, about, etc.) */
+/* ======================================== */
+
+.page-hero,
+.admin-header,
+.export-header,
+.about-hero {
+    text-align: center;
+    margin-bottom: var(--fluid-space-3xl);
+    padding: var(--fluid-space-2xl) 0;
+}
+
+.page-hero h1,
+.admin-header h1,
+.export-header h1,
+.about-hero h1 {
+    font-size: var(--heading-xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--fluid-space-md);
+    text-align: center;
+}
+
+.page-hero p,
+.admin-header p,
+.export-header p,
+.about-hero p {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    text-align: center;
+    max-width: 42rem;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+@media (min-width: 1024px) {
+    .page-hero h1,
+    .admin-header h1,
+    .export-header h1,
+    .about-hero h1 {
+        font-size: var(--heading-2xl);
+    }
+}
+
+/* Compact header — FM history/review, clerk submission history (no hero band) */
+.content-page-header {
+    padding: var(--fluid-space-2xl) 0 var(--fluid-space-xl);
+    margin-bottom: var(--fluid-space-xl);
+    text-align: center;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.content-page-header h1 {
+    font-size: var(--heading-xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--fluid-space-sm);
+}
+
+.content-page-header p {
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+    max-width: 42rem;
+    margin: 0 auto var(--fluid-space-md);
+    line-height: 1.6;
+}
+
+.content-page-header .content-page-header__lead {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    margin: 0;
+}
+
+@media (min-width: 1024px) {
+    .content-page-header h1 {
+        font-size: var(--heading-2xl);
+    }
+
+    .content-page-header p {
+        font-size: var(--text-lg);
+    }
+}
+
+/* ======================================== */
+/* STEPS GRID - Handled by layout.css */
+/* ======================================== */
+

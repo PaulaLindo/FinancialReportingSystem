@@ -25,6 +25,9 @@ venv/
 env/
 ENV/
 
+# Node (stylelint)
+node_modules/
+
 # IDE
 .vscode/
 .idea/

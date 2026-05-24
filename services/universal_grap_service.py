@@ -68,6 +68,16 @@ class UniversalGrapService:
         # Strategy 6: Final fallback - use account code
         return getattr(row, 'account_code', 'Unknown Account')
     
+    @staticmethod
+    def _to_float(value, default: float = 0.0) -> float:
+        """Coerce DB amounts; None must not reach float() (debit-only rows store credit_balance=NULL)."""
+        if value is None:
+            return default
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
+
     def _extract_financial_amounts(self, row, document_type: str) -> Dict[str, float]:
         """Extract financial amounts from any document type"""
         amounts = {
@@ -78,8 +88,8 @@ class UniversalGrapService:
         
         if document_type == 'budget_report':
             # For budget reports, calculate variance
-            budget_amount = float(getattr(row, 'budget_amount', 0))
-            actual_amount = float(getattr(row, 'actual_amount', 0))
+            budget_amount = self._to_float(getattr(row, 'budget_amount', None))
+            actual_amount = self._to_float(getattr(row, 'actual_amount', None))
             variance = actual_amount - budget_amount
             
             amounts['debit_balance'] = variance if variance < 0 else 0
@@ -87,16 +97,19 @@ class UniversalGrapService:
             amounts['net_balance'] = variance
             
         elif document_type == 'income_statement':
-            # For income statements, use existing balance fields
-            amounts['debit_balance'] = float(getattr(row, 'debit_balance', 0))
-            amounts['credit_balance'] = float(getattr(row, 'credit_balance', 0))
-            amounts['net_balance'] = float(getattr(row, 'net_balance', 0))
+            amounts['debit_balance'] = self._to_float(getattr(row, 'debit_balance', None))
+            amounts['credit_balance'] = self._to_float(getattr(row, 'credit_balance', None))
+            amounts['net_balance'] = self._to_float(getattr(row, 'net_balance', None))
             
         else:
-            # For balance sheets and other documents, use standard balance fields
-            amounts['debit_balance'] = float(getattr(row, 'debit_balance', 0))
-            amounts['credit_balance'] = float(getattr(row, 'credit_balance', 0))
-            amounts['net_balance'] = float(getattr(row, 'net_balance', 0))
+            amounts['debit_balance'] = self._to_float(getattr(row, 'debit_balance', None))
+            amounts['credit_balance'] = self._to_float(getattr(row, 'credit_balance', None))
+            amounts['net_balance'] = self._to_float(getattr(row, 'net_balance', None))
+            if amounts['debit_balance'] == 0 and amounts['credit_balance'] == 0:
+                processed = getattr(row, 'processed_data', None) or {}
+                if isinstance(processed, dict):
+                    amounts['debit_balance'] = self._to_float(processed.get('debit_balance'))
+                    amounts['credit_balance'] = self._to_float(processed.get('credit_balance'))
         
         return amounts
     
@@ -161,6 +174,9 @@ class UniversalGrapService:
                 'metadata': getattr(session, 'metadata', {})
             }
         except Exception as e:
+            print(f"[UniversalGrapService] get_session_data error: {e}")
+            import traceback
+            traceback.print_exc()
             return {'success': False, 'error': str(e)}
     
     def register_document_type(self, document_type: str, model_class):
@@ -285,6 +301,8 @@ class UniversalGrapService:
             # Get the current session and update its metadata
             current_session = model.get_session(session_id)
             if current_session:
+                if current_session.metadata is None:
+                    current_session.metadata = {}
                 current_session.metadata.update(metadata)
                 model.update_session(current_session)
             

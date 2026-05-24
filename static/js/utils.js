@@ -56,7 +56,9 @@ class VarydianUtils {
             ALLOWED_EXTENSIONS: ['xlsx', 'xls', 'csv', 'xlsm', 'xlsb', 'tsv']
         },
         API: {
-            TIMEOUT: 60000
+            TIMEOUT: 60000,
+            /** Large file upload + row persistence can exceed the default timeout. */
+            UPLOAD_TIMEOUT: 180000
         }
     };
 
@@ -70,6 +72,35 @@ class VarydianUtils {
             minimumFractionDigits: 2, 
             maximumFractionDigits: 2 
         });
+    }
+
+    /**
+     * Human-readable workflow status (no underscores), e.g. pending_review → Pending Review.
+     */
+    static formatWorkflowStatus(status) {
+        if (status == null || status === '') return '—';
+        const key = String(status).toLowerCase().trim();
+        const labels = {
+            pending_review: 'Pending Review',
+            pending_cfo: 'Pending CFO Approval',
+            pending: 'Pending Review',
+            approved_by_manager: 'Approved by Manager',
+            approved: 'Approved',
+            rejected_by_manager: 'Rejected by Manager',
+            rejected_by_cfo: 'Rejected by CFO',
+            rejected: 'Rejected',
+            finalized: 'Finalized',
+            draft: 'Draft',
+            submitted: 'Submitted',
+            completed: 'Completed',
+            processing: 'Processing',
+        };
+        if (labels[key]) return labels[key];
+        return key
+            .split('_')
+            .filter(Boolean)
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
     }
 
     /**
@@ -162,6 +193,65 @@ class VarydianUtils {
     }
 
     /**
+     * Centered toast (mapping, review, upload). Stays visible longer; click or × to dismiss.
+     * @param {string} message
+     * @param {'success'|'error'|'info'|'warning'} [type='info']
+     * @param {{ duration?: number }} [options]
+     */
+    static showToast(message, type = 'info', options = {}) {
+        const duration =
+            options.duration != null
+                ? options.duration
+                : type === 'error'
+                  ? 12000
+                  : 8000;
+
+        let stack = document.getElementById('varydianToastStack');
+        if (!stack) {
+            stack = document.createElement('div');
+            stack.id = 'varydianToastStack';
+            stack.className = 'varydian-toast-stack';
+            stack.setAttribute('aria-live', 'polite');
+            document.body.appendChild(stack);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `varydian-toast varydian-toast--${type}`;
+        toast.setAttribute('role', 'alert');
+
+        const text = document.createElement('p');
+        text.className = 'varydian-toast__message';
+        text.textContent = message;
+
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'varydian-toast__close';
+        closeBtn.setAttribute('aria-label', 'Dismiss');
+        closeBtn.textContent = '×';
+
+        const remove = () => {
+            toast.classList.remove('varydian-toast--visible');
+            window.setTimeout(() => toast.remove(), 280);
+        };
+
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            remove();
+        });
+        toast.addEventListener('click', remove);
+
+        toast.appendChild(text);
+        toast.appendChild(closeBtn);
+        stack.appendChild(toast);
+
+        requestAnimationFrame(() => toast.classList.add('varydian-toast--visible'));
+
+        const timer = window.setTimeout(remove, duration);
+        const cancelTimer = () => window.clearTimeout(timer);
+        closeBtn.addEventListener('click', cancelTimer, { once: true });
+    }
+
+    /**
      * Validate file type and size
      */
     static validateFile(file) {
@@ -246,8 +336,9 @@ class VarydianUtils {
      * Safe fetch with timeout and error handling
      */
     static async safeFetch(url, options = {}) {
+        const { timeout = this.CONFIG.API.TIMEOUT, ...fetchOptions } = options;
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.CONFIG.API.TIMEOUT);
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
 
         try {
             // Use base URL for API requests
@@ -255,57 +346,96 @@ class VarydianUtils {
             
                         
             const response = await fetch(fullUrl, {
-                ...options,
+                ...fetchOptions,
                 signal: controller.signal,
                 credentials: 'include' // Include cookies for authentication
             });
             clearTimeout(timeoutId);
             
             if (!response.ok) {
-                // Try to get more error details
                 let errorMessage = `HTTP error! status: ${response.status}`;
+                let responseData = null;
                 try {
                     const errorText = await response.text();
                     if (errorText) {
-                        errorMessage += ` - ${errorText}`;
+                        try {
+                            responseData = JSON.parse(errorText);
+                            if (responseData.error) {
+                                errorMessage = `HTTP error! status: ${response.status} - ${JSON.stringify(responseData)}`;
+                            } else {
+                                errorMessage += ` - ${errorText}`;
+                            }
+                        } catch (_parseErr) {
+                            errorMessage += ` - ${errorText}`;
+                        }
                     }
                 } catch (e) {
                     // If we can't read the response text, just use the status
                 }
-                
-                // Add helpful context for common routing issues
-                if (response.status === 404 && url.startsWith('/api/')) {
-                    errorMessage += `\n\n⚠️ Routing Issue Detected:\nIf you're seeing this error, make sure you're accessing the app through http://localhost:5000 (not through IDE preview or direct file opening).`;
-                }
-                
-                throw new Error(errorMessage);
+
+                const httpError = new Error(errorMessage);
+                httpError.status = response.status;
+                httpError.responseData = responseData;
+                throw httpError;
             }
             
             return await response.json();
         } catch (error) {
             clearTimeout(timeoutId);
+            if (error.name === 'AbortError' || String(error.message || '').includes('aborted')) {
+                const timeoutError = new Error(
+                    `Request timed out after ${timeout / 1000} seconds. Please try again.`
+                );
+                timeoutError.name = 'AbortError';
+                throw timeoutError;
+            }
             throw error;
         }
     }
 
     /**
-     * Format date string consistently across the application
+     * Format date/time for UI display: ``2026-05-03 21:46`` (matches server display_datetime).
      */
-    static formatDate(dateString, options = {}) {
-        if (!dateString) return 'Invalid Date';
-        
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return 'Invalid Date';
-        
-        const defaultOptions = {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        };
-        
-        return date.toLocaleDateString('en-US', { ...defaultOptions, ...options });
+    static formatDate(dateString) {
+        return VarydianUtils.formatDateTime(dateString);
+    }
+
+    static formatDateTime(dateString) {
+        if (dateString == null || dateString === '') return '';
+
+        if (dateString instanceof Date && !isNaN(dateString.getTime())) {
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${dateString.getFullYear()}-${pad(dateString.getMonth() + 1)}-${pad(dateString.getDate())} ${pad(dateString.getHours())}:${pad(dateString.getMinutes())}`;
+        }
+
+        let text = String(dateString).trim();
+        if (!text) return '';
+
+        text = text.replace('Z', '');
+        if (text.includes('+')) {
+            text = text.split('+', 1)[0];
+        }
+        if (text.includes('.')) {
+            text = text.split('.', 1)[0];
+        }
+
+        const isoMatch = text.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}):(\d{2})/);
+        if (isoMatch) {
+            return `${isoMatch[1]} ${isoMatch[2]}:${isoMatch[3]}`;
+        }
+
+        const dateOnly = text.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (dateOnly) {
+            return dateOnly[1];
+        }
+
+        const date = new Date(text);
+        if (isNaN(date.getTime())) {
+            return String(dateString).trim();
+        }
+
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
     }
 
     /**
@@ -317,7 +447,98 @@ class VarydianUtils {
         console.log('🔐 Secure, Efficient, User-Friendly');
     }
 
+    /**
+     * Show an element without breaking flex/grid layouts (pairs with visibility-layout.css).
+     * @param {HTMLElement|null} el
+     * @param {'block'|'flex'|'grid'} [displayMode='block']
+     */
+    static showElement(el, displayMode = 'block') {
+        if (!el) return;
+        el.classList.remove('element--hidden', 'element--visible-flex', 'element--visible-grid');
+        el.classList.add('element--visible');
+        if (displayMode === 'flex') el.classList.add('element--visible-flex');
+        if (displayMode === 'grid') el.classList.add('element--visible-grid');
     }
+
+    /**
+     * Hide an element and clear layout visibility modifiers.
+     * @param {HTMLElement|null} el
+     */
+    static hideElement(el) {
+        if (!el) return;
+        el.classList.add('element--hidden');
+        el.classList.remove('element--visible', 'element--visible-flex', 'element--visible-grid');
+    }
+
+    /** Icon slot inside cards (visibility-layout.css scopes display). */
+    static showIcon(el) {
+        VarydianUtils.showElement(el);
+    }
+
+    static hideIcon(el) {
+        VarydianUtils.hideElement(el);
+    }
+
+    /**
+     * Show inline spinner on a button while an async action runs.
+     * @param {HTMLButtonElement|null} btn
+     * @param {boolean} busy
+     * @param {string} [labelWhileBusy='Processing…']
+     */
+    static setButtonBusy(btn, busy, labelWhileBusy = 'Processing…') {
+        if (!btn) return;
+        if (busy) {
+            if (!btn.dataset.varydianBusyLabel) {
+                btn.dataset.varydianBusyLabel = (btn.textContent || '').trim();
+            }
+            btn.disabled = true;
+            btn.setAttribute('aria-busy', 'true');
+            btn.classList.add('btn-is-busy');
+            btn.replaceChildren();
+            const spinner = document.createElement('span');
+            spinner.className = 'spinner spinner-sm btn-busy-spinner';
+            spinner.setAttribute('aria-hidden', 'true');
+            const labelEl = document.createElement('span');
+            labelEl.className = 'btn-busy-label';
+            labelEl.textContent = labelWhileBusy;
+            btn.append(spinner, labelEl);
+            const card = btn.closest('.transaction-actions');
+            if (card) {
+                card.querySelectorAll('button').forEach((other) => {
+                    if (other !== btn) other.disabled = true;
+                });
+            }
+        } else {
+            VarydianUtils.clearButtonBusy(btn);
+        }
+    }
+
+    /**
+     * Restore button label after setButtonBusy.
+     * @param {HTMLButtonElement|null} btn
+     */
+    static clearButtonBusy(btn) {
+        if (!btn) return;
+        btn.disabled = false;
+        btn.removeAttribute('aria-busy');
+        btn.classList.remove('btn-is-busy');
+        const orig = btn.dataset.varydianBusyLabel;
+        if (orig) {
+            btn.textContent = orig;
+        }
+        delete btn.dataset.varydianBusyLabel;
+        const card = btn.closest('.transaction-actions');
+        if (card) {
+            card.querySelectorAll('button').forEach((other) => {
+                other.disabled = false;
+            });
+        }
+    }
+}
 
 // Export for global use
 window.VarydianUtils = VarydianUtils;
+/** @param {string|Date|null|undefined} value */
+window.formatDisplayDateTime = (value) => VarydianUtils.formatDateTime(value);
+/** @param {string|null|undefined} status */
+window.formatWorkflowStatus = (status) => VarydianUtils.formatWorkflowStatus(status);

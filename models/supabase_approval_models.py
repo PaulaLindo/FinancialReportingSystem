@@ -1,6 +1,17 @@
 """
-Varydian Financial Reporting System - Supabase Approval Models
-Four-Eyes approval workflow using Supabase database
+Supabase **transactional** approval persistence (``transaction_approvals``).
+
+Implements create / approve / reject / finalize and logging to ``approval_actions``.
+Reads pending rows via the ``pending_approvals`` view (and related views).
+
+Primary access for HTTP handlers: ``services.approval_facade.approval_facade.transactions``.
+This package is the implementation behind that attribute.
+
+**Contrast:** ``models.approval_models.ApprovalModel`` uses ``approval_workflows`` /
+``approval_steps``. ``UniversalWorkflowService.get_pending_approvals`` lists document
+sessions awaiting review — a different product path from this model.
+
+Requires ``SUPABASE_URL`` and ``SUPABASE_SECRET_KEY``; see ``utils.supabase_client.get_supabase_secret_key``.
 """
 
 from datetime import datetime
@@ -14,11 +25,16 @@ class SupabaseApprovalModel:
     
     def __init__(self):
         """Initialize Supabase client"""
+        from utils.supabase_client import get_supabase_secret_key
+
         self.supabase_url = os.environ.get('SUPABASE_URL')
-        self.supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
-        
+        self.supabase_key = get_supabase_secret_key()
+
         if not self.supabase_url or not self.supabase_key:
-            raise ValueError("Supabase credentials not found in environment variables")
+            raise ValueError(
+                "Supabase credentials not found. Set SUPABASE_URL and "
+                "SUPABASE_SECRET_KEY (service role JWT)."
+            )
         
         self.client = create_client(self.supabase_url, self.supabase_key)
     

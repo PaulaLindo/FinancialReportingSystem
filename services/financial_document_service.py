@@ -130,7 +130,11 @@ class FinancialDocumentService(ABC):
         logger.info(f"📄 filename: {filename}")
         logger.info(f"📋 document_type: {self.document_type}")
         
+        stored_session = None
         try:
+            from services.cleanup_service import CleanupService
+            CleanupService().cleanup_user_ephemeral_sessions(user_id)
+
             # Step 1: Create session
             logger.info("📋 Step 1: Creating session...")
             session = self.create_session(file_path, user_id, filename)
@@ -162,8 +166,26 @@ class FinancialDocumentService(ABC):
             session.total_columns = len(df.columns)
             session.file_size_bytes = self._get_file_size(file_path)
             session.checksum_md5 = self._calculate_checksum(file_path)
+            from utils.session_workflow import new_ephemeral_session_metadata
+            if not session.metadata:
+                session.metadata = {}
+            session.metadata.update(new_ephemeral_session_metadata())
+            if period_id:
+                from services.period_management_service import period_management_service
+                from utils.period_lock import attach_period_to_session_metadata
+
+                can_upload, lock_msg = period_management_service.validate_upload_for_period(period_id)
+                if not can_upload:
+                    raise Exception(lock_msg)
+                attach_period_to_session_metadata(session, period_id)
+            else:
+                from utils.period_lock import find_open_period_for_today, attach_period_to_session_metadata
+                fallback = find_open_period_for_today()
+                if fallback:
+                    attach_period_to_session_metadata(session, fallback.id)
             session.metadata['column_mapping'] = column_mapping
             session.metadata['validation_result'] = validation_result
+            session.metadata['file_columns'] = [str(col) for col in df.columns]
             session.processing_log.append(f"File processed successfully: {len(df)} rows, {len(df.columns)} columns")
             
             # Store in database
@@ -175,12 +197,15 @@ class FinancialDocumentService(ABC):
             data_rows = self._process_data_rows(stored_session.id, df, column_mapping, validation_result)
             logger.info(f"✅ Processed {len(data_rows)} data rows")
             
+            file_columns = session.metadata['file_columns']
+
             return {
                 'success': True,
                 'session_id': stored_session.id,
                 'document_type': self.document_type,
                 'total_rows': len(df),
                 'total_columns': len(df.columns),
+                'file_columns': file_columns,
                 'column_mapping': column_mapping,
                 'validation_result': validation_result,
                 'data_rows_count': len(data_rows),
@@ -189,6 +214,12 @@ class FinancialDocumentService(ABC):
             
         except Exception as e:
             logger.error(f"❌ Error processing {self.document_type}: {str(e)}")
+            if stored_session and getattr(stored_session, 'id', None):
+                try:
+                    from services.cleanup_service import CleanupService
+                    CleanupService().cleanup_specific_session(stored_session.id)
+                except Exception as cleanup_err:
+                    logger.warning(f"Staging cleanup after failed upload: {cleanup_err}")
             return {
                 'success': False,
                 'error': f'Error processing {self.document_type}: {str(e)}',
@@ -293,18 +324,42 @@ class FinancialDocumentService(ABC):
                 'error': f'Session {session_id} not found'
             }
         
-        return {
+        from utils.session_workflow import effective_workflow_status
+
+        workflow_status = effective_workflow_status(session)
+        result = {
             'success': True,
             'session_id': session.id,
             'document_type': session.document_type,
             'filename': session.filename,
-            'status': session.status,
+            'status': workflow_status,
+            'workflow_status': workflow_status,
+            'db_status': session.status,
             'total_rows': session.total_rows,
             'total_columns': session.total_columns,
             'created_at': session.created_at.isoformat() if session.created_at else None,
             'metadata': session.metadata,
             'processing_log': session.processing_log[-5:] if session.processing_log else []
         }
+
+        uid = getattr(session, 'user_id', None)
+        if uid:
+            result['user_id'] = str(uid)
+            try:
+                u = supabase_auth.get_user_by_id(str(uid))
+                if u:
+                    cn = (u.get('full_name') or u.get('username') or u.get('email') or '').strip()
+                    if cn:
+                        result['creator_name'] = cn
+            except Exception as e:
+                logger.debug('get_session_summary: could not resolve creator for %s: %s', uid, e)
+        md = session.metadata or {}
+        if not result.get('creator_name'):
+            result['creator_name'] = (md.get('creator_name') or md.get('submitted_by_name') or '').strip()
+        if not result.get('creator_name'):
+            result['creator_name'] = ''
+
+        return result
 
 
 # Import os for file operations

@@ -211,7 +211,7 @@ class SupabaseUser:
         permissions = {
             # Primary active roles
             'FINANCE_CLERK': ['upload', 'process', 'view_own'],
-            'FINANCE_MANAGER': ['review', 'approve', 'process', 'view_all'],
+            'FINANCE_MANAGER': ['review', 'approve', 'process', 'view_all', 'download_pdf'],
             'CFO': ['final_approve', 'generate_pdf', 'view_all', 'export', 'export_audit', 'review', 'process'],
             'ASSET_MANAGER': ['manage_assets', 'view_assets'],
             'AUDITOR': ['view_all', 'export_audit'],
@@ -228,7 +228,7 @@ class SupabaseUser:
         return self.has_permission('process')
     
     def can_approve(self):
-        return self.has_permission('approve')
+        return self.has_permission('approve') or self.has_permission('final_approve')
     
     def can_review(self):
         return self.has_permission('review')
@@ -238,6 +238,13 @@ class SupabaseUser:
     
     def can_generate_pdf(self):
         return self.has_permission('generate_pdf')
+
+    def can_download_pdf(self):
+        """Download finalized AFS PDF after CFO period lock (FM read-only; CFO also generates)."""
+        return self.has_permission('generate_pdf') or self.has_permission('download_pdf')
+
+    def can_access_export_center(self):
+        return self.can_export() or self.can_download_pdf()
     
     def can_view_all(self):
         return self.has_permission('view_all')
@@ -254,6 +261,11 @@ class SupabaseUser:
     def can_export(self):
         return self.has_permission('export')
 
+    @property
+    def role_label(self):
+        """Short display label for nav badges (e.g. Finance Clerk)."""
+        return get_role_label(self.role)
+
 # Lazy initialization of Supabase auth model
 supabase_auth = None
 
@@ -265,6 +277,25 @@ def get_supabase_auth():
     return supabase_auth
 
 # Legacy compatibility functions
+def get_role_label(role):
+    """Short human-readable role label for nav and badges (no underscores)."""
+    labels = {
+        'FINANCE_CLERK': 'Finance Clerk',
+        'FINANCE_MANAGER': 'Finance Manager',
+        'CFO': 'CFO',
+        'ASSET_MANAGER': 'Asset Manager',
+        'AUDITOR': 'Auditor',
+        'SYSTEM_ADMIN': 'System Admin',
+        'ACCOUNTANT': 'Accountant',
+        'CLERK': 'Clerk',
+    }
+    if role in labels:
+        return labels[role]
+    if not role:
+        return 'User'
+    return str(role).replace('_', ' ').title()
+
+
 def get_role_description(role):
     """Get human-readable role description"""
     descriptions = {

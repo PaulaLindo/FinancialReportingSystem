@@ -8,13 +8,27 @@
 
 {% block content %}
 
-<div class="section mapping-section">
+<div class="page page--mapping mapping-section section">
     <div class="mapping-container">
+
+        <!-- Clerk correction workspace (rejected submissions) -->
+        <div id="revisionRejectionBanner" class="revision-rejection-banner element--hidden" role="alert">
+            <div class="revision-rejection-banner__icon" aria-hidden="true">⚠️</div>
+            <div class="revision-rejection-banner__body">
+                <h2 class="revision-rejection-banner__title" id="revisionRejectionTitle">Correction required</h2>
+                <p class="revision-rejection-banner__reason" id="revisionRejectionReason"></p>
+            </div>
+        </div>
+
+        <div id="revisionBalanceStrip" class="revision-balance-strip element--hidden" aria-live="polite">
+            <span class="revision-balance-strip__label" id="revisionBalanceLabel">Trial balance check</span>
+            <span class="revision-balance-strip__value" id="revisionBalanceValue">Checking…</span>
+        </div>
         
         <!-- Header -->
         <div class="mapping-header">
-            <h1 class="mapping-title">GRAP Account Mapping</h1>
-            <p class="mapping-subtitle">
+            <h1 class="mapping-title" id="mappingPageTitle">GRAP Account Mapping</h1>
+            <p class="mapping-subtitle" id="mappingPageSubtitle">
                 Drag unmapped accounts to their correct GRAP categories to complete the mapping process
             </p>
         </div>
@@ -73,11 +87,35 @@
         </div>
 
         
+        <!-- GRAP submit compliance (GRAP 24 budget / GRAP 1 SFP / GRAP 1 performance) -->
+        <div id="grapSubmitComplianceMount" class="grap-submit-compliance-mount"></div>
+        <div id="grap24BudgetTableMount" class="grap24-budget-table-mount"></div>
+        <div id="grap24VarianceMount" class="grap24-variance-mount"></div>
+
         <!-- Action Buttons -->
-        <div class="action-buttons">
+        <div class="action-buttons" id="mappingStandardActions">
+            <a id="backToUploadBtn" class="btn btn-secondary btn-mapping-back" href="/upload">← Back to upload</a>
             <button id="submitMappingBtn" class="btn-mapping" type="button" disabled>
-                ✓ Submit Mapping & Continue
+                ✓ Submit for Review
             </button>
+        </div>
+
+        <!-- Correction workspace: mandatory note + resubmit -->
+        <div id="revisionResubmitPanel" class="revision-resubmit-panel element--hidden">
+            <label for="clerkCorrectionNote" class="revision-resubmit-panel__label">
+                Mandatory clerk response <span class="required">*</span>
+            </label>
+            <p class="revision-resubmit-panel__hint">
+                Explain what you corrected based on the manager's feedback. This is recorded on the audit timeline.
+            </p>
+            <textarea id="clerkCorrectionNote" class="revision-resubmit-panel__input" rows="3"
+                placeholder="e.g. Remapped Account 4015 to GRAP 23 conditional grant liability as requested."></textarea>
+            <div class="revision-resubmit-panel__actions action-buttons">
+                <a href="/submission-history" class="btn btn-secondary">Cancel</a>
+                <button type="button" id="revisionResubmitBtn" class="btn btn-primary" disabled>
+                    Resubmit for review
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -86,9 +124,12 @@
 
 {% block extra_js %}
 <script>
-// Pass data to JavaScript
-window.sessionId = '{{ session_id }}';
+// Pass data to JavaScript (JSON-safe; never the literal string "None")
+window.sessionId = {{ session_id|tojson }};
 console.log('📋 Session ID set in template:', window.sessionId);
 </script>
-<script src="{{ url_for('static', filename='js/enhanced-mapping-interface.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mapping-interface-init.js') }}"></script>
+<script src="{{ url_for('static', filename='js/grap-standards.js') }}"></script>
+<script src="{{ url_for('static', filename='js/budget-variance-grap24.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mapping-interface.js') }}"></script>
 {% endblock %}

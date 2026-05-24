@@ -1,0 +1,28 @@
+{
+  "pending_transactions": [],
+  "approved_transactions": [
+    {
+      "transaction_id": "INC-E8A3E74B",
+      "transaction_type": "journal_entry",
+      "creator_id": "test_user",
+      "created_at": "2026-05-12T10:37:58.586285",
+      "required_approvals": [
+        "FINANCE_MANAGER"
+      ],
+      "current_approvals": [
+        {
+          "approver_id": "test_user",
+          "approver_name": "User test_user",
+          "approver_role": "FINANCE_MANAGER",
+          "approved_at": "2026-05-12T10:40:35.675106",
+          "reason": "Test approval"
+        }
+      ],
+      "status": "approved",
+      "amount": 10000,
+      "description": "Test transaction for approval"
+    }
+  ],
+  "rejected_transactions": [],
+  "finalized_transactions": []
+}

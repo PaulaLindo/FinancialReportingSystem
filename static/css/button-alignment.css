@@ -1,0 +1,97 @@
+/* Center primary button rows and modal footers (all viewports) */
+
+.action-buttons,
+.form-actions,
+.modal-footer,
+.modal-overlay .modal-footer,
+.modal-container .modal-footer,
+.modal:has(> .modal-content) .modal-footer,
+.custom-prompt-footer,
+.file-details-footer,
+.footer-actions,
+.status-actions,
+.workflow-actions,
+.transaction-actions,
+.review-actions,
+.comment-actions,
+.draft-statement-actions,
+.filter-actions,
+.hero-actions,
+.file-actions,
+.report-actions,
+.report-card .report-actions,
+.report-list .report-actions,
+.pdf-preview-actions,
+.unbalanced-actions,
+.locked-actions,
+.formula-modal-footer,
+.formula-modal-footer .modal-actions,
+.modal-actions,
+.button-group,
+.submission-status-page .action-buttons,
+.upload-page .button-group,
+.mapping-interface .action-buttons,
+.filter-controls,
+.queue-filters .filter-actions {
+    justify-content: center;
+}
+
+.btn-group:not(.btn-group--align-start) {
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
+}
+
+.review-actions,
+.comment-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fluid-space-md);
+}
+
+.review-header-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--fluid-space-lg);
+}
+
+.review-header-info .transaction-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--fluid-space-sm) var(--fluid-space-md);
+}
+
+/* Stacked button rows on narrow screens — keep centered */
+@media (max-width: 768px) {
+    .action-buttons,
+    .workflow-actions,
+    .transaction-actions,
+    .review-actions,
+    .comment-actions,
+    .submission-status-page .action-buttons,
+    .button-group,
+    .modal-footer,
+    .modal-overlay .modal-footer,
+    .modal-container .modal-footer,
+    .form-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .action-buttons .btn,
+    .workflow-actions .btn,
+    .transaction-actions .btn,
+    .review-actions .btn,
+    .comment-actions .btn,
+    .submission-status-page .action-buttons .btn,
+    .button-group .btn,
+    .modal-footer .btn,
+    .form-actions .btn {
+        width: 100%;
+        max-width: min(20rem, 100%);
+    }
+}

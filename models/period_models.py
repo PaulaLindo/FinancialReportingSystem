@@ -1,6 +1,14 @@
 """
 Period Management Models
 Handles financial period creation, management, and workflow state tracking
+
+**Table:** ``financial_periods`` (via ``PeriodModel`` / ``period_model``).
+
+**Not the same as** ``models.workflow_models``, which uses the **``periods``** table for
+submission workflow (upload counts, ``submissions``). Dashboard and ``/api/periods`` routes
+use **this** module; legacy workflow UIs may still touch ``WorkflowModel`` / ``periods``.
+
+See ``services.period_management_service`` for orchestration used by the API.
 """
 
 from datetime import datetime, timedelta
@@ -45,6 +53,7 @@ class FinancialPeriod:
     created_at: str
     updated_at: str
     metadata: Dict[str, Any]
+    is_locked: bool = False
 
     def __post_init__(self):
         """Post-initialization processing"""
@@ -58,6 +67,8 @@ class FinancialPeriod:
             self.created_at = self.created_at.isoformat()
         if isinstance(self.updated_at, datetime):
             self.updated_at = self.updated_at.isoformat()
+        if isinstance(self.metadata, dict) and self.metadata.get("is_locked"):
+            self.is_locked = True
 
     @property
     def is_urgent(self) -> bool:
@@ -119,15 +130,40 @@ class FinancialPeriod:
         data['days_remaining'] = self.days_remaining
         data['completion_percentage'] = self.completion_percentage
         data['last_upload'] = self.last_upload
+        data['is_locked'] = self.is_locked or bool((self.metadata or {}).get("is_locked"))
         return data
+
+    @classmethod
+    def from_db_row(cls, row: Dict[str, Any]) -> "FinancialPeriod":
+        """Build period from Supabase row, tolerating missing is_locked column."""
+        data = dict(row)
+        if "is_locked" not in data:
+            data["is_locked"] = bool((data.get("metadata") or {}).get("is_locked", False))
+        return cls(**data)
 
 
 class PeriodModel:
     """Period management model with database operations"""
     
     def __init__(self):
-        self.client = supabase_auth.client
         self.table_name = "financial_periods"
+        self._client: Optional[Client] = None
+
+    @property
+    def client(self) -> Client:
+        """Lazy Supabase client (auth client is often None at import time)."""
+        if self._client is None:
+            from utils.supabase_client import create_admin_supabase_client
+            try:
+                self._client = create_admin_supabase_client()
+            except ValueError:
+                self._client = supabase_auth.client
+            if self._client is None:
+                raise ValueError(
+                    "Supabase client unavailable for period management. "
+                    "Check SUPABASE_URL and SUPABASE_ANON_KEY in .env"
+                )
+        return self._client
 
     def create_period(self, period_data: Dict[str, Any]) -> FinancialPeriod:
         """Create a new financial period"""
@@ -151,7 +187,7 @@ class PeriodModel:
             result = self.client.table(self.table_name).insert(period_data).execute()
             
             if result.data:
-                return FinancialPeriod(**result.data[0])
+                return FinancialPeriod.from_db_row(result.data[0])
             else:
                 raise Exception("Failed to create period")
                 
@@ -164,7 +200,7 @@ class PeriodModel:
             result = self.client.table(self.table_name).select('*').eq('id', period_id).execute()
             
             if result.data:
-                return FinancialPeriod(**result.data[0])
+                return FinancialPeriod.from_db_row(result.data[0])
             return None
             
         except Exception as e:
@@ -175,11 +211,7 @@ class PeriodModel:
         try:
             result = self.client.table(self.table_name).select('*').order('created_at', desc=True).execute()
             
-            periods = []
-            for period_data in result.data:
-                periods.append(FinancialPeriod(**period_data))
-            
-            return periods
+            return [FinancialPeriod.from_db_row(p) for p in result.data]
             
         except Exception as e:
             raise Exception(f"Error getting all periods: {str(e)}")
@@ -189,11 +221,7 @@ class PeriodModel:
         try:
             result = self.client.table(self.table_name).select('*').eq('status', PeriodStatus.OPEN.value).order('due_date').execute()
             
-            periods = []
-            for period_data in result.data:
-                periods.append(FinancialPeriod(**period_data))
-            
-            return periods
+            return [FinancialPeriod.from_db_row(p) for p in result.data]
             
         except Exception as e:
             raise Exception(f"Error getting open periods: {str(e)}")
@@ -203,11 +231,7 @@ class PeriodModel:
         try:
             result = self.client.table(self.table_name).select('*').eq('status', status.value).order('created_at', desc=True).execute()
             
-            periods = []
-            for period_data in result.data:
-                periods.append(FinancialPeriod(**period_data))
-            
-            return periods
+            return [FinancialPeriod.from_db_row(p) for p in result.data]
             
         except Exception as e:
             raise Exception(f"Error getting periods by status: {str(e)}")
@@ -222,12 +246,29 @@ class PeriodModel:
             result = self.client.table(self.table_name).update(update_data).eq('id', period_id).execute()
             
             if result.data:
-                return FinancialPeriod(**result.data[0])
+                return FinancialPeriod.from_db_row(result.data[0])
             else:
                 raise Exception("Period not found or update failed")
                 
         except Exception as e:
             raise Exception(f"Error updating period: {str(e)}")
+
+    def lock_period(self, period_id: str, locked_by: str) -> FinancialPeriod:
+        """Lock period after CFO finalization — no further edits allowed."""
+        period = self.get_period(period_id)
+        if not period:
+            raise Exception("Period not found")
+        now = datetime.now().isoformat()
+        metadata = {**(period.metadata or {}), "is_locked": True, "locked_at": now, "locked_by": locked_by}
+        update_data: Dict[str, Any] = {
+            "is_locked": True,
+            "status": PeriodStatus.CLOSED.value,
+            "metadata": metadata,
+        }
+        try:
+            return self.update_period(period_id, update_data)
+        except Exception:
+            return self.update_period(period_id, {"status": PeriodStatus.CLOSED.value, "metadata": metadata})
 
     def open_period(self, period_id: str) -> FinancialPeriod:
         """Open a period for uploads"""

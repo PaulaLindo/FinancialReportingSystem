@@ -197,6 +197,94 @@ h4.text-center {
 /* NOTIFICATION UTILITIES */
 /* ======================================== */
 
+/* Top-center app toasts (VarydianUtils.showToast) */
+.varydian-toast-stack {
+    position: fixed;
+    top: var(--fluid-space-lg);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10050;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--fluid-space-md);
+    width: min(32rem, 92vw);
+    max-width: 92vw;
+    padding-top: env(safe-area-inset-top, 0);
+    pointer-events: none;
+}
+
+.varydian-toast {
+    pointer-events: auto;
+    max-width: min(32rem, 92vw);
+    width: 100%;
+    padding: var(--fluid-space-lg) var(--fluid-space-xl);
+    padding-right: 2.75rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    font-weight: var(--font-semibold);
+    font-size: var(--fluid-text-base);
+    line-height: 1.45;
+    color: var(--white);
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+    transition: opacity 0.28s ease, transform 0.28s ease;
+    position: relative;
+}
+
+.varydian-toast--visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.varydian-toast--success {
+    background: var(--success-600, var(--success));
+}
+
+.varydian-toast--error {
+    background: var(--error-600, var(--error));
+}
+
+.varydian-toast--info {
+    background: var(--primary-600, var(--primary));
+}
+
+.varydian-toast--warning {
+    background: var(--warning-600, #d97706);
+}
+
+.varydian-toast__message {
+    margin: 0;
+}
+
+.varydian-toast__close {
+    position: absolute;
+    top: var(--fluid-space-sm);
+    right: var(--fluid-space-sm);
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.9;
+    padding: 0.15rem 0.35rem;
+}
+
+.varydian-toast__close:hover {
+    opacity: 1;
+}
+
+/* Legacy notifications — top center */
+.notification.notification--center {
+    top: var(--fluid-space-lg);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    max-width: min(32rem, 92vw);
+    text-align: center;
+}
+
 /* Fixed positioning for notifications */
 .notification-fixed {
     position: fixed;
@@ -696,15 +784,24 @@ h4.text-center {
     display: none;
 }
 
+/*
+ * Visibility utilities
+ * - element--hidden: display none
+ * - element--visible: display block (default)
+ * - element--visible-flex / -grid: use with flex/grid containers (see visibility-layout.css)
+ * - Prefer VarydianUtils.showElement(el, 'flex'|'grid') in JS
+ */
 .element--visible {
     display: block;
 }
 
-.element--visible-grid {
+.element--visible-grid,
+.element--visible.element--visible-grid {
     display: grid;
 }
 
-.element--visible-flex {
+.element--visible-flex,
+.element--visible.element--visible-flex {
     display: flex;
 }
 

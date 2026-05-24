@@ -1,6 +1,20 @@
 """
 Varydian Financial Reporting System - Workflow Models
 Period management and submission workflow tracking
+
+**Two period concepts in the database (do not merge without a migration plan):**
+
+1. **``periods`` table** — Used only by this module (``WorkflowModel``) and
+   ``SubmissionWorkflowModel`` for **submission workflow**: due dates, upload counts,
+   ``submissions`` linkage. Shape is workflow-centric (e.g. ``name``, ``due_date``,
+   ``uploaded_count``).
+
+2. **``financial_periods`` table** — Used by ``models.period_models.PeriodModel`` and
+   ``services.period_management_service`` for **structured fiscal periods** (API under
+   ``/api/periods``). Different columns and semantics (e.g. ``period_code``, ``fiscal_year``).
+
+New features should call out which table they target. Long-term, consider consolidating
+into one period entity and migrating ``submissions`` / workflow code.
 """
 
 from datetime import datetime, timedelta

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Inbox — Varydian{% endblock %}
+{% block content %}
+<div class="page page--inbox container-content inbox-page">
+    <div class="inbox-page__hero">
+        <h1 class="inbox-page__title">Inbox</h1>
+        <p class="inbox-page__subtitle">Notifications about returned submissions and other workflow events.</p>
+        <div class="inbox-page__toolbar">
+            <button type="button" class="btn btn-secondary btn-sm" id="inboxMarkAllRead">
+                Mark all read
+            </button>
+            <span class="inbox-page__hint" role="note">Click a message to open it — unread items are marked read when opened.</span>
+        </div>
+    </div>
+
+    {% if not inbox_messages %}
+    <div class="card inbox-empty">
+        <p class="inbox-empty__text">You're all caught up — no messages yet.</p>
+        <p class="inbox-empty__subtext">When a reviewer returns a submission, you'll see it here.</p>
+    </div>
+    {% else %}
+    <ul class="inbox-list" aria-label="Inbox messages">
+        {% for m in inbox_messages %}
+        <li class="inbox-msg{% if not m.read_at %} inbox-msg--unread{% endif %}"
+            data-message-id="{{ m.id }}"
+            data-unread="{{ 'true' if not m.read_at else 'false' }}">
+            <div class="inbox-msg__shell">
+                <button type="button"
+                        class="inbox-msg__toggle"
+                        aria-expanded="false"
+                        aria-controls="inbox-panel-{{ m.id }}">
+                    <div class="inbox-msg__header">
+                        <span class="inbox-msg__severity inbox-msg__severity--{{ (m.severity or 'info')|lower }}">{{ m.severity or 'info' }}</span>
+                        <time class="inbox-msg__time" datetime="{{ m.created_at or '' }}">{{ format_display_datetime(m.created_at) }}</time>
+                    </div>
+                    <h2 class="inbox-msg__title">{{ m.title }}</h2>
+                    <span class="inbox-msg__chevron" aria-hidden="true"></span>
+                </button>
+                <div class="inbox-msg__panel" id="inbox-panel-{{ m.id }}" hidden>
+                    <div class="inbox-msg__body">{{ m.body }}</div>
+                    {% if m.metadata %}
+                    {% set md = m.metadata %}
+                    {% if md.action_url or md.session_id %}
+                    {% set open_url = md.action_url or '/mapping' %}
+                    {% if md.session_id and ('session_id=' not in open_url) %}
+                    {% set open_url = open_url ~ ('&' if '?' in open_url else '?') ~ 'session_id=' ~ md.session_id %}
+                    {% endif %}
+                    {% if md.new_status in ['rejected_by_manager', 'rejected_by_cfo', 'rejected'] and 'revision=' not in open_url %}
+                    {% set open_url = open_url ~ ('&' if '?' in open_url else '?') ~ 'revision=1' %}
+                    {% endif %}
+                    <p class="inbox-msg__action">
+                        <a href="{{ open_url }}" class="btn btn-primary btn-sm inbox-msg__open-link">{{ md.action_label or 'Open' }}</a>
+                        {% if md.session_id %}<span class="inbox-msg__meta muted">Session: {{ md.session_id[:8] }}…</span>{% endif %}
+                    </p>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="inbox-msg__aside">
+                {% if not m.read_at %}
+                <button type="button" class="btn btn-secondary btn-sm inbox-mark-read" data-message-id="{{ m.id }}">
+                    Mark read
+                </button>
+                {% else %}
+                <span class="inbox-msg__readlabel muted">Read</span>
+                {% endif %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/inbox-page.js') }}"></script>
+{% endblock %}

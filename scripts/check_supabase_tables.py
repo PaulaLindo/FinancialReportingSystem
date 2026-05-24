@@ -24,7 +24,7 @@ def check_database_tables():
     load_dotenv()
     
     # Check required environment variables
-    required_vars = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']
+    required_vars = ['SUPABASE_URL', 'SUPABASE_SECRET_KEY']
     missing_vars = [var for var in required_vars if not os.getenv(var)]
     
     if missing_vars:
@@ -39,7 +39,7 @@ def check_database_tables():
         print("🔌 Connecting to Supabase...")
         supabase: Client = create_client(
             supabase_url=os.getenv('SUPABASE_URL'),
-            supabase_key=os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+            supabase_key=os.getenv('SUPABASE_SECRET_KEY')
         )
         
         print("✅ Connected to Supabase successfully!")
@@ -157,8 +157,8 @@ def check_database_tables():
                     except Exception as count_error:
                         print(f"   ❌ Error checking row count: {str(count_error)}")
                         
-                except Exception as table_error:
-                    print(f"   ❌ Error analyzing table {table_name}: {str(table_error)}")
+            except Exception as table_error:
+                print(f"   ❌ Error analyzing table {table_name}: {str(table_error)}")
             
             # Generate migration recommendations
             print("\n🎯 MIGRATION RECOMMENDATIONS:")

@@ -3,7 +3,7 @@
 {% block title %}File Management - Varydian{% endblock %}
 
 {% block content %}
-<div class="reports-page">
+<div class="page page--reports reports-page">
     <div class="container-content">
         <div class="reports-header">
             <h1>📁 File Management</h1>
@@ -146,52 +146,6 @@
         </div>
     </div>
 </template>
-
-<!-- File Details Modal -->
-<div id="fileDetailsModal" class="file-details-modal element--hidden">
-    <div class="file-details-overlay" data-action="close-file-details-modal"></div>
-    <div class="file-details-content">
-        <div class="file-details-header">
-            <h3>File Details</h3>
-            <button class="file-details-close" data-action="close-file-details-modal">✕</button>
-        </div>
-        <div class="file-details-body">
-            <div class="detail-row">
-                <label>Filename:</label>
-                <span id="detailFilename"></span>
-            </div>
-            <div class="detail-row">
-                <label>Original Filename:</label>
-                <span id="detailOriginalFilename"></span>
-            </div>
-            <div class="detail-row">
-                <label>File Type:</label>
-                <span id="detailFileType"></span>
-            </div>
-            <div class="detail-row">
-                <label>File Size:</label>
-                <span id="detailFileSize"></span>
-            </div>
-            <div class="detail-row">
-                <label>Upload Date:</label>
-                <span id="detailUploadDate"></span>
-            </div>
-            <div class="detail-row">
-                <label>Status:</label>
-                <span id="detailStatus"></span>
-            </div>
-            <div class="detail-row" id="detailBalanceSheetRow">
-                <label>Associated Balance Sheet:</label>
-                <span id="detailBalanceSheet"></span>
-            </div>
-        </div>
-        <div class="file-details-footer">
-            <button id="modalDownloadBtn" class="btn btn-primary">Download File</button>
-            <button id="modalDeleteBtn" class="btn btn-danger">Delete File</button>
-            <button class="btn btn-secondary" data-action="close-file-details-modal">Close</button>
-        </div>
-    </div>
-</div>
 
 {% endblock %}
 

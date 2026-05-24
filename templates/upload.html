@@ -6,6 +6,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/grap-standards.js') }}"></script>
 <script src="{{ url_for('static', filename='js/document-type-selector.js') }}"></script>
 <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
 <script src="{{ url_for('static', filename='js/real-time-validation.js') }}"></script>
@@ -16,7 +17,7 @@
 
 
 
-    <div class="section upload-section">
+    <div class="page page--upload section upload-section">
 
         <div class="container-content">
 
@@ -121,7 +122,7 @@
                     <!-- Balance Check Section -->
                     <div id="balanceCheckSection" class="balance-check-section display-none">
                         <div class="balance-header">
-                            <h4>🔍 Balance Check</h4>
+                            <h4 id="balanceCheckTitle">🔍 Upload validation</h4>
                             <div class="balance-indicator" id="balanceIndicator">
                                 <span class="indicator-icon">⏳</span>
                             </div>
@@ -146,11 +147,12 @@
                                 <span class="status-text">Checking balance...</span>
                             </div>
                         </div>
+                        <p id="balanceCheckFootnote" class="balance-check-footnote text-muted" hidden></p>
                     </div>
 
-                    <div class="button-group">
-                        <button id="closeBtn" class="btn btn-secondary" type="button">Close & Remove File</button>
-                        <button id="processBtn" class="btn btn-primary" type="button" {% if not current_user or not current_user.can_process() %}disabled{% endif %}>Process Balance Sheet</button>
+                    <div id="uploadActionButtons" class="button-group">
+                        <button id="closeBtn" class="btn btn-secondary" type="button">Close and upload again</button>
+                        <button id="processBtn" class="btn btn-primary" type="button" {% if not current_user or not current_user.can_process() %}disabled{% endif %}>Continue to mapping</button>
                     </div>
 
                 </div>
@@ -180,14 +182,14 @@
     <div id="confirmModal" class="modal-overlay modal-overlay--hidden">
         <div class="modal-container">
             <div class="modal-header">
-                <h3>Confirm File Removal</h3>
+                <h3>Upload again?</h3>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to remove this uploaded file? This action cannot be undone.</p>
+                <p>Discard this upload and return to the upload screen to choose another file?</p>
             </div>
             <div class="modal-footer">
                 <button id="confirmCancel" class="btn btn-secondary">Cancel</button>
-                <button id="confirmRemove" class="btn btn-danger">Remove File</button>
+                <button id="confirmRemove" class="btn btn-danger">Yes, upload again</button>
             </div>
         </div>
     </div>

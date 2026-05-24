@@ -1,3 +1,20 @@
+const CLERK_LOCKED_STATUSES = new Set([
+    'pending',
+    'pending_review',
+    'submitted',
+    'approved',
+    'pending_cfo',
+    'approved_by_manager',
+]);
+
+const CLERK_CORRECTION_STATUSES = new Set([
+    'rejected',
+    'rejected_by_manager',
+    'rejected_by_cfo',
+]);
+
+const CLERK_FORWARD_SUCCESS_MESSAGE = 'Data forwarded to Finance Manager for review.';
+
 // GRAP Mapping Interface
 class GRAPMappingInterface {
     constructor(sessionId) {
@@ -5,12 +22,25 @@ class GRAPMappingInterface {
             sessionId: sessionId,
             unmappedAccounts: [],
             mappedAccounts: {},
-            autoMappedAccounts: [], // New: for review workflow
+            autoMappedAccounts: [],
             grapCategories: [],
             isDragging: false,
             draggedAccount: null,
-            isReviewMode: false, // New: review mode flag
-            mappingData: null // New: review data from upload
+            isReviewMode: false,
+            mappingData: null,
+            currentStatus: null,
+            touchStartX: 0,
+            touchStartY: 0,
+            draggedElement: null,
+            dragGhost: null,
+            touchFeedback: null,
+            isRevisionMode: false,
+            revisionRequestedFromUrl: false,
+            correctionNote: '',
+            balanceCheck: { balanced: null, message: 'Checking balance…' },
+            trialBalanceCheck: { balanced: null, message: 'Checking trial balance…' },
+            _balanceDebounce: null,
+            _trialBalanceDebounce: null,
         };
         
         this.elements = {};
@@ -19,10 +49,565 @@ class GRAPMappingInterface {
 
     init() {
         this.cacheElements();
+        this.createDragGhost();
         this.setupEventListeners();
         this.checkReviewMode();
+        this.detectRevisionModeFromUrl();
         this.loadGRAPCategories();
         this.loadData();
+        void this.bootstrapWorkspace();
+    }
+
+    async bootstrapWorkspace() {
+        this.hideRevisionWorkspaceChrome();
+        await this.applySessionLockFromServer();
+        if (this.state.isRevisionMode) {
+            await this.maybeEnterRevisionMode();
+            return;
+        }
+        this.hideRevisionWorkspaceChrome();
+        await this.loadGrapSubmitPanels();
+    }
+
+    hideRevisionWorkspaceChrome() {
+        const section = document.querySelector('.mapping-section');
+        if (section) section.classList.remove('revision-mode');
+
+        VarydianUtils.hideElement(document.getElementById('revisionRejectionBanner'));
+        VarydianUtils.hideElement(document.getElementById('revisionBalanceStrip'));
+        VarydianUtils.hideElement(document.getElementById('revisionResubmitPanel'));
+        VarydianUtils.showElement(document.getElementById('mappingStandardActions'), 'flex');
+    }
+
+    detectRevisionModeFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('revision') === '1') {
+            this.state.revisionRequestedFromUrl = true;
+        }
+    }
+
+    getGrapSubmitConfig() {
+        const dt = this.state.documentType || '';
+        if (window.GrapStandards) {
+            return GrapStandards.config(dt);
+        }
+        return { standard: 'GRAP compliance', submitButton: 'Submit for Review', success: CLERK_FORWARD_SUCCESS_MESSAGE };
+    }
+
+    submitButtonLabel(unmappedCount) {
+        const base = this.getGrapSubmitConfig().submitButton;
+        if (unmappedCount === 0) return base;
+        return `${base} (${unmappedCount} remaining)`;
+    }
+
+    createDragGhost() {
+        this.state.dragGhost = document.createElement('div');
+        this.state.dragGhost.className = 'drag-ghost';
+        this.state.dragGhost.style.cssText = `
+            position: fixed;
+            top: -1000px;
+            left: -1000px;
+            pointer-events: none;
+            z-index: 1000;
+            background: var(--primary-600);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transform: rotate(-2deg);
+        `;
+        document.body.appendChild(this.state.dragGhost);
+    }
+
+    async resolveDocumentType() {
+        if (this.state.documentType) return this.state.documentType;
+        if (this.state.mappingData && this.state.mappingData.document_type) {
+            return this.state.mappingData.document_type;
+        }
+        const types = ['balance_sheet', 'income_statement', 'budget_report'];
+        for (const dt of types) {
+            try {
+                const res = await fetch(
+                    `/api/universal/session/${encodeURIComponent(this.state.sessionId)}?document_type=${dt}`
+                );
+                const data = await res.json();
+                if (data && data.success !== false && !data.error) {
+                    if (dt === 'budget_report' && Array.isArray(data.budget_rows)) {
+                        return dt;
+                    }
+                    if (dt !== 'budget_report' && (data.total_rows != null || data.session_id || data.id)) {
+                        return dt;
+                    }
+                }
+            } catch (_e) {
+                /* try next type */
+            }
+        }
+        return '';
+    }
+
+    async loadGrapSubmitPanels() {
+        const complianceMount = document.getElementById('grapSubmitComplianceMount');
+        const budgetTableMount = document.getElementById('grap24BudgetTableMount');
+        const varianceMount = document.getElementById('grap24VarianceMount');
+        if (!this.state.sessionId) return;
+        let documentType = await this.resolveDocumentType();
+        this.state.documentType = documentType || this.state.documentType;
+        if (complianceMount && window.GrapStandards) {
+            complianceMount.innerHTML = GrapStandards.renderCompliancePanel(this.state.documentType);
+        }
+        if (this.state.isRevisionMode) {
+            if (budgetTableMount) budgetTableMount.innerHTML = '';
+            this.scheduleTrialBalanceCheck();
+            this.refreshGrapComplianceDashboard();
+            return;
+        }
+        const isLocked = CLERK_LOCKED_STATUSES.has(this.state.currentStatus);
+        if (!varianceMount || !window.BudgetVarianceGrap24) {
+            if (budgetTableMount) budgetTableMount.innerHTML = '';
+            this.scheduleTrialBalanceCheck();
+            this.refreshGrapComplianceDashboard();
+            this.updateSubmitButton();
+            return;
+        }
+        try {
+            if (documentType === 'budget_report') {
+                const res = await fetch(
+                    `/api/universal/session/${encodeURIComponent(this.state.sessionId)}?document_type=budget_report`
+                );
+                const data = await res.json();
+                if (data.budget_rows) {
+                    this.state.budgetRows = data.budget_rows;
+                    this.state.varianceExplanations = data.variance_explanations || {};
+                    const periodLabel =
+                        data.period_name ||
+                        (data.metadata && (data.metadata.period_name || data.metadata.reporting_period)) ||
+                        '';
+                    if (budgetTableMount) {
+                        budgetTableMount.innerHTML = BudgetVarianceGrap24.renderComparisonTable(
+                            data.budget_rows,
+                            { period: periodLabel }
+                        );
+                    }
+                    varianceMount.innerHTML = BudgetVarianceGrap24.renderVariancePanel(
+                        data.budget_rows,
+                        data.variance_explanations || {},
+                        { readOnly: isLocked }
+                    );
+                    if (!isLocked && !varianceMount.dataset.grap24LiveBound) {
+                        varianceMount.dataset.grap24LiveBound = '1';
+                        varianceMount.addEventListener('input', () => {
+                            this.refreshGrapComplianceDashboard();
+                            this.updateSubmitButton();
+                        });
+                    }
+                }
+            } else {
+                if (budgetTableMount) budgetTableMount.innerHTML = '';
+                if (varianceMount) varianceMount.innerHTML = '';
+            }
+        } catch (_err) {
+            // Non-fatal
+        }
+        this.scheduleTrialBalanceCheck();
+        this.refreshGrapComplianceDashboard();
+        this.updateSubmitButton();
+    }
+
+    scheduleTrialBalanceCheck() {
+        if (this.state.isRevisionMode) {
+            this.scheduleBalanceRecheck();
+            return;
+        }
+        if (this.state._trialBalanceDebounce) clearTimeout(this.state._trialBalanceDebounce);
+        this.state._trialBalanceDebounce = window.setTimeout(() => this.runTrialBalanceCheck(), 400);
+    }
+
+    async runTrialBalanceCheck() {
+        const dt = this.state.documentType || (await this.resolveDocumentType()) || 'balance_sheet';
+        if (dt !== 'balance_sheet' && dt !== 'income_statement' && dt !== 'budget_report') {
+            this.state.trialBalanceCheck = { balanced: true, message: 'N/A for this document type' };
+            this.refreshGrapComplianceDashboard();
+            return;
+        }
+        if (!this.state.sessionId) return;
+        try {
+            const res = await fetch('/api/universal/validate-balance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    session_id: this.state.sessionId,
+                    document_type: dt,
+                }),
+            });
+            const data = await res.json();
+            const bc = data.balance_check || data;
+            const balanced = !!(bc.is_balanced ?? bc.balanced ?? data.success);
+            const diff = bc.difference ?? bc.balance_difference ?? 0;
+            let message;
+            if (dt === 'budget_report') {
+                message = balanced
+                    ? 'Budget and actual lines captured'
+                    : 'Add budget and actual amounts before submit';
+            } else if (balanced) {
+                message = 'Debits equal credits';
+            } else if (dt === 'income_statement' && bc.debit_credit_balanced === false) {
+                message = `Out of balance by R ${Math.abs(Number(diff)).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            } else if (dt === 'income_statement') {
+                message = 'Map at least one revenue or expense line';
+            } else {
+                message = `Out of balance by R ${Math.abs(Number(diff)).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+            this.state.trialBalanceCheck = { balanced, message };
+        } catch (_e) {
+            this.state.trialBalanceCheck = { balanced: null, message: 'Could not verify trial balance' };
+        }
+        this.refreshGrapComplianceDashboard();
+        this.updateSubmitButton();
+        if (this.state.isRevisionMode) {
+            this.updateRevisionResubmitButton();
+        }
+    }
+
+    getGrapComplianceOpts() {
+        const G = window.GrapStandards;
+        const documentType = this.state.documentType || 'balance_sheet';
+        const validationRows = this.getTrialBalanceRowsForValidation();
+        const unmappedCount = this.state.unmappedAccounts.length;
+        const opts = {
+            validationRows,
+            unmappedCount,
+            trialBalance: this.state.trialBalanceCheck || {},
+        };
+        if (G && documentType === 'balance_sheet') {
+            const mappedOnly = validationRows.filter((r) =>
+                String(r.grap_code || r.grap_category || '').trim()
+            );
+            opts.sfpTotals = G.computeSfpTotals(mappedOnly);
+            opts.perfTotals = G.computePerformanceTotals(validationRows);
+        }
+        if (G && documentType === 'income_statement') {
+            opts.perfTotals = G.computePerformanceTotals(validationRows);
+        }
+        if (documentType === 'budget_report' && window.BudgetVarianceGrap24 && this.state.budgetRows) {
+            const explanations = BudgetVarianceGrap24.collectFromDom(
+                document.getElementById('grap24VarianceMount')
+            );
+            const check = BudgetVarianceGrap24.validateExplanations(
+                this.state.budgetRows,
+                explanations
+            );
+            opts.grap24 = {
+                passed: check.passed,
+                message: check.passed
+                    ? check.required.length
+                        ? `✓ ${check.required.length} variance explanation(s) complete`
+                        : '✓ No variances above 10% require explanation'
+                    : `Missing explanations for ${check.missing.length} line(s)`,
+            };
+        }
+        return opts;
+    }
+
+    refreshGrapComplianceDashboard() {
+        const live = document.getElementById('grapComplianceLiveMount');
+        const G = window.GrapStandards;
+        if (!live || !G || !G.renderMappingComplianceLive) return;
+        live.innerHTML = G.renderMappingComplianceLive(
+            this.state.documentType || 'balance_sheet',
+            this.getGrapComplianceOpts()
+        );
+    }
+
+    isClerkSubmitReady() {
+        const G = window.GrapStandards;
+        if (!G || !G.clerkSubmitReady) {
+            return this.state.unmappedAccounts.length === 0;
+        }
+        return G.clerkSubmitReady(this.state.documentType, this.getGrapComplianceOpts());
+    }
+
+    async ensureBudgetVarianceExplanationsSaved() {
+        if (this.state.documentType !== 'budget_report' || !this.state.budgetRows || !window.BudgetVarianceGrap24) {
+            return true;
+        }
+        const explanations = BudgetVarianceGrap24.collectFromDom(document.getElementById('grap24VarianceMount'));
+        const check = BudgetVarianceGrap24.validateExplanations(this.state.budgetRows, explanations);
+        if (!check.passed) {
+            this.showError(
+                'GRAP 24: provide variance explanations for all line items exceeding 10%: '
+                + check.missing.slice(0, 5).join(', ')
+                + (check.missing.length > 5 ? '…' : '')
+            );
+            return false;
+        }
+        if (check.required.length === 0) return true;
+        const result = await BudgetVarianceGrap24.saveExplanations(
+            this.state.sessionId,
+            'budget_report',
+            explanations
+        );
+        if (!result.success) {
+            this.showError(result.error || 'Could not save variance explanations');
+            return false;
+        }
+        return true;
+    }
+
+    async applySessionLockFromServer() {
+        if (!this.state.sessionId) return;
+        try {
+            const response = await fetch(`/api/submission-status/${this.state.sessionId}`);
+            const result = await response.json();
+            if (result.success && result.status) {
+                this.state.currentStatus = result.status;
+                if (result.is_correction_mode) {
+                    this.state.isRevisionMode = true;
+                } else {
+                    this.state.isRevisionMode = false;
+                    if (this.state.revisionRequestedFromUrl) {
+                        this.showError(
+                            'This session is not in correction mode. Upload a new file or open a rejected submission from history.'
+                        );
+                    }
+                }
+                this.state.revisionRequestedFromUrl = false;
+                if (result.is_correction_mode && result.rejection_reason) {
+                    this.state.rejectionReason = result.rejection_reason;
+                } else if (!result.is_correction_mode) {
+                    this.state.rejectionReason = '';
+                }
+                if (result.locked || CLERK_LOCKED_STATUSES.has(result.status)) {
+                    this.showSubmissionStatus(result.status);
+                    this.updateMappingInterfaceState(result.status);
+                }
+            }
+        } catch (_err) {
+            // Non-fatal: mapping still usable in draft/uploaded state
+        }
+    }
+
+    async maybeEnterRevisionMode() {
+        if (!this.state.isRevisionMode || !this.state.sessionId) return;
+        await this.loadRevisionContext();
+        this.activateRevisionWorkspace();
+    }
+
+    async loadRevisionContext() {
+        try {
+            const docType = await this.resolveDocumentType();
+            const q = docType ? `?document_type=${encodeURIComponent(docType)}` : '';
+            const res = await fetch(
+                `/api/universal/correction-workspace/${encodeURIComponent(this.state.sessionId)}${q}`,
+                { credentials: 'same-origin' }
+            );
+            const data = await res.json();
+            if (!data.success) {
+                this.showError(data.error || 'Could not load correction workspace');
+                return;
+            }
+            this.state.documentType = data.document_type || this.state.documentType;
+            this.state.currentStatus = data.status || this.state.currentStatus;
+            this.state.rejectionBanner = data.rejection_banner || {};
+            this.state.revisionTimeline = data.timeline || [];
+            if (data.rejection_reason) {
+                this.state.rejectionReason = data.rejection_reason;
+            }
+        } catch (err) {
+            this.showError('Failed to load rejection details.');
+        }
+    }
+
+    activateRevisionWorkspace() {
+        const section = document.querySelector('.mapping-section');
+        if (section) section.classList.add('revision-mode');
+
+        const title = document.getElementById('mappingPageTitle');
+        const subtitle = document.getElementById('mappingPageSubtitle');
+        if (title) title.textContent = 'Correction workspace';
+        if (subtitle) {
+            subtitle.textContent =
+                'Mapping is unlocked. Apply the manager’s feedback, confirm the trial balance still balances, then resubmit.';
+        }
+
+        const banner = document.getElementById('revisionRejectionBanner');
+        const bannerTitle = document.getElementById('revisionRejectionTitle');
+        const bannerReason = document.getElementById('revisionRejectionReason');
+        const rb = this.state.rejectionBanner || {};
+        if (banner) VarydianUtils.showElement(banner, 'flex');
+        if (bannerTitle) {
+            bannerTitle.textContent = rb.title || 'Rejected — correction required';
+        }
+        if (bannerReason) {
+            bannerReason.textContent =
+                rb.reason || this.state.rejectionReason || 'Review the manager comment and update mappings.';
+        }
+
+        VarydianUtils.showElement(document.getElementById('revisionBalanceStrip'), 'flex');
+        VarydianUtils.showElement(document.getElementById('revisionResubmitPanel'), 'flex');
+        VarydianUtils.hideElement(document.getElementById('mappingStandardActions'));
+
+        this.enableMapping();
+        if (this.elements.submitMappingBtn) {
+            this.elements.submitMappingBtn.disabled = true;
+        }
+
+        const noteEl = document.getElementById('clerkCorrectionNote');
+        if (noteEl && !noteEl.dataset.bound) {
+            noteEl.dataset.bound = '1';
+            noteEl.addEventListener('input', () => {
+                this.state.correctionNote = noteEl.value.trim();
+                this.updateRevisionResubmitButton();
+            });
+        }
+
+        const resubmitBtn = document.getElementById('revisionResubmitBtn');
+        if (resubmitBtn && !resubmitBtn.dataset.bound) {
+            resubmitBtn.dataset.bound = '1';
+            resubmitBtn.addEventListener('click', () => this.resubmitAfterCorrection());
+        }
+
+        this.scheduleBalanceRecheck();
+        this.updateRevisionResubmitButton();
+    }
+
+    scheduleBalanceRecheck() {
+        if (this.state._balanceDebounce) clearTimeout(this.state._balanceDebounce);
+        this.state._balanceDebounce = window.setTimeout(() => this.runRevisionBalanceCheck(), 400);
+    }
+
+    async runRevisionBalanceCheck() {
+        const strip = document.getElementById('revisionBalanceStrip');
+        const valueEl = document.getElementById('revisionBalanceValue');
+        const labelEl = document.getElementById('revisionBalanceLabel');
+        if (!this.state.sessionId) return;
+
+        let documentType = this.state.documentType || (await this.resolveDocumentType());
+        this.state.documentType = documentType || 'balance_sheet';
+
+        if (labelEl) {
+            labelEl.textContent =
+                documentType === 'budget_report' ? 'Budget vs actual check' : 'Trial balance check (Debits = Credits)';
+        }
+        if (valueEl) valueEl.textContent = 'Checking…';
+        if (strip) strip.classList.remove('revision-balance-strip--balanced', 'revision-balance-strip--unbalanced');
+
+        try {
+            const res = await fetch('/api/universal/validate-balance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    session_id: this.state.sessionId,
+                    document_type: documentType,
+                }),
+            });
+            const data = await res.json();
+            const bc = data.balance_check || data;
+            const balanced = !!(bc.is_balanced ?? bc.balanced ?? data.success);
+            const diff = bc.difference ?? bc.balance_difference ?? 0;
+            this.state.balanceCheck = {
+                balanced,
+                message: balanced
+                    ? 'Balanced — debits equal credits.'
+                    : `Out of balance by R ${Math.abs(Number(diff)).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            };
+            if (valueEl) valueEl.textContent = this.state.balanceCheck.message;
+            if (strip) {
+                strip.classList.add(
+                    balanced ? 'revision-balance-strip--balanced' : 'revision-balance-strip--unbalanced'
+                );
+            }
+        } catch (_e) {
+            this.state.balanceCheck = { balanced: false, message: 'Could not verify balance.' };
+            if (valueEl) valueEl.textContent = this.state.balanceCheck.message;
+        }
+        this.state.trialBalanceCheck = { ...this.state.balanceCheck };
+        this.refreshGrapComplianceDashboard();
+        this.updateRevisionResubmitButton();
+    }
+
+    updateRevisionResubmitButton() {
+        const btn = document.getElementById('revisionResubmitBtn');
+        if (!btn) return;
+        const noteOk = (this.state.correctionNote || '').length >= 10;
+        const mappedOk = this.state.unmappedAccounts.length === 0;
+        const balanced = this.state.balanceCheck.balanced === true;
+        const grapOk = this.isClerkSubmitReady();
+        btn.disabled = !(noteOk && mappedOk && balanced && grapOk);
+        btn.title = !noteOk
+            ? 'Enter at least 10 characters explaining your correction.'
+            : !mappedOk
+              ? 'Map all accounts before resubmitting.'
+              : !balanced
+                ? 'Trial balance must be balanced before resubmitting.'
+                : !grapOk
+                  ? 'GRAP compliance checks must pass before resubmitting.'
+                  : '';
+    }
+
+    async resubmitAfterCorrection() {
+        const note = (this.state.correctionNote || '').trim();
+        if (note.length < 10) {
+            this.showError('Please enter a correction note (at least 10 characters).');
+            return;
+        }
+        if (this.state.unmappedAccounts.length > 0) {
+            this.showError('Complete all account mappings before resubmitting.');
+            return;
+        }
+        if (this.state.balanceCheck.balanced !== true) {
+            this.showError('Trial balance must be balanced before resubmitting.');
+            return;
+        }
+        if (!this.isClerkSubmitReady()) {
+            const grapCheck = window.GrapStandards
+                ? GrapStandards.validateBeforeSubmit(documentType, this.getTrialBalanceRowsForValidation())
+                : { passed: false, message: 'GRAP checks failed.' };
+            this.showError(grapCheck.message || 'GRAP compliance checks must pass before resubmitting.');
+            return;
+        }
+
+        const documentType = this.state.documentType || (await this.resolveDocumentType()) || 'balance_sheet';
+        const mappedData = this.getMappedDataForSubmission();
+        const btn = document.getElementById('revisionResubmitBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Resubmitting…';
+        }
+
+        try {
+            const response = await fetch('/api/submit-mapping', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    session_id: this.state.sessionId,
+                    document_type: documentType,
+                    mapped_data: mappedData,
+                    clerk_correction_note: note,
+                }),
+            });
+            const result = await response.json();
+            if (result.success) {
+                this.showSuccess(result.message || CLERK_FORWARD_SUCCESS_MESSAGE);
+                window.setTimeout(() => {
+                    window.location.href = '/submission-history';
+                }, 1500);
+            } else {
+                this.showError(result.error || 'Resubmit failed');
+            }
+        } catch (err) {
+            this.showError('Resubmit failed. Please try again.');
+        } finally {
+            if (btn) {
+                btn.textContent = 'Resubmit for review';
+                this.updateRevisionResubmitButton();
+            }
+        }
     }
 
     cacheElements() {
@@ -35,12 +620,12 @@ class GRAPMappingInterface {
             mappedAccounts: document.getElementById('mappedAccounts'),
             remainingAccounts: document.getElementById('remainingAccounts'),
             completionPercentage: document.getElementById('completionPercentage'),
+            backToUploadBtn: document.getElementById('backToUploadBtn'),
                         submitMappingBtn: document.getElementById('submitMappingBtn'),
             submissionStatus: document.getElementById('submissionStatus'),
             statusBadge: document.getElementById('statusBadge'),
             statusMessage: document.getElementById('statusMessage'),
             statusActions: document.getElementById('statusActions'),
-            submitForReviewBtn: document.getElementById('submitForReviewBtn'),
             editMappingBtn: document.getElementById('editMappingBtn'),
             // New: Review mode elements
             mappedAccountsReview: document.getElementById('mappedAccountsReview'),
@@ -63,7 +648,7 @@ class GRAPMappingInterface {
         
         if (this.state.isReviewMode && window.mappingData) {
             this.state.mappingData = window.mappingData;
-            this.state.autoMappedAccounts = window.mappingData.mapped_accounts || [];
+            this.state.autoMappedAccounts = [];
             console.log('Review mode activated with data:', this.state.mappingData);
         }
     }
@@ -84,6 +669,9 @@ class GRAPMappingInterface {
 
     loadReviewData() {
         try {
+            if (this.state.mappingData && this.state.mappingData.document_type) {
+                this.state.documentType = this.state.mappingData.document_type;
+            }
             console.log('🔄 Loading review data...');
             console.log('📊 Raw mappingData:', this.state.mappingData);
             
@@ -134,14 +722,18 @@ class GRAPMappingInterface {
                 console.log(`  - GRAP Code: ${grapCode}`);
                 
                 // Create standardized account object
+                const code = account.account_code || account.code || '';
                 const standardAccount = {
-                    id: account.id || account.account_id || Date.now().toString(),
+                    id: account.id || account.account_id || (code ? `${code}-${index}` : `mapped-${index}`),
+                    account_desc: account.account_desc || account.name || 'Unknown Account',
+                    account_code: code,
                     name: account.account_desc || account.name || 'Unknown Account',
-                    code: account.account_code || account.code || '',
-                    amount: account.net_balance || account.balance || account.amount || 0,
+                    code,
+                    net_balance: account.net_balance ?? account.balance ?? account.amount ?? 0,
+                    amount: account.net_balance ?? account.balance ?? account.amount ?? 0,
                     grapCategory: grapCategory,
                     grapCode: grapCode,
-                    confidence: account.confidence || 0
+                    confidence: account.confidence || 0,
                 };
                 
                 console.log(`  - Standardized account:`, standardAccount);
@@ -164,7 +756,7 @@ class GRAPMappingInterface {
             // Render all data
             this.renderUnmappedAccounts();
             this.renderCategories(); // This will show auto-mapped accounts in their categories
-            this.updateProgress();
+            this.updateStats();
             this.updateConfidenceSummary();
             this.updateReviewStatus();
             
@@ -251,18 +843,35 @@ class GRAPMappingInterface {
     }
 
     setupEventListeners() {
-        // Drag and drop events - check if elements exist
         if (this.elements.unmappedAccountsList) {
             this.elements.unmappedAccountsList.addEventListener('dragstart', this.handleDragStart.bind(this));
             this.elements.unmappedAccountsList.addEventListener('dragend', this.handleDragEnd.bind(this));
+            this.elements.unmappedAccountsList.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
+            this.elements.unmappedAccountsList.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
+            this.elements.unmappedAccountsList.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
         }
-        
+
         if (this.elements.grapCategories) {
             this.elements.grapCategories.addEventListener('dragover', this.handleDragOver.bind(this));
             this.elements.grapCategories.addEventListener('drop', this.handleDrop.bind(this));
+            this.elements.grapCategories.addEventListener('touchmove', this.handleCategoryTouchMove.bind(this), { passive: false });
+            this.elements.grapCategories.addEventListener('touchend', this.handleCategoryTouchEnd.bind(this), { passive: false });
+            this.elements.grapCategories.addEventListener('click', this.handleMappedAccountsClick.bind(this));
         }
-        
-                
+
+        document.addEventListener('keydown', this.handleKeyDown.bind(this));
+
+        if (this.elements.backToUploadBtn) {
+            this.elements.backToUploadBtn.addEventListener('click', (e) => {
+                const href = this.elements.backToUploadBtn.getAttribute('href') || '/upload';
+                const dt = this.state.documentType || '';
+                if (dt) {
+                    e.preventDefault();
+                    window.location.href = `${href}${href.includes('?') ? '&' : '?'}document_type=${encodeURIComponent(dt)}`;
+                }
+            });
+        }
+
         if (this.elements.submitMappingBtn) {
             this.elements.submitMappingBtn.addEventListener('click', this.submitMapping.bind(this));
         }
@@ -274,10 +883,6 @@ class GRAPMappingInterface {
         }
         
         // Submission events
-        if (this.elements.submitForReviewBtn) {
-            this.elements.submitForReviewBtn.addEventListener('click', this.submitForReview.bind(this));
-        }
-        
         if (this.elements.editMappingBtn) {
             this.elements.editMappingBtn.addEventListener('click', this.editMapping.bind(this));
         }
@@ -298,6 +903,7 @@ class GRAPMappingInterface {
             if (result.categories && Array.isArray(result.categories)) {
                 this.state.grapCategories = result.categories;
                 this.renderCategories();
+                this.updateSectionBadges();
             } else if (result.error) {
                 this.showError(result.error);
             } else {
@@ -328,8 +934,6 @@ class GRAPMappingInterface {
                 
                 this.renderUnmappedAccounts();
                 this.updateStats();
-                
-                console.log('🎨 UI updated');
             } else {
                 console.error('❌ API Error:', result.error);
                 this.showError(result.error || 'Failed to load accounts');
@@ -341,6 +945,7 @@ class GRAPMappingInterface {
     }
 
     renderCategories() {
+        if (!this.elements.grapCategories) return;
         console.log('🎨 Rendering GRAP categories...');
         console.log('  - Element exists:', !!this.elements.grapCategories);
         console.log('  - Categories available:', this.state.grapCategories.length);
@@ -354,7 +959,10 @@ class GRAPMappingInterface {
             const categoryEl = document.createElement('div');
             categoryEl.className = 'grap-category';
             categoryEl.dataset.categoryId = category.code;
-            
+            categoryEl.setAttribute('tabindex', '0');
+            categoryEl.setAttribute('role', 'button');
+            categoryEl.setAttribute('aria-label', `GRAP Category: ${category.name}`);
+
             categoryEl.innerHTML = `
                 <div class="category-header">
                     <h3>${category.name}</h3>
@@ -378,7 +986,7 @@ class GRAPMappingInterface {
             return '<div class="empty-category">Drop accounts here</div>';
         }
         
-        return mappedAccounts.map(account => {
+        return mappedAccounts.map((account, index) => {
             // Determine confidence level
             const confidence = account.confidence || 0;
             let confidenceClass = 'confidence-low';
@@ -392,14 +1000,13 @@ class GRAPMappingInterface {
                 confidenceLabel = 'Medium';
             }
             
-            // Use correct field names for both unmapped and pre-mapped accounts
             const accountName = account.account_desc || account.name || 'Unknown Account';
             const accountCode = account.account_code || account.code || '';
-            const accountAmount = account.net_balance || account.amount || 0;
-            const accountId = account.id || account.account_code || 'unknown';
+            const accountAmount = account.net_balance ?? account.amount ?? account.balance ?? 0;
+            const accountKey = this.accountKey(account, `${categoryId}-${index}`);
             
             return `
-                <div class="mapped-account" data-account-id="${accountId}" draggable="true">
+                <div class="mapped-account" data-account-id="${accountKey}" data-category-id="${categoryId}" draggable="true">
                     <div class="account-info">
                         <div class="account-name">${accountName}</div>
                         <div class="account-code">${accountCode}</div>
@@ -409,17 +1016,62 @@ class GRAPMappingInterface {
                         <span class="confidence-label">${confidenceLabel}</span>
                         <span class="confidence-value">${Math.round(confidence * 100)}%</span>
                     </div>
-                    <button class="remove-account" onclick="window.mappingInterface.removeMapping('${accountId}')">×</button>
+                    <button type="button" class="remove-account" aria-label="Remove mapping for ${accountName}">×</button>
                 </div>
             `;
         }).join('');
     }
 
+    accountKey(account, fallback = '') {
+        if (account == null) return String(fallback || 'unknown');
+        const id = account.id ?? account.account_id;
+        if (id != null && id !== '') return String(id);
+        const code = account.account_code ?? account.code;
+        if (code != null && code !== '') return String(code);
+        return String(fallback || 'unknown');
+    }
+
+    accountMatchesKey(account, key) {
+        const want = String(key);
+        return [account.id, account.account_id, account.account_code, account.code]
+            .filter((v) => v != null && v !== '')
+            .some((v) => String(v) === want);
+    }
+
+    normalizeAccountForUnmapped(account) {
+        const code = account.account_code || account.code || '';
+        return {
+            ...account,
+            id: account.id || account.account_id || code || account.id,
+            account_code: code,
+            account_desc: account.account_desc || account.name || account.description || '',
+            code,
+            name: account.account_desc || account.name || '',
+            net_balance: account.net_balance ?? account.amount ?? account.balance ?? 0,
+            amount: account.net_balance ?? account.amount ?? account.balance ?? 0,
+        };
+    }
+
+    handleMappedAccountsClick(e) {
+        const btn = e.target.closest('.remove-account');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (this.elements.grapCategories?.classList.contains('mapping-locked')) {
+            return;
+        }
+
+        const row = btn.closest('.mapped-account');
+        const categoryEl = btn.closest('.grap-category');
+        if (!row || !categoryEl) return;
+
+        this.removeMapping(row.dataset.accountId, categoryEl.dataset.categoryId);
+    }
+
     renderUnmappedAccounts() {
-        console.log('🎨 Rendering unmapped accounts...');
-        console.log('  - Element exists:', !!this.elements.unmappedAccountsList);
-        console.log('  - Accounts to render:', this.state.unmappedAccounts.length);
-        
+        if (!this.elements.unmappedAccountsList) return;
+
         this.elements.unmappedAccountsList.innerHTML = '';
         
         if (this.state.unmappedAccounts.length === 0) {
@@ -450,51 +1102,212 @@ class GRAPMappingInterface {
     }
 
     handleDragStart(e) {
-        const accountEl = e.target.closest('.unmapped-account');
+        if (e.target.closest('.remove-account')) {
+            e.preventDefault();
+            return;
+        }
+        const accountEl = e.target.closest('.unmapped-account, .mapped-account');
         if (!accountEl) return;
-        
+
         this.state.isDragging = true;
         this.state.draggedAccount = {
             id: accountEl.dataset.accountId,
-            element: accountEl
+            element: accountEl,
+            sourceType: accountEl.classList.contains('unmapped-account') ? 'unmapped' : 'mapped',
         };
-        
+
         accountEl.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', this.state.draggedAccount.id);
+        e.dataTransfer.setData('sourceType', this.state.draggedAccount.sourceType);
+
+        if (this.state.dragGhost) {
+            const accountName = accountEl.querySelector('.account-name')?.textContent || 'Account';
+            this.state.dragGhost.textContent = accountName;
+            e.dataTransfer.setDragImage(this.state.dragGhost, 0, 0);
+        }
+
+        if ('vibrate' in navigator) {
+            navigator.vibrate(50);
+        }
     }
 
-    handleDragEnd(e) {
+    handleDragEnd() {
         this.state.isDragging = false;
         this.state.draggedAccount = null;
-        
+
         const draggingEl = document.querySelector('.dragging');
         if (draggingEl) {
             draggingEl.classList.remove('dragging');
         }
+
+        document.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
     }
 
     handleDragOver(e) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
-        
+
         const categoryEl = e.target.closest('.grap-category');
-        if (categoryEl) {
-            categoryEl.classList.add('drag-over');
+        if (!categoryEl || !this.state.isDragging) return;
+
+        document.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
+        categoryEl.classList.add('drag-over');
+
+        const dropZone = categoryEl.querySelector('.mapped-accounts');
+        if (dropZone) {
+            dropZone.style.background = 'var(--primary-50)';
+            dropZone.style.borderColor = 'var(--primary-300)';
         }
     }
 
     handleDrop(e) {
         e.preventDefault();
-        
+
         const categoryEl = e.target.closest('.grap-category');
         if (!categoryEl || !this.state.draggedAccount) return;
-        
+
         categoryEl.classList.remove('drag-over');
-        
-        const categoryId = categoryEl.dataset.categoryId;
-        const accountId = this.state.draggedAccount.id;
-        
-        this.addMapping(accountId, categoryId);
+
+        const dropZone = categoryEl.querySelector('.mapped-accounts');
+        if (dropZone) {
+            dropZone.style.background = '';
+            dropZone.style.borderColor = '';
+        }
+
+        this.addMapping(this.state.draggedAccount.id, categoryEl.dataset.categoryId);
+
+        if ('vibrate' in navigator) {
+            navigator.vibrate([50, 50, 100]);
+        }
+    }
+
+    handleTouchStart(e) {
+        const accountEl = e.target.closest('.unmapped-account, .mapped-account');
+        if (!accountEl) return;
+
+        const touch = e.touches[0];
+        this.state.touchStartX = touch.clientX;
+        this.state.touchStartY = touch.clientY;
+        this.state.draggedElement = accountEl;
+        accountEl.classList.add('dragging');
+        e.preventDefault();
+    }
+
+    handleTouchMove(e) {
+        if (!this.state.draggedElement) return;
+
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - this.state.touchStartX;
+        const deltaY = touch.clientY - this.state.touchStartY;
+
+        if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+            this.createTouchFeedback(touch.clientX, touch.clientY);
+            e.preventDefault();
+        }
+    }
+
+    handleTouchEnd(e) {
+        if (!this.state.draggedElement) return;
+
+        const touch = e.changedTouches[0];
+        const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+        const categoryEl = targetElement?.closest('.grap-category');
+
+        this.state.draggedElement.classList.remove('dragging');
+
+        if (categoryEl) {
+            this.addMapping(this.state.draggedElement.dataset.accountId, categoryEl.dataset.categoryId);
+        }
+
+        this.removeTouchFeedback();
+        this.state.draggedElement = null;
+        e.preventDefault();
+    }
+
+    handleCategoryTouchMove(e) {
+        if (!this.state.draggedElement) return;
+
+        const categoryEl = e.target.closest('.grap-category');
+        if (categoryEl) {
+            document.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
+            categoryEl.classList.add('drag-over');
+        }
+        e.preventDefault();
+    }
+
+    handleCategoryTouchEnd(e) {
+        if (!this.state.draggedElement) return;
+
+        const categoryEl = e.target.closest('.grap-category');
+        if (categoryEl) {
+            this.addMapping(this.state.draggedElement.dataset.accountId, categoryEl.dataset.categoryId);
+        }
+
+        document.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
+        this.state.draggedElement = null;
+        e.preventDefault();
+    }
+
+    createTouchFeedback(x, y) {
+        this.removeTouchFeedback();
+        const feedback = document.createElement('div');
+        feedback.className = 'touch-feedback';
+        feedback.style.cssText = `
+            position: fixed;
+            left: ${x}px;
+            top: ${y}px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary-600);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            z-index: 1000;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        feedback.textContent = '📄';
+        document.body.appendChild(feedback);
+        this.state.touchFeedback = feedback;
+    }
+
+    removeTouchFeedback() {
+        if (this.state.touchFeedback) {
+            this.state.touchFeedback.remove();
+            this.state.touchFeedback = null;
+        }
+    }
+
+    handleKeyDown(e) {
+        if (e.key === 'Escape') {
+            this.cancelDrag();
+        }
+    }
+
+    cancelDrag() {
+        if (this.state.draggedElement) {
+            this.state.draggedElement.classList.remove('dragging');
+            this.state.draggedElement = null;
+        }
+        this.removeTouchFeedback();
+        this.state.isDragging = false;
+        this.state.draggedAccount = null;
+        document.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
+    }
+
+    startKeyboardDrag(element) {
+        this.state.draggedAccount = {
+            id: element.dataset.accountId,
+            element,
+            sourceType: 'unmapped',
+        };
+        element.classList.add('dragging');
+        this.showNotification('Select a GRAP category and press Enter to map the account', 'info');
     }
 
     addMapping(accountId, categoryId) {
@@ -535,33 +1348,52 @@ class GRAPMappingInterface {
         }
     }
 
-    removeMapping(accountId) {
+    removeMapping(accountId, categoryId) {
         try {
-            // Find the account in mapped accounts
             let foundAccount = null;
-            let sourceCategoryId = null;
-            
-            for (const [categoryId, accounts] of Object.entries(this.state.mappedAccounts)) {
-                const accountIndex = accounts.findIndex(a => a.id === accountId);
-                if (accountIndex > -1) {
-                    foundAccount = accounts.splice(accountIndex, 1)[0];
-                    sourceCategoryId = categoryId;
-                    break;
+
+            const removeFromCategory = (catId) => {
+                const accounts = this.state.mappedAccounts[catId];
+                if (!Array.isArray(accounts)) return false;
+                const accountIndex = accounts.findIndex((a) => this.accountMatchesKey(a, accountId));
+                if (accountIndex < 0) return false;
+                foundAccount = accounts.splice(accountIndex, 1)[0];
+                if (!accounts.length) {
+                    delete this.state.mappedAccounts[catId];
+                }
+                return true;
+            };
+
+            if (categoryId && !removeFromCategory(categoryId)) {
+                for (const catId of Object.keys(this.state.mappedAccounts)) {
+                    if (catId !== categoryId && removeFromCategory(catId)) break;
+                }
+            } else if (!categoryId) {
+                for (const catId of Object.keys(this.state.mappedAccounts)) {
+                    if (removeFromCategory(catId)) break;
                 }
             }
-            
+
             if (foundAccount) {
-                // Add back to unmapped
-                this.state.unmappedAccounts.push(foundAccount);
-                
-                // Update UI
+                const restored = this.normalizeAccountForUnmapped(foundAccount);
+                const alreadyUnmapped = this.state.unmappedAccounts.some((a) =>
+                    this.accountMatchesKey(a, accountId)
+                );
+                if (!alreadyUnmapped) {
+                    this.state.unmappedAccounts.push(restored);
+                }
+
                 this.renderUnmappedAccounts();
                 this.renderCategories();
                 this.updateStats();
+                this.showSuccess(
+                    `Removed "${restored.account_desc || restored.name || restored.account_code}" from mapping`
+                );
             } else {
-                // Mapped account not found
+                this.showError('Could not find that account in the selected category.');
             }
         } catch (error) {
+            console.error('removeMapping failed:', error);
             this.showError('Failed to remove mapping. Please try again.');
         }
     }
@@ -625,20 +1457,60 @@ class GRAPMappingInterface {
         }
     }
 
+    formatAccountLabel(count) {
+        if (count === 1) {
+            return '1 account';
+        }
+        return `${count} accounts`;
+    }
+
+    formatCategoryLabel(populatedCount, totalAvailable) {
+        if (totalAvailable > 0 && populatedCount !== totalAvailable) {
+            return `${populatedCount} of ${totalAvailable} categories`;
+        }
+        if (populatedCount === 1) {
+            return '1 category';
+        }
+        return `${populatedCount} categories`;
+    }
+
+    getPopulatedCategoryCount() {
+        return Object.values(this.state.mappedAccounts || {})
+            .filter((accounts) => Array.isArray(accounts) && accounts.length > 0)
+            .length;
+    }
+
+    updateSectionBadges() {
+        const unmapped = this.state.unmappedAccounts.length;
+        const populatedCategories = this.getPopulatedCategoryCount();
+        const totalCategories = (this.state.grapCategories || []).length;
+
+        if (this.elements.unmappedCount) {
+            this.elements.unmappedCount.textContent = this.formatAccountLabel(unmapped);
+        }
+        if (this.elements.categoryCount) {
+            this.elements.categoryCount.textContent = this.formatCategoryLabel(
+                populatedCategories,
+                totalCategories
+            );
+        }
+    }
+
     updateStats() {
         console.log('📊 Updating statistics...');
         
         const totalAccounts = this.state.unmappedAccounts.length + this.getTotalMappedAccounts();
         const mappedAccounts = this.getTotalMappedAccounts();
         const remainingAccounts = this.state.unmappedAccounts.length;
+        const populatedCategories = this.getPopulatedCategoryCount();
         const completionPercentage = totalAccounts > 0 ? Math.round((mappedAccounts / totalAccounts) * 100) : 0;
 
         console.log('  - Total accounts:', totalAccounts);
         console.log('  - Mapped accounts:', mappedAccounts);
         console.log('  - Remaining accounts:', remainingAccounts);
+        console.log('  - Categories in use:', populatedCategories);
         console.log('  - Completion percentage:', completionPercentage + '%');
 
-        // Update stats display
         if (this.elements.totalAccounts) {
             this.elements.totalAccounts.textContent = totalAccounts;
         }
@@ -652,13 +1524,17 @@ class GRAPMappingInterface {
             this.elements.completionPercentage.textContent = completionPercentage + '%';
         }
 
+        this.updateSectionBadges();
+
         console.log('✅ Statistics updated');
 
-        // Update submit button
         this.updateSubmitButton();
-        
-        // Check if mapping is complete and show submission status
         this.checkMappingCompletion();
+        this.scheduleTrialBalanceCheck();
+        this.refreshGrapComplianceDashboard();
+        if (this.state.isRevisionMode) {
+            this.updateRevisionResubmitButton();
+        }
     }
 
     getTotalMappedAccounts() {
@@ -670,26 +1546,76 @@ class GRAPMappingInterface {
     }
 
     updateSubmitButton() {
+        if (this.state.isRevisionMode) return;
         const unmappedCount = this.state.unmappedAccounts.length;
         const submitBtn = this.elements.submitMappingBtn;
-        
+        const ready = this.isClerkSubmitReady();
+
         if (submitBtn) {
-            if (unmappedCount === 0) {
+            if (unmappedCount === 0 && ready) {
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Submit for Review';
+                submitBtn.textContent = this.submitButtonLabel(0);
                 submitBtn.classList.remove('disabled');
+                submitBtn.title = '';
             } else {
                 submitBtn.disabled = true;
-                submitBtn.textContent = `Submit for Review (${unmappedCount} remaining)`;
+                submitBtn.textContent = this.submitButtonLabel(unmappedCount);
                 submitBtn.classList.add('disabled');
+                if (unmappedCount > 0) {
+                    submitBtn.title = 'Map all accounts before submit';
+                } else if (!ready) {
+                    const dt = this.state.documentType || 'balance_sheet';
+                    submitBtn.title =
+                        dt === 'balance_sheet'
+                            ? 'Trial balance and GRAP 1 (SFP) equation must pass'
+                            : dt === 'income_statement'
+                              ? 'Map revenue/expense lines for GRAP 1 (Performance)'
+                              : 'Complete GRAP 24 variance explanations';
+                }
             }
         }
     }
 
     async submitMapping() {
+        const documentType = this.state.documentType || (await this.resolveDocumentType()) || 'balance_sheet';
+        this.state.documentType = documentType;
+        const grapConfig = this.getGrapSubmitConfig();
         const unmappedCount = this.state.unmappedAccounts.length;
         if (unmappedCount > 0) {
-            if (!confirm(`You still have ${unmappedCount} unmapped accounts. Are you sure you want to submit?`)) {
+            const confirmed = await showConfirm(
+                grapConfig.submitButton,
+                `You still have ${unmappedCount} unmapped accounts. Submit for review under ${grapConfig.standard}?`
+            );
+            if (!confirmed) return;
+        }
+
+        if (!(await this.ensureBudgetVarianceExplanationsSaved())) {
+            return;
+        }
+
+        const mappedData = this.getMappedDataForSubmission();
+        if (window.GrapStandards) {
+            const validationRows = this.getTrialBalanceRowsForValidation();
+            const grapCheck = GrapStandards.validateBeforeSubmit(documentType, validationRows);
+            if (!grapCheck.passed) {
+                let msg = grapCheck.message || `${grapConfig.standard}: checks failed before submit.`;
+                if (this.state.unmappedAccounts.length) {
+                    const names = this.state.unmappedAccounts
+                        .map((a) => a.account_desc || a.name || a.account_code || a.code)
+                        .filter(Boolean)
+                        .join(', ');
+                    msg += ` Map these unmapped accounts before submit: ${names}.`;
+                }
+                this.showError(msg);
+                return;
+            }
+            if (
+                documentType === 'balance_sheet' &&
+                this.state.unmappedAccounts.length > 0
+            ) {
+                this.showError(
+                    'All trial balance accounts must be mapped to a GRAP category before submit.'
+                );
                 return;
             }
         }
@@ -698,9 +1624,6 @@ class GRAPMappingInterface {
             this.elements.submitMappingBtn.disabled = true;
             this.elements.submitMappingBtn.textContent = 'Submitting...';
             
-            // Get mapped data for submission
-            const mappedData = this.getMappedDataForSubmission();
-            
             const response = await fetch('/api/submit-mapping', {
                 method: 'POST',
                 headers: {
@@ -708,14 +1631,15 @@ class GRAPMappingInterface {
                 },
                 body: JSON.stringify({
                     mapped_data: mappedData,
-                    session_id: this.state.sessionId
+                    session_id: this.state.sessionId,
+                    document_type: documentType,
                 })
             });
             
             const result = await response.json();
             
             if (result.success) {
-                this.showSuccess('Mapping submitted successfully');
+                this.showSuccess(result.message || grapConfig.success || CLERK_FORWARD_SUCCESS_MESSAGE);
                 setTimeout(() => {
                     // Redirect to the submission status page using the submission_id returned
                     window.location.href = `/submission/${result.submission_id}`;
@@ -726,8 +1650,10 @@ class GRAPMappingInterface {
         } catch (error) {
             this.showError('Failed to submit mapping. Please try again.');
         } finally {
-            this.elements.submitMappingBtn.disabled = false;
-            this.elements.submitMappingBtn.textContent = 'Submit Mapping & Continue';
+            if (!CLERK_LOCKED_STATUSES.has(this.state.currentStatus)) {
+                this.elements.submitMappingBtn.disabled = false;
+                this.updateSubmitButton();
+            }
         }
     }
 
@@ -763,15 +1689,16 @@ class GRAPMappingInterface {
     }
 
     showNotification(message, type) {
+        if (window.VarydianUtils && typeof VarydianUtils.showToast === 'function') {
+            VarydianUtils.showToast(message, type);
+            return;
+        }
         const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
+        notification.className = `notification notification-${type} notification--center`;
         notification.textContent = message;
-        
+        notification.setAttribute('role', 'alert');
         document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
+        setTimeout(() => notification.remove(), 8000);
     }
 
     // Submission workflow methods
@@ -792,9 +1719,12 @@ class GRAPMappingInterface {
         // Update message
         const messages = {
             draft: 'Your balance sheet mapping is ready for submission.',
-            pending: 'Your balance sheet has been submitted for review. You will be notified when it\'s approved or rejected.',
-            approved: 'Your balance sheet has been approved! You can now generate financial statements.',
-            rejected: 'Your balance sheet was rejected. You can edit the mapping and resubmit.'
+            pending: 'Data forwarded to Finance Manager for review. This record is read-only.',
+            pending_review: 'Data forwarded to Finance Manager for review. This record is read-only.',
+            submitted: 'Data forwarded to Finance Manager for review. This record is read-only.',
+            approved: 'This submission was approved. Export is handled by the CFO after finalization.',
+            rejected: 'Your balance sheet was rejected. You can edit the mapping and resubmit.',
+            rejected_by_manager: 'Rejected by the Finance Manager. Review the feedback, correct mappings, and resubmit.'
         };
         
         this.elements.statusMessage.textContent = messages[status] || 'Status unknown.';
@@ -809,7 +1739,7 @@ class GRAPMappingInterface {
     updateSubmissionActions(status) {
         if (!this.elements.statusActions) return;
         
-        const submitBtn = this.elements.submitForReviewBtn;
+        const submitBtn = this.elements.submitMappingBtn;
         const editBtn = this.elements.editMappingBtn;
         
         switch (status) {
@@ -824,6 +1754,9 @@ class GRAPMappingInterface {
                 }
                 break;
             case 'pending':
+            case 'pending_review':
+            case 'submitted':
+            case 'pending_cfo':
                 if (submitBtn) {
                     submitBtn.classList.add('button-hidden');
                     submitBtn.classList.remove('button-visible');
@@ -834,6 +1767,7 @@ class GRAPMappingInterface {
                 }
                 break;
             case 'rejected':
+            case 'rejected_by_manager':
                 if (submitBtn) {
                     submitBtn.classList.remove('button-hidden');
                     submitBtn.classList.add('button-visible');
@@ -857,7 +1791,7 @@ class GRAPMappingInterface {
     }
 
     updateMappingInterfaceState(status) {
-        const isLocked = status === 'pending' || status === 'approved';
+        const isLocked = CLERK_LOCKED_STATUSES.has(status);
         
         // Disable drag and drop if locked
         if (isLocked) {
@@ -870,7 +1804,8 @@ class GRAPMappingInterface {
         if (this.elements.submitMappingBtn) {
             this.elements.submitMappingBtn.disabled = isLocked;
             if (isLocked) {
-                this.elements.submitMappingBtn.textContent = 'Locked - Pending Review';
+                this.elements.submitMappingBtn.textContent = 'Locked — Pending Review';
+                this.elements.submitMappingBtn.disabled = true;
             } else {
                 this.updateSubmitButton();
             }
@@ -889,6 +1824,29 @@ class GRAPMappingInterface {
         if (this.elements.grapCategories) {
             this.elements.grapCategories.classList.add('mapping-locked');
         }
+
+        ['grap24VarianceMount', 'grap24BudgetTableMount', 'grapSubmitComplianceMount'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('mapping-locked');
+        });
+        void this.lockGrapSubmitPanelsReadOnly();
+    }
+
+    lockGrapSubmitPanelsReadOnly() {
+        const varianceMount = document.getElementById('grap24VarianceMount');
+        if (
+            !varianceMount
+            || this.state.documentType !== 'budget_report'
+            || !this.state.budgetRows
+            || !window.BudgetVarianceGrap24
+        ) {
+            return;
+        }
+        varianceMount.innerHTML = BudgetVarianceGrap24.renderVariancePanel(
+            this.state.budgetRows,
+            this.state.varianceExplanations || {},
+            { readOnly: true }
+        );
     }
 
     enableMapping() {
@@ -900,90 +1858,110 @@ class GRAPMappingInterface {
         if (this.elements.grapCategories) {
             this.elements.grapCategories.classList.remove('mapping-locked');
         }
+
+        ['grap24VarianceMount', 'grap24BudgetTableMount', 'grapSubmitComplianceMount'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('mapping-locked');
+        });
     }
 
-    async submitForReview() {
-        if (!this.state.sessionId) {
-            this.showError('No session found. Please start over.');
-            return;
-        }
-
-        try {
-            // Disable button during submission
-            if (this.elements.submitForReviewBtn) {
-                this.elements.submitForReviewBtn.disabled = true;
-                this.elements.submitForReviewBtn.textContent = 'Submitting...';
-            }
-
-            // Get mapped data
-            const mappedData = this.getMappedDataForSubmission();
-            
-            const response = await fetch('/api/submit-mapping', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    filepath: `session_${this.state.sessionId}`,
-                    mapped_data: mappedData,
-                    uploaded_filepath: this.state.uploadedFilePath,
-                    session_id: this.state.sessionId
-                })
-            });
-            
-            const result = await response.json();
-
-            if (result.success) {
-                this.showSuccess('Balance sheet submitted for review successfully!');
-                this.updateSubmissionUI('pending');
-                
-                // Store submission ID for status checking
-                this.state.submissionId = result.submission_id;
-                
-                setTimeout(() => {
-                    window.location.href = `/submission/${result.submission_id}`;
-                }, 2000);
-            } else {
-                this.showError(result.error || 'Submission failed');
-            }
-        } catch (error) {
-            this.showError('Submission failed. Please try again.');
-        } finally {
-            // Re-enable submit button
-            if (this.elements.submitForReviewBtn) {
-                this.elements.submitForReviewBtn.disabled = false;
-                this.elements.submitForReviewBtn.textContent = 'Submit for Review';
-            }
-        }
+    accountDedupeKey(account) {
+        const code = String(account.account_code || account.code || '').trim();
+        if (code) return `code:${code}`;
+        const name = String(account.account_desc || account.name || '').trim().toLowerCase();
+        return name ? `name:${name}` : `id:${account.id || ''}`;
     }
-        
+
+    /** Full trial balance for GRAP equation checks (mapped + unmapped, no duplicates). */
+    getTrialBalanceRowsForValidation() {
+        const seen = new Set();
+        const rows = [];
+
+        const pushRow = (account, categoryCode) => {
+            const row =
+                categoryCode != null && categoryCode !== ''
+                    ? this.normalizeMappedRowForSubmit(account, categoryCode)
+                    : this.normalizeMappedRowForSubmit(
+                          { ...account, grap_code: '', grap_category: '' },
+                          ''
+                      );
+            const key = this.accountDedupeKey(row);
+            if (seen.has(key)) return;
+            seen.add(key);
+            rows.push(row);
+        };
+
+        Object.entries(this.state.mappedAccounts).forEach(([categoryCode, accounts]) => {
+            (accounts || []).forEach((account) => pushRow(account, categoryCode));
+        });
+
+        this.state.unmappedAccounts.forEach((account) => pushRow(account, null));
+
+        this.state.autoMappedAccounts.forEach((account) => {
+            const cat = account.grap_code || '';
+            if (cat && this.state.mappedAccounts[cat]) return;
+            pushRow(account, cat || null);
+        });
+
+        return rows;
+    }
 
     getMappedDataForSubmission() {
         const mappedData = [];
-        
-        // Add auto-mapped accounts
-        this.state.autoMappedAccounts.forEach(account => {
-            mappedData.push({
-                ...account,
-                grap_code: account.grap_code,
-                grap_category: account.grap_name || this.getGRAPCategoryName(account.grap_code),
-                confidence: account.confidence
-            });
-        });
-        
-        // Add manually mapped accounts from categories
+        const seen = new Set();
+
+        const pushMapped = (account, categoryCode) => {
+            const row = this.normalizeMappedRowForSubmit(account, categoryCode);
+            const key = this.accountDedupeKey(row);
+            if (seen.has(key)) return;
+            seen.add(key);
+            mappedData.push(row);
+        };
+
         Object.entries(this.state.mappedAccounts).forEach(([categoryCode, accounts]) => {
-            accounts.forEach(account => {
-                mappedData.push({
-                    ...account,
-                    grap_code: categoryCode,
-                    grap_category: this.getGRAPCategoryName(categoryCode),
-                    confidence: 1.0 // Manual mapping has 100% confidence
-                });
-            });
+            (accounts || []).forEach((account) => pushMapped(account, categoryCode));
+        });
+
+        this.state.autoMappedAccounts.forEach((account) => {
+            const cat = account.grap_code || '';
+            if (!cat || this.state.mappedAccounts[cat]) return;
+            pushMapped(account, cat);
         });
 
         return mappedData;
+    }
+
+    resolveAccountBalance(account) {
+        if (account == null) return 0;
+        const net = account.net_balance ?? account.amount ?? account.balance;
+        if (net != null && net !== '' && !Number.isNaN(Number(net))) {
+            return Number(net);
+        }
+        const dr = Number(account.debit_balance ?? account.debit ?? 0) || 0;
+        const cr = Number(account.credit_balance ?? account.credit ?? 0) || 0;
+        if (dr !== 0 || cr !== 0) {
+            return dr - cr;
+        }
+        return 0;
+    }
+
+    normalizeMappedRowForSubmit(account, categoryCode) {
+        const name = account.account_desc || account.name || account.description || '';
+        const code = account.account_code || account.code || '';
+        const balance = this.resolveAccountBalance(account);
+        return {
+            ...account,
+            account_name: account.account_name || name,
+            account_desc: account.account_desc || name,
+            account_code: code,
+            name,
+            code,
+            net_balance: balance,
+            amount: account.amount ?? balance,
+            grap_code: categoryCode,
+            grap_category: this.getGRAPCategoryName(categoryCode),
+            confidence: account.confidence != null ? account.confidence : 1.0,
+        };
     }
     
     getGRAPCategoryName(categoryCode) {
@@ -1011,7 +1989,7 @@ class GRAPMappingInterface {
         // Re-render both sections
         this.renderAutoMappedAccounts();
         this.renderUnmappedAccounts();
-        this.updateProgress();
+        this.updateStats();
         this.updateConfidenceSummary();
         this.updateReviewStatus();
         
@@ -1019,47 +1997,9 @@ class GRAPMappingInterface {
     }
 
     async saveMappingProgress() {
-        try {
-            // Disable button during save
-            const saveBtn = document.getElementById('saveMappingBtn');
-            if (saveBtn) {
-                saveBtn.disabled = true;
-                saveBtn.textContent = 'Saving...';
-            }
-
-            // Prepare data to save
-            const saveData = {
-                session_id: this.state.sessionId,
-                auto_mapped_accounts: this.state.autoMappedAccounts,
-                unmapped_accounts: this.state.unmappedAccounts,
-                saved_at: new Date().toISOString()
-            };
-
-            const response = await fetch('/api/save-mapping-progress', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(saveData)
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                this.showSuccess('Mapping progress saved successfully!');
-            } else {
-                this.showError(result.error || 'Failed to save mapping progress');
-            }
-        } catch (error) {
-            this.showError('Failed to save mapping progress. Please try again.');
-        } finally {
-            // Re-enable save button
-            const saveBtn = document.getElementById('saveMappingBtn');
-            if (saveBtn) {
-                saveBtn.disabled = false;
-                saveBtn.textContent = ' Save Mapping Progress';
-            }
-        }
+        this.showError(
+            'Draft save is not available. Complete mapping and use Submit for Review.'
+        );
     }
 
     startStatusPolling() {
@@ -1089,40 +2029,8 @@ class GRAPMappingInterface {
     }
 
     updateProgress() {
-        // Calculate total accounts (auto-mapped + unmapped)
-        const autoMappedCount = this.state.autoMappedAccounts.length;
-        const unmappedCount = this.state.unmappedAccounts.length;
-        const totalAccounts = autoMappedCount + unmappedCount;
-        
-        // Update counts in UI
-        if (this.elements.totalAccounts) {
-            this.elements.totalAccounts.textContent = totalAccounts;
-        }
-        
-        if (this.elements.mappedCount) {
-            this.elements.mappedCount.textContent = autoMappedCount;
-        }
-        
-        if (this.elements.unmappedCount) {
-            this.elements.unmappedCount.textContent = unmappedCount;
-        }
-        
-        if (this.elements.remainingAccounts) {
-            this.elements.remainingAccounts.textContent = unmappedCount;
-        }
-        
-        // Calculate completion percentage
-        const completionPercentage = totalAccounts > 0 ? 
-            Math.round((autoMappedCount / totalAccounts) * 100) : 0;
-        
-        if (this.elements.completionPercentage) {
-            this.elements.completionPercentage.textContent = `${completionPercentage}%`;
-        }
-        
-        // Update category count
-        if (this.elements.categoryCount && this.state.grapCategories) {
-            this.elements.categoryCount.textContent = this.state.grapCategories.length;
-        }
+        // Legacy alias — keep callers in sync with mapping progress + section badges
+        this.updateStats();
     }
 
     updateConfidenceSummary() {
@@ -1214,7 +2122,7 @@ class GRAPMappingInterface {
 
     updateReviewStatus() {
         // Update submit button state based on confidence and completion
-        const submitBtn = this.elements.submitForReviewBtn;
+        const submitBtn = this.elements.submitMappingBtn;
         if (!submitBtn) return;
 
         const hasUnmappedAccounts = this.state.unmappedAccounts.length > 0;
@@ -1252,16 +2160,55 @@ class GRAPMappingInterface {
     }
 }
 
-// Initialize mapping interface
-document.addEventListener('DOMContentLoaded', function() {
-    // Extract session ID from uploaded file path or generate one
-    let sessionId = window.sessionId || '';
-    
-    // Session ID managed server-side via Supabase
-    if (sessionId) {
-        window.sessionId = sessionId;
+const MAPPING_TOUCH_STYLES = `
+    @keyframes touchPulse {
+        0%, 100% { transform: translate(-50%, -50%) scale(1); }
+        50% { transform: translate(-50%, -50%) scale(1.1); }
     }
-    
+    .touch-feedback { animation: touchPulse 0.6s ease-in-out infinite; }
+    .drag-ghost { transition: none !important; }
+`;
+if (!document.getElementById('mapping-touch-styles')) {
+    const styleSheet = document.createElement('style');
+    styleSheet.id = 'mapping-touch-styles';
+    styleSheet.textContent = MAPPING_TOUCH_STYLES;
+    document.head.appendChild(styleSheet);
+}
+
+function normalizeMappingSessionId(raw) {
+    const s = String(raw == null ? '' : raw).trim();
+    if (!s || s === 'None' || s === 'null' || s === 'undefined') return '';
+    return s;
+}
+
+function showMappingSessionRequired() {
+    const container = document.querySelector('.mapping-container');
+    if (!container || document.getElementById('mappingSessionRequired')) return;
+    const banner = document.createElement('div');
+    banner.id = 'mappingSessionRequired';
+    banner.className = 'alert alert-warning mapping-session-required';
+    banner.setAttribute('role', 'alert');
+    banner.innerHTML =
+        '<p><strong>No session selected.</strong> Open a returned submission from your ' +
+        '<a href="/inbox">Inbox</a> or <a href="/submission-history">Submission history</a>, ' +
+        'or upload a new file from <a href="/upload">Upload</a>.</p>';
+    container.prepend(banner);
+}
+
+function initMappingInterface() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = normalizeMappingSessionId(urlParams.get('session_id') || window.sessionId);
+    if (!sessionId) {
+        showMappingSessionRequired();
+        return;
+    }
+    window.sessionId = sessionId;
     window.mappingInterface = new GRAPMappingInterface(sessionId);
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMappingInterface);
+} else {
+    initMappingInterface();
+}
 

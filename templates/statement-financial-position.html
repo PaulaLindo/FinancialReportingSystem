@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<div class="section">
+<div class="page page--statement page--sfp section">
     <div class="container-content">
         <h1>Statement of Financial Position</h1>
         <p class="page-subtitle">As of {{ current_date or 'December 31, 2025' }}</p>
@@ -165,8 +165,11 @@
 
         <div class="statement-footer grid-container">
             <div class="footer-actions">
-                {% if current_user and current_user.can_generate_pdf() %}
-                <button class="btn btn-primary">Download PDF</button>
+                {% if current_user and current_user.can_download_pdf() %}
+                <div class="pdf-gate-wrap pdf-gate-wrap--blocked" data-pdf-gate-wrap data-pdf-gate-mode="download">
+                    <p class="pdf-gate-notice" data-pdf-gate-notice>Checking period lock…</p>
+                    <button class="btn btn-primary pdf-gate-action pdf-gate-action--hidden" data-pdf-gate-action type="button" disabled>Download PDF</button>
+                </div>
                 {% endif %}
                 {% if current_user and current_user.can_export() %}
                 <button class="btn btn-secondary">Export to Excel</button>
@@ -179,5 +182,11 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/pdf-period-gate.js') }}"></script>
 <script src="{{ url_for('static', filename='js/financial-statements.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.PdfPeriodGate) PdfPeriodGate.init();
+});
+</script>
 {% endblock %}

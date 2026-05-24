@@ -1,0 +1,50 @@
+/* pages/content-global.css — print + shared page utilities (login: login.css only) */
+
+@media print {
+    .dashboard-page,
+    .upload-page,
+    .results-page,
+    .reports-page,
+    .admin-page,
+    .export-page,
+    .about-page {
+        background: var(--white);
+    }
+
+    .dashboard-header,
+    .upload-header,
+    .results-header,
+    .reports-header,
+    .admin-header,
+    .export-header,
+    .about-header {
+        background: none;
+        box-shadow: none;
+        border-bottom: 2px solid var(--border-primary);
+    }
+
+    .stat-card,
+    .summary-card,
+    .ratio-card,
+    .report-card,
+    .admin-stat-card,
+    .admin-action-card {
+        box-shadow: none;
+        border: 1px solid var(--border-primary);
+        break-inside: avoid;
+    }
+
+    .upload-box {
+        border: 2px solid var(--border-primary);
+        background: none;
+    }
+
+    .pdf-preview-container {
+        box-shadow: none;
+        border: 1px solid var(--border-primary);
+    }
+
+    .btn {
+        display: none;
+    }
+}

@@ -23,14 +23,26 @@ class PDFService:
         self.styles = None
         self.custom_styles = {}
     
+    def _standard_col_widths(self):
+        """Column widths in ReportLab units (constants are defined in cm)."""
+        return [
+            TABLE_COLUMN_WIDTHS['note'] * cm,
+            TABLE_COLUMN_WIDTHS['description'] * cm,
+            TABLE_COLUMN_WIDTHS['amount'] * cm,
+        ]
+
     def generate_financial_statements_pdf(self, results, output_path):
         """Generate complete financial statements PDF"""
         try:
             self._initialize_document(output_path)
             self._create_custom_styles()
-            self._add_document_header()
-            self._add_statement_of_financial_position(results)
-            self._add_statement_of_performance(results)
+            self._add_document_header(results)
+            doc_type = ((results.get("summary") or {}).get("document_type") or "").lower()
+            if doc_type == "budget_report":
+                self._add_budget_report_summary(results)
+            else:
+                self._add_statement_of_financial_position(results)
+            self._add_statement_of_performance(results, doc_type=doc_type)
             if 'scf' in results:
                 self._add_statement_of_cash_flows(results)
             self._add_financial_ratios(results)
@@ -73,12 +85,49 @@ class PDFService:
             fontName='Helvetica-Bold'
         )
     
-    def _add_document_header(self):
+    def _add_document_header(self, results=None):
         """Add document title and header information"""
+        doc_type = ""
+        if results:
+            doc_type = ((results.get("summary") or {}).get("document_type") or "").lower()
+        title = "ANNUAL FINANCIAL STATEMENTS"
+        if doc_type == "budget_report":
+            title = "BUDGET vs ACTUAL REPORT (GRAP 24)"
         self.story.append(Paragraph("SOUTH AFRICAN DIAMOND AND PRECIOUS METALS REGULATOR", self.custom_styles['title']))
-        self.story.append(Paragraph("ANNUAL FINANCIAL STATEMENTS", self.custom_styles['title']))
+        self.story.append(Paragraph(title, self.custom_styles['title']))
         self.story.append(Paragraph(f"For the year ended 31 March {datetime.now().year}", self.styles['Normal']))
         self.story.append(Spacer(1, 1*cm))
+
+    def _add_budget_report_summary(self, results):
+        """Budget vs actual summary (replaces balance sheet for GRAP 24 exports)."""
+        summary = results.get("summary") or {}
+        self._add_section_header(
+            "BUDGET vs ACTUAL SUMMARY",
+            f"for the year ended 31 March {datetime.now().year}",
+        )
+        rows = [
+            ["Note", "Measure", f"{datetime.now().year}\nR"],
+            ["", "Total approved budget", f"{float(summary.get('total_budget', 0)):,.2f}"],
+            ["", "Total actual", f"{float(summary.get('total_actual', 0)):,.2f}"],
+            ["", "Variance (actual − budget)", f"{float(summary.get('total_variance', 0)):,.2f}"],
+        ]
+        table = Table(rows, colWidths=self._standard_col_widths())
+        table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(PDF_COLORS["light_blue"])),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor(PDF_COLORS["primary"])),
+                    ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                    ("ALIGN", (2, 0), (2, -1), "RIGHT"),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 9),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                ]
+            )
+        )
+        self.story.append(table)
+        self.story.append(Spacer(1, 1 * cm))
     
     def _add_statement_of_financial_position(self, results):
         """Add Statement of Financial Position section"""
@@ -109,14 +158,24 @@ class PDFService:
         self.story.append(net_assets_table)
         self.story.append(Spacer(1, 1*cm))
     
-    def _add_statement_of_performance(self, results):
+    def _add_statement_of_performance(self, results, doc_type=""):
         """Add Statement of Financial Performance section"""
-        self._add_section_header("STATEMENT OF FINANCIAL AND ECONOMIC PERFORMANCE", f"for the year ended 31 March {datetime.now().year}")
+        if doc_type == "budget_report":
+            self._add_section_header(
+                "BUDGET LINE DETAIL",
+                f"for the year ended 31 March {datetime.now().year}",
+            )
+        else:
+            self._add_section_header(
+                "STATEMENT OF FINANCIAL AND ECONOMIC PERFORMANCE",
+                f"for the year ended 31 March {datetime.now().year}",
+            )
         
         # Revenue table
+        revenue_title = "BUDGET" if doc_type == "budget_report" else "REVENUE"
         revenue_table = self._create_financial_table(
             results['sofe']['revenue'], 
-            'REVENUE',
+            revenue_title,
             PDF_COLORS['light_green'],
             PDF_COLORS['success']
         )
@@ -124,9 +183,10 @@ class PDFService:
         self.story.append(Spacer(1, 0.5*cm))
         
         # Expenses table
+        expenses_title = "ACTUAL EXPENDITURE" if doc_type == "budget_report" else "EXPENSES"
         expenses_table = self._create_financial_table(
             results['sofe']['expenses'], 
-            'EXPENSES',
+            expenses_title,
             PDF_COLORS['light_red'],
             PDF_COLORS['danger']
         )
@@ -180,11 +240,7 @@ class PDFService:
             ['', '', f"{scf['net_movement']:,.2f}"]
         ]
         
-        net_movement_table = Table(net_movement_data, colWidths=[
-            TABLE_COLUMN_WIDTHS['note'], 
-            TABLE_COLUMN_WIDTHS['description'], 
-            TABLE_COLUMN_WIDTHS['amount']
-        ])
+        net_movement_table = Table(net_movement_data, colWidths=self._standard_col_widths())
         
         net_movement_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor(PDF_COLORS['light_orange'])),
@@ -211,11 +267,7 @@ class PDFService:
         for item in data:
             table_data.append(['', item['Line Item'], f"{item['Amount']:,.2f}"])
         
-        table = Table(table_data, colWidths=[
-            TABLE_COLUMN_WIDTHS['note'], 
-            TABLE_COLUMN_WIDTHS['description'], 
-            TABLE_COLUMN_WIDTHS['amount']
-        ])
+        table = Table(table_data, colWidths=self._standard_col_widths())
         
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor(bg_color)),
@@ -257,11 +309,7 @@ class PDFService:
         total_amount = sum(item['Amount'] for item in data)
         table_data.append(['', f'TOTAL {section_title.upper()}', f"{total_amount:,.2f}"])
         
-        table = Table(table_data, colWidths=[
-            TABLE_COLUMN_WIDTHS['note'], 
-            TABLE_COLUMN_WIDTHS['description'], 
-            TABLE_COLUMN_WIDTHS['amount']
-        ])
+        table = Table(table_data, colWidths=self._standard_col_widths())
         
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor(bg_color)),
@@ -286,11 +334,7 @@ class PDFService:
             ['', 'TOTAL NET ASSETS', f"{results['summary']['net_assets']:,.2f}"]
         ]
         
-        table = Table(net_assets_data, colWidths=[
-            TABLE_COLUMN_WIDTHS['note'], 
-            TABLE_COLUMN_WIDTHS['description'], 
-            TABLE_COLUMN_WIDTHS['amount']
-        ])
+        table = Table(net_assets_data, colWidths=self._standard_col_widths())
         
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor(PDF_COLORS['light_blue'])),
@@ -314,11 +358,7 @@ class PDFService:
             ['', '', f"{results['summary']['surplus_deficit']:,.2f}"]
         ]
         
-        table = Table(surplus_data, colWidths=[
-            TABLE_COLUMN_WIDTHS['note'], 
-            TABLE_COLUMN_WIDTHS['description'], 
-            TABLE_COLUMN_WIDTHS['amount']
-        ])
+        table = Table(surplus_data, colWidths=self._standard_col_widths())
         
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor(PDF_COLORS['light_orange'])),
@@ -337,12 +377,13 @@ class PDFService:
     
     def _create_ratios_table(self, results):
         """Create financial ratios table"""
+        ratios = (results.get("summary") or {}).get("ratios") or {}
         ratios_data = [['Ratio', 'Value', 'Benchmark']]
         ratios_data.extend([
-            ['Current Ratio', f"{results['summary']['ratios']['current_ratio']:.2f}", '≥ 1.5'],
-            ['Debt to Equity', f"{results['summary']['ratios']['debt_to_equity']:.2f}", '≤ 1.0'],
-            ['Operating Margin (%)', f"{results['summary']['ratios']['operating_margin']:.2f}%", '≥ 10%'],
-            ['Return on Assets (%)', f"{results['summary']['ratios']['return_on_assets']:.2f}%", '≥ 5%']
+            ['Current Ratio', f"{float(ratios.get('current_ratio', 0)):.2f}", '≥ 1.5'],
+            ['Debt to Equity', f"{float(ratios.get('debt_to_equity', 0)):.2f}", '≤ 1.0'],
+            ['Operating Margin (%)', f"{float(ratios.get('operating_margin', 0)):.2f}%", '≥ 10%'],
+            ['Return on Assets (%)', f"{float(ratios.get('return_on_assets', 0)):.2f}%", '≥ 5%']
         ])
         
         table = Table(ratios_data, colWidths=[6*cm, 4*cm, 4*cm])

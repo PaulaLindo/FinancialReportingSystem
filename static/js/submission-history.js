@@ -1,23 +1,48 @@
 /**
- * Submission History Manager
- * Handles loading and displaying user's own balance sheet submissions
+ * Clerk submission history — own submitted documents across all types.
  */
 
-// Status messages for display formatting
+const REJECTED_HISTORY_STATUSES = new Set([
+    'rejected',
+    'rejected_by_manager',
+    'rejected_by_cfo',
+]);
+
+const DOCUMENT_TYPE_LABELS = {
+    balance_sheet: 'Balance sheet',
+    income_statement: 'Income statement',
+    budget_report: 'Budget report',
+};
+
+function isRejectedHistoryStatus(status) {
+    return REJECTED_HISTORY_STATUSES.has(String(status || '').toLowerCase());
+}
+
+function isClosedHistoryStatus(status) {
+    return String(status || '').toLowerCase() === 'closed';
+}
+
 const StatusMessages = {
-    get_message: function(status) {
+    get_message(status) {
         const messages = {
-            'uploaded': 'Pending Review',           // Balance sheet uploaded
-            'processing': 'Processing',      // Being processed/mapped
-            'mapped': 'Pending Review',      // Accounts mapped - pending finance manager approval
-            'approved': 'Approved',          // Approved by finance manager
-            'rejected': 'Rejected',          // Rejected by finance manager
-            'archived': 'Archived',          // Archived submission
-            'draft': 'Draft',
-            'pending': 'Pending Review'      // Pending submission
+            uploaded: 'Pending review',
+            processing: 'Processing',
+            mapped: 'Pending review',
+            approved: 'Approved',
+            rejected: 'Rejected',
+            rejected_by_manager: 'Rejected by manager',
+            rejected_by_cfo: 'Rejected by CFO',
+            approved_by_manager: 'Awaiting CFO',
+            archived: 'Archived',
+            draft: 'Draft',
+            pending: 'Pending review',
+            pending_review: 'In review',
+            pending_cfo: 'Awaiting CFO',
+            submitted: 'In review',
         };
-        return messages[status] || status;
-    }
+        const key = String(status || '').toLowerCase();
+        return messages[key] || status;
+    },
 };
 
 class SubmissionHistoryManager {
@@ -25,21 +50,23 @@ class SubmissionHistoryManager {
         this.submissions = [];
         this.filteredSubmissions = [];
         this.currentPage = 1;
-        this.perPage = 10;
+        this.perPage = 12;
         this.totalPages = 1;
         this.selectedSubmission = null;
-        
+
         this.state = {
             loading: false,
-            error: null
+            error: null,
         };
-        
+
         this.elements = {
             loadingState: document.getElementById('loadingState'),
             emptyState: document.getElementById('emptyState'),
             submissionsList: document.getElementById('submissionsList'),
             paginationControls: document.getElementById('paginationControls'),
+            resultsSummary: document.getElementById('historyResultsSummary'),
             searchInput: document.getElementById('searchInput'),
+            documentTypeFilter: document.getElementById('documentTypeFilter'),
             statusFilter: document.getElementById('statusFilter'),
             dateFilter: document.getElementById('dateFilter'),
             prevPageBtn: document.getElementById('prevPageBtn'),
@@ -47,441 +74,492 @@ class SubmissionHistoryManager {
             pageInfo: document.getElementById('pageInfo'),
             modal: document.getElementById('submissionDetailsModal'),
             modalCloseBtn: document.getElementById('modalCloseBtn'),
-            modalCloseFooterBtn: document.getElementById('modalCloseFooterBtn')
+            modalCloseFooterBtn: document.getElementById('modalCloseFooterBtn'),
         };
-        
+
         this.init();
     }
-    
+
     init() {
         this.bindEvents();
         this.loadSubmissions();
     }
-    
+
     bindEvents() {
-        // Search and filter events
         if (this.elements.searchInput) {
-            this.elements.searchInput.addEventListener('input', this.debounce(() => this.applyFilters(), 300));
+            this.elements.searchInput.addEventListener('input', this.debounce(() => {
+                this.currentPage = 1;
+                this.applyFilters();
+            }, 300));
         }
-        
-        if (this.elements.statusFilter) {
-            this.elements.statusFilter.addEventListener('change', () => this.applyFilters());
-        }
-        
-        if (this.elements.dateFilter) {
-            this.elements.dateFilter.addEventListener('change', () => this.applyFilters());
-        }
-        
-        // Pagination events
+
+        [this.elements.documentTypeFilter, this.elements.statusFilter, this.elements.dateFilter].forEach((el) => {
+            if (el) {
+                el.addEventListener('change', () => {
+                    this.currentPage = 1;
+                    this.applyFilters();
+                });
+            }
+        });
+
         if (this.elements.prevPageBtn) {
             this.elements.prevPageBtn.addEventListener('click', () => this.goToPage(this.currentPage - 1));
         }
-        
+
         if (this.elements.nextPageBtn) {
             this.elements.nextPageBtn.addEventListener('click', () => this.goToPage(this.currentPage + 1));
         }
-        
-        // Modal events
+
         if (this.elements.modalCloseBtn) {
             this.elements.modalCloseBtn.addEventListener('click', () => this.closeModal());
         }
-        
+
         if (this.elements.modalCloseFooterBtn) {
             this.elements.modalCloseFooterBtn.addEventListener('click', () => this.closeModal());
         }
-        
-        // Close modal when clicking on overlay
+
         const overlay = this.elements.modal?.querySelector('.submission-details-overlay');
         if (overlay) {
             overlay.addEventListener('click', (e) => {
-                if (e.target === e.currentTarget) {
-                    this.closeModal();
-                }
+                if (e.target === e.currentTarget) this.closeModal();
             });
         }
-        
-        // View details buttons (event delegation)
+
         if (this.elements.submissionsList) {
             this.elements.submissionsList.addEventListener('click', (e) => {
+                const mapBtn = e.target.closest('.btn-open-mapping');
+                if (mapBtn) {
+                    const submissionId = mapBtn.closest('.submission-item')?.dataset.submissionId;
+                    if (submissionId) this.openMappingWorkspace(submissionId);
+                    return;
+                }
                 const viewBtn = e.target.closest('.btn-view-details');
                 if (viewBtn) {
-                    const submissionItem = viewBtn.closest('.submission-item');
-                    const submissionId = submissionItem?.dataset.submissionId;
-                    if (submissionId) {
-                        this.showSubmissionDetails(submissionId);
-                    }
+                    const submissionId = viewBtn.closest('.submission-item')?.dataset.submissionId;
+                    if (submissionId) this.showSubmissionDetails(submissionId);
                 }
             });
         }
+
+        document.getElementById('modalOpenMappingBtn')?.addEventListener('click', () => {
+            if (this.selectedSubmission?.session_id) {
+                this.openMappingWorkspace(this.selectedSubmission.session_id);
+            }
+        });
     }
-    
-    async loadSubmissions(page = 1, retryCount = 0) {
+
+    openMappingWorkspace(sessionId, { revision = true } = {}) {
+        const sid = encodeURIComponent(String(sessionId || '').trim());
+        if (!sid) return;
+        const rev = revision ? '&revision=1' : '';
+        window.location.href = `/mapping?session_id=${sid}${rev}`;
+    }
+
+    async loadSubmissions(retryCount = 0) {
         this.showLoading(true);
-        this.currentPage = page;
-        
+
         try {
-            const url = `/api/submissions/user?page=${page}&per_page=${this.perPage}`;
-            console.log('🔍 Debug - Fetching URL:', url);
-            
-            const response = await VarydianUtils.safeFetch(url);
-            
-            console.log('🔍 Debug - API Response:', response);
-            
+            const response = await VarydianUtils.safeFetch('/api/submissions/user');
+
             if (response.success) {
-                this.submissions = response.submissions || [];
-                console.log('🔍 Debug - Submissions loaded:', this.submissions.length, this.submissions);
+                this.submissions = (response.submissions || []).filter((s) => !isClosedHistoryStatus(s.status));
+                this.submissions.sort((a, b) => {
+                    const da = new Date(a.submitted_at || a.submission_timestamp || 0).getTime();
+                    const db = new Date(b.submitted_at || b.submission_timestamp || 0).getTime();
+                    return db - da;
+                });
                 this.updateSubmissionStats();
                 this.applyFilters();
                 this.showLoading(false);
                 this.hideError();
+            } else if (response.error?.includes('401')) {
+                throw new Error('Authentication required. Please log in again.');
+            } else if (response.error?.includes('403')) {
+                throw new Error('Permission denied. You do not have access to view submissions.');
             } else {
-                // Handle specific error cases
-                if (response.error && response.error.includes('401')) {
-                    throw new Error('Authentication required. Please log in again.');
-                } else if (response.error && response.error.includes('403')) {
-                    throw new Error('Permission denied. You do not have access to view submissions.');
-                } else {
-                    throw new Error(response.error || 'Failed to load submissions');
-                }
+                throw new Error(response.error || 'Failed to load submissions');
             }
         } catch (error) {
-            console.error('🔍 Debug - Error loading submissions:', error);
-            
-            // Retry logic for temporary failures
-            if (retryCount < 2 && (error.name === 'AbortError' || error.message.includes('timed out'))) {
-                console.log(`🔄 Retrying... Attempt ${retryCount + 1}/2`);
-                setTimeout(() => {
-                    this.loadSubmissions(page, retryCount + 1);
-                }, 2000 * (retryCount + 1)); // Exponential backoff
+            if (retryCount < 2 && (error.name === 'AbortError' || String(error.message).includes('timed out'))) {
+                setTimeout(() => this.loadSubmissions(retryCount + 1), 2000 * (retryCount + 1));
                 return;
             }
-            
             this.showLoading(false);
-            
-            // Handle AbortError specifically
             if (error.name === 'AbortError') {
-                this.showError('Request timed out after multiple attempts. Please refresh the page and try again.');
-            } else if (error.message.includes('Authentication required')) {
-                this.showError('Your session has expired. Please refresh the page and log in again.');
+                this.showError('Request timed out. Please refresh and try again.');
             } else {
-                this.showError(error.message || 'Failed to load submissions. Please try again.');
+                this.showError(error.message || 'Failed to load submissions.');
             }
         }
     }
-    
+
     updateSubmissionStats() {
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Set to start of day
-        
+        today.setHours(0, 0, 0, 0);
+
+        const pendingStatuses = new Set(['pending', 'pending_review', 'pending_cfo', 'approved_by_manager', 'submitted']);
+        const approvedStatuses = new Set(['approved']);
+        const submittedTimestamp = (submission) => submission.submitted_at || submission.submission_timestamp;
+
+        const isSubmittedToday = (submission) => {
+            const raw = submittedTimestamp(submission);
+            if (!raw) return false;
+            const submissionDate = new Date(raw);
+            if (Number.isNaN(submissionDate.getTime())) return false;
+            submissionDate.setHours(0, 0, 0, 0);
+            return submissionDate.getTime() === today.getTime();
+        };
+
         const stats = {
             total: this.submissions.length,
-            pending: this.submissions.filter(s => s.status === 'pending').length,
-            mapped: this.submissions.filter(s => s.status === 'mapped').length,
-            processing: this.submissions.filter(s => s.status === 'processing').length,
-            uploaded: this.submissions.filter(s => s.status === 'uploaded').length,
-            approved: this.submissions.filter(s => s.status === 'approved').length,
-            rejected: this.submissions.filter(s => s.status === 'rejected').length,
-            submittedToday: this.submissions.filter(s => {
-                const submissionDate = new Date(s.submission_timestamp);
-                submissionDate.setHours(0, 0, 0, 0); // Set to start of day
-                return submissionDate.getTime() === today.getTime();
-            }).length
+            pending: this.submissions.filter(
+                (s) => s.pending_approval || pendingStatuses.has(String(s.status || '').toLowerCase())
+            ).length,
+            approved: this.submissions.filter((s) => approvedStatuses.has(String(s.status || '').toLowerCase())).length,
+            rejected: this.submissions.filter((s) => isRejectedHistoryStatus(s.status)).length,
+            submittedToday: this.submissions.filter(isSubmittedToday).length,
         };
-        
-        // Update DOM
-        const totalEl = document.getElementById('totalSubmissionsCount');
-        const pendingEl = document.getElementById('pendingSubmissionsCount');
-        const approvedEl = document.getElementById('approvedSubmissionsCount');
-        const rejectedEl = document.getElementById('rejectedSubmissionsCount');
-        const submittedTodayEl = document.getElementById('submittedTodayCount');
-        
-        if (totalEl) totalEl.textContent = stats.total;
-        if (pendingEl) pendingEl.textContent = stats.pending + stats.mapped + stats.processing + stats.uploaded; // All submissions needing attention
-        if (approvedEl) approvedEl.textContent = stats.approved;
-        if (rejectedEl) rejectedEl.textContent = stats.rejected;
-        if (submittedTodayEl) submittedTodayEl.textContent = stats.submittedToday;
+
+        const set = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        };
+        set('totalSubmissionsCount', stats.total);
+        set('pendingSubmissionsCount', stats.pending);
+        set('approvedSubmissionsCount', stats.approved);
+        set('rejectedSubmissionsCount', stats.rejected);
+        set('submittedTodayCount', stats.submittedToday);
     }
-    
+
     applyFilters() {
-        console.log('🔍 Debug - About to apply filters:', {
-            searchValue: this.elements.searchInput?.value,
-            statusFilter: this.elements.statusFilter?.value,
-            dateFilter: this.elements.dateFilter?.value
+        const searchTerm = (this.elements.searchInput?.value || '').toLowerCase();
+        const statusFilter = this.elements.statusFilter?.value || 'all';
+        const dateFilter = this.elements.dateFilter?.value || 'all';
+        const docFilter = this.elements.documentTypeFilter?.value || 'all';
+
+        this.filteredSubmissions = this.submissions.filter((submission) => {
+            const filename = this.getFilename(submission).toLowerCase();
+            const matchesSearch = !searchTerm || filename.includes(searchTerm);
+
+            let matchesStatus = statusFilter === 'all';
+            if (!matchesStatus) {
+                if (statusFilter === 'rejected') {
+                    matchesStatus = isRejectedHistoryStatus(submission.status);
+                } else if (statusFilter === 'pending_review') {
+                    matchesStatus = ['pending_review', 'pending', 'submitted', 'pending_cfo', 'approved_by_manager']
+                        .includes(String(submission.status || '').toLowerCase());
+                } else {
+                    matchesStatus = String(submission.status || '').toLowerCase() === statusFilter;
+                }
+            }
+
+            const rawDate = submission.submitted_at || submission.submission_timestamp;
+            const submissionDate = rawDate ? new Date(rawDate) : null;
+            const matchesDate = !submissionDate || Number.isNaN(submissionDate.getTime())
+                ? dateFilter === 'all'
+                : this.matchesDateFilter(submissionDate, dateFilter);
+
+            const docType = String(submission.document_type || 'balance_sheet').toLowerCase();
+            const matchesDoc = docFilter === 'all' || docType === docFilter;
+
+            return matchesSearch && matchesStatus && matchesDate && matchesDoc;
         });
-        
-        this.filteredSubmissions = this.submissions.filter(submission => {
-            // Search filter
-            const searchTerm = this.elements.searchInput?.value.toLowerCase() || '';
-            const filename = submission.filepath ? submission.filepath.split('\\').pop().toLowerCase() : '';
-            const matchesSearch = filename.includes(searchTerm);
-            
-            // Status filter
-            const statusFilter = this.elements.statusFilter?.value || 'all';
-            const matchesStatus = statusFilter === 'all' || submission.status === statusFilter;
-            
-            // Date filter
-            const dateFilter = this.elements.dateFilter?.value || 'all';
-            const submissionDate = new Date(submission.submission_timestamp);
-            const matchesDate = this.matchesDateFilter(submissionDate, dateFilter);
-            
-            return matchesSearch && matchesStatus && matchesDate;
-        });
-        
-        console.log('🔍 Debug - After filtering:', {
-            originalCount: this.submissions.length,
-            filteredCount: this.filteredSubmissions.length,
-            firstFiltered: this.filteredSubmissions[0]
-        });
-        
+
         this.renderSubmissions();
         this.updatePaginationControls();
+        this.updateResultsSummary();
     }
-    
+
+    updateResultsSummary() {
+        const el = this.elements.resultsSummary;
+        if (!el) return;
+        if (this.state.loading || this.submissions.length === 0) {
+            VarydianUtils.hideElement(el);
+            return;
+        }
+        const total = this.filteredSubmissions.length;
+        const all = this.submissions.length;
+        el.textContent = total === all
+            ? `Showing ${total} submission${total === 1 ? '' : 's'}`
+            : `Showing ${total} of ${all} submissions`;
+        VarydianUtils.showElement(el);
+    }
+
     matchesDateFilter(submissionDate, filter) {
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
+
         switch (filter) {
             case 'today':
                 return submissionDate >= today;
-            case 'week':
+            case 'week': {
                 const weekAgo = new Date(today);
                 weekAgo.setDate(weekAgo.getDate() - 7);
                 return submissionDate >= weekAgo;
-            case 'month':
+            }
+            case 'month': {
                 const monthAgo = new Date(today);
                 monthAgo.setMonth(monthAgo.getMonth() - 1);
                 return submissionDate >= monthAgo;
+            }
             default:
                 return true;
         }
     }
-    
+
+    getPageSlice() {
+        const start = (this.currentPage - 1) * this.perPage;
+        return this.filteredSubmissions.slice(start, start + this.perPage);
+    }
+
     renderSubmissions() {
         if (this.filteredSubmissions.length === 0) {
-            console.log('🔍 Debug - Showing empty state because no filtered submissions');
             this.showEmptyState();
             return;
         }
-        
+
         this.showSubmissionsList();
-        
-        // Clear existing submissions
         this.elements.submissionsList.innerHTML = '';
-        
-        // Add submission items
-        this.filteredSubmissions.forEach(submission => {
-            const submissionElement = this.createSubmissionElement(submission);
-            this.elements.submissionsList.appendChild(submissionElement);
+
+        this.getPageSlice().forEach((submission) => {
+            this.elements.submissionsList.appendChild(this.createSubmissionElement(submission));
         });
     }
-    
+
+    getFilename(submission) {
+        const path = submission.filename || submission.filepath || '';
+        if (path) {
+            const parts = String(path).split(/[/\\]/);
+            return parts[parts.length - 1] || path;
+        }
+        return `submission_${submission.session_id}`;
+    }
+
+    formatDocumentType(documentType) {
+        return DOCUMENT_TYPE_LABELS[documentType] || String(documentType || 'Document').replace(/_/g, ' ');
+    }
+
     createSubmissionElement(submission) {
         const template = document.getElementById('submissionItemTemplate');
         const clone = template.content.cloneNode(true);
-        
-        // Set submission data
+
         const submissionItem = clone.querySelector('.submission-item');
         submissionItem.dataset.submissionId = submission.session_id;
-        
-        // Set icon based on document type
+
         const balanceSheetIcon = clone.querySelector('.icon-balance-sheet');
         const incomeStatementIcon = clone.querySelector('.icon-income-statement');
         const budgetReportIcon = clone.querySelector('.icon-budget-report');
-        const pdfReportIcon = clone.querySelector('.icon-pdf-report');
-        
-        // Hide all icons first
-        balanceSheetIcon.classList.add('element--hidden');
-        balanceSheetIcon.classList.remove('element--visible');
-        incomeStatementIcon.classList.add('element--hidden');
-        incomeStatementIcon.classList.remove('element--visible');
-        budgetReportIcon.classList.add('element--hidden');
-        budgetReportIcon.classList.remove('element--visible');
-        pdfReportIcon.classList.add('element--hidden');
-        pdfReportIcon.classList.remove('element--visible');
-        
-        // Show appropriate icon based on document type
+
+        [balanceSheetIcon, incomeStatementIcon, budgetReportIcon].forEach((el) => {
+            if (el) VarydianUtils.hideIcon(el);
+        });
+
         const documentType = submission.document_type || 'balance_sheet';
-        switch (documentType) {
-            case 'income_statement':
-                incomeStatementIcon.classList.remove('element--hidden');
-                incomeStatementIcon.classList.add('element--visible');
-                break;
-            case 'budget_report':
-                budgetReportIcon.classList.remove('element--hidden');
-                budgetReportIcon.classList.add('element--visible');
-                break;
-            case 'balance_sheet':
-            default:
-                balanceSheetIcon.classList.remove('element--hidden');
-                balanceSheetIcon.classList.add('element--visible');
-                break;
-        }
-        
-        // Set submission info
+        const iconByType = {
+            income_statement: incomeStatementIcon,
+            budget_report: budgetReportIcon,
+            balance_sheet: balanceSheetIcon,
+        };
+        const activeIcon = iconByType[documentType] || balanceSheetIcon;
+        if (activeIcon) VarydianUtils.showIcon(activeIcon);
+
         const submissionName = clone.querySelector('.submission-name');
+        const docBadge = clone.querySelector('.submission-doc-badge');
         const submissionDate = clone.querySelector('.submission-date');
         const submissionStatus = clone.querySelector('.submission-status');
         const submissionAccounts = clone.querySelector('.submission-accounts');
-        
-        const filename = submission.filepath ? submission.filepath.split('\\').pop() : `submission_${submission.session_id}.xlsx`;
+
+        const filename = this.getFilename(submission);
         submissionName.textContent = filename;
         submissionName.title = filename;
-        
-        submissionDate.textContent = this.formatDate(submission.submission_timestamp);
+
+        if (docBadge) {
+            docBadge.textContent = this.formatDocumentType(documentType);
+            docBadge.className = `submission-doc-badge submission-doc-badge--${documentType}`;
+        }
+
+        submissionDate.textContent = this.formatDate(submission.submitted_at || submission.submission_timestamp);
         submissionStatus.textContent = this.formatStatus(submission.status);
-        // Ensure mapped_accounts_count is a number
-        const mappedCount = typeof submission.mapped_accounts_count === 'number' ? 
-            submission.mapped_accounts_count : 
-            (Array.isArray(submission.mapped_accounts_count) ? submission.mapped_accounts_count.length : 0);
-        submissionAccounts.textContent = `${mappedCount} accounts mapped`;
-        
-        // Set status class
-        submissionStatus.className = `submission-status status-${submission.status}`;
-        
+
+        const mappedCount = typeof submission.mapped_accounts_count === 'number'
+            ? submission.mapped_accounts_count
+            : (Array.isArray(submission.mapped_accounts_count) ? submission.mapped_accounts_count.length : 0);
+        submissionAccounts.textContent = `${mappedCount} account${mappedCount === 1 ? '' : 's'} mapped`;
+
+        submissionStatus.className = `submission-status status-${String(submission.status || '').toLowerCase()}`;
+
+        const mapBtn = clone.querySelector('.btn-open-mapping');
+        if (mapBtn && isRejectedHistoryStatus(submission.status)) {
+            VarydianUtils.showElement(mapBtn);
+        }
+
         return clone;
     }
-    
+
+    formatEditingState(submission) {
+        const status = String(submission.status || '').toLowerCase();
+        if (isRejectedHistoryStatus(status)) {
+            return 'Open for correction — use Correct or the correction workspace';
+        }
+        if (status === 'approved') {
+            return 'Finalized — no further clerk edits required';
+        }
+        if (submission.locked || ['pending_review', 'pending', 'submitted', 'pending_cfo', 'approved_by_manager'].includes(status)) {
+            return 'Read-only while under review';
+        }
+        return 'Editable';
+    }
+
     showSubmissionDetails(submissionId) {
-        const submission = this.submissions.find(s => s.session_id === submissionId);
+        const submission = this.submissions.find((s) => s.session_id === submissionId);
         if (!submission) return;
-        
+
         this.selectedSubmission = submission;
-        
-        // Update modal content
-        const filename = submission.filepath ? submission.filepath.split('\\').pop() : `submission_${submission.session_id}.xlsx`;
-        
+        const filename = this.getFilename(submission);
+        const docType = submission.document_type || 'balance_sheet';
+        const status = String(submission.status || '').toLowerCase();
+        const rejected = isRejectedHistoryStatus(status);
+
+        const titleEl = document.getElementById('detailModalTitle');
+        const subtitleEl = document.getElementById('detailModalSubtitle');
+        if (titleEl) titleEl.textContent = filename;
+        if (subtitleEl) subtitleEl.textContent = this.formatDocumentType(docType);
+
         document.getElementById('detailFilename').textContent = filename;
-        document.getElementById('detailStatus').textContent = this.formatStatus(submission.status);
-        document.getElementById('detailSubmissionDate').textContent = this.formatDate(submission.submission_timestamp);
-        // Ensure mapped_accounts_count is a number for modal view
-        const modalMappedCount = typeof submission.mapped_accounts_count === 'number' ? 
-            submission.mapped_accounts_count : 
-            (Array.isArray(submission.mapped_accounts_count) ? submission.mapped_accounts_count.length : 0);
-        document.getElementById('detailMappedAccounts').textContent = modalMappedCount;
-        document.getElementById('detailReviewNotes').textContent = submission.review_notes || 'No review notes';
-        
-        // Use the correct field name: 'locked' (not 'is_locked')
-        document.getElementById('detailLocked').textContent = submission.locked ? 'Yes' : 'No';
-        
-        // Set status class
+
+        const docBadge = document.getElementById('detailDocumentType');
+        if (docBadge) {
+            docBadge.textContent = this.formatDocumentType(docType);
+            docBadge.className = `submission-doc-badge submission-doc-badge--${docType}`;
+        }
+
         const statusEl = document.getElementById('detailStatus');
-        statusEl.className = `submission-status status-${submission.status}`;
-        
-                
+        statusEl.textContent = this.formatStatus(submission.status);
+        statusEl.className = `submission-status status-${status}`;
+
+        document.getElementById('detailSubmissionDate').textContent = this.formatDate(
+            submission.submitted_at || submission.submission_timestamp
+        );
+
+        const modalMappedCount = typeof submission.mapped_accounts_count === 'number'
+            ? submission.mapped_accounts_count
+            : (Array.isArray(submission.mapped_accounts_count) ? submission.mapped_accounts_count.length : 0);
+        document.getElementById('detailMappedAccounts').textContent = `${modalMappedCount} account${modalMappedCount === 1 ? '' : 's'}`;
+        document.getElementById('detailLocked').textContent = this.formatEditingState(submission);
+
+        const reviewNotesGroup = document.getElementById('detailReviewNotesGroup');
+        const reviewNotes = String(submission.review_notes || '').trim();
+        if (reviewNotesGroup) {
+            if (reviewNotes) {
+                document.getElementById('detailReviewNotes').textContent = reviewNotes;
+                VarydianUtils.showElement(reviewNotesGroup);
+            } else {
+                VarydianUtils.hideElement(reviewNotesGroup);
+            }
+        }
+
+        const rejectionBlock = document.getElementById('detailRejectionBlock');
+        const rejectionReason = String(submission.rejection_reason || '').trim();
+        if (rejectionBlock) {
+            if (rejected && rejectionReason) {
+                document.getElementById('detailRejectionReason').textContent = rejectionReason;
+                VarydianUtils.showElement(rejectionBlock);
+            } else {
+                VarydianUtils.hideElement(rejectionBlock);
+            }
+        }
+
+        const mapBtn = document.getElementById('modalOpenMappingBtn');
+        if (mapBtn) {
+            if (rejected) {
+                VarydianUtils.showElement(mapBtn);
+            } else {
+                VarydianUtils.hideElement(mapBtn);
+            }
+        }
+
         this.showModal();
     }
-    
+
     goToPage(page) {
         if (page < 1 || page > this.totalPages) return;
-        this.loadSubmissions(page);
+        this.currentPage = page;
+        this.renderSubmissions();
+        this.updatePaginationControls();
+        this.elements.submissionsList?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    
+
     updatePaginationControls() {
         const totalItems = this.filteredSubmissions.length;
-        this.totalPages = Math.ceil(totalItems / this.perPage) || 1;
-        
+        this.totalPages = Math.max(1, Math.ceil(totalItems / this.perPage));
+
+        if (this.currentPage > this.totalPages) {
+            this.currentPage = this.totalPages;
+        }
+
         if (this.elements.prevPageBtn) {
             this.elements.prevPageBtn.disabled = this.currentPage <= 1;
         }
-        
         if (this.elements.nextPageBtn) {
             this.elements.nextPageBtn.disabled = this.currentPage >= this.totalPages;
         }
-        
         if (this.elements.pageInfo) {
             this.elements.pageInfo.textContent = `Page ${this.currentPage} of ${this.totalPages}`;
         }
-        
-        // Show/hide pagination controls
+
         if (this.totalPages > 1) {
-            this.elements.paginationControls.classList.remove('element--hidden');
-            this.elements.paginationControls.classList.add('element--visible');
+            VarydianUtils.showElement(this.elements.paginationControls, 'flex');
         } else {
-            this.elements.paginationControls.classList.add('element--hidden');
-            this.elements.paginationControls.classList.remove('element--visible');
+            VarydianUtils.hideElement(this.elements.paginationControls);
         }
     }
-    
-    // UI State Management
+
     showLoading(show) {
         if (this.elements.loadingState) {
-            if (show) {
-                this.elements.loadingState.classList.remove('element--hidden');
-                this.elements.loadingState.classList.add('element--visible');
-            } else {
-                this.elements.loadingState.classList.add('element--hidden');
-                this.elements.loadingState.classList.remove('element--visible');
-            }
+            if (show) VarydianUtils.showElement(this.elements.loadingState);
+            else VarydianUtils.hideElement(this.elements.loadingState);
         }
-        
         this.state.loading = show;
     }
-    
+
     showEmptyState() {
-        if (this.elements.submissionsList) {
-            this.elements.submissionsList.classList.add('element--hidden');
-            this.elements.submissionsList.classList.remove('element--visible');
-        }
-        
-        if (this.elements.emptyState) {
-            this.elements.emptyState.classList.remove('element--hidden');
-            this.elements.emptyState.classList.add('element--visible');
-        }
-        
-        if (this.elements.paginationControls) {
-            this.elements.paginationControls.classList.add('element--hidden');
-            this.elements.paginationControls.classList.remove('element--visible');
-        }
+        VarydianUtils.hideElement(this.elements.submissionsList);
+        VarydianUtils.showElement(this.elements.emptyState);
+        VarydianUtils.hideElement(this.elements.paginationControls);
+        if (this.elements.resultsSummary) VarydianUtils.hideElement(this.elements.resultsSummary);
     }
-    
+
     showSubmissionsList() {
-        if (this.elements.emptyState) {
-            this.elements.emptyState.classList.add('element--hidden');
-            this.elements.emptyState.classList.remove('element--visible');
-        }
-        
-        if (this.elements.submissionsList) {
-            this.elements.submissionsList.classList.remove('element--hidden');
-            this.elements.submissionsList.classList.add('element--visible');
-        }
+        VarydianUtils.hideElement(this.elements.emptyState);
+        VarydianUtils.showElement(this.elements.submissionsList, 'grid');
     }
-    
+
     showError(message) {
         this.state.error = message;
-        if (typeof VarydianUtils !== 'undefined') {
-            VarydianUtils.showError(message);
-        }
+        if (typeof VarydianUtils !== 'undefined') VarydianUtils.showError(message);
     }
-    
+
     hideError() {
         this.state.error = null;
     }
-    
+
     showModal() {
-        if (this.elements.modal) {
-            this.elements.modal.classList.remove('element--hidden');
-            this.elements.modal.classList.add('element--visible');
-        }
+        VarydianUtils.showElement(this.elements.modal, 'flex');
     }
-    
+
     closeModal() {
-        if (this.elements.modal) {
-            this.elements.modal.classList.add('element--hidden');
-            this.elements.modal.classList.remove('element--visible');
-        }
+        VarydianUtils.hideElement(this.elements.modal);
         this.selectedSubmission = null;
     }
-    
-    // Utility Functions
+
     formatDate(dateString) {
         return VarydianUtils.formatDate(dateString);
     }
-    
+
     formatStatus(status) {
         return StatusMessages.get_message(status);
     }
-    
+
     debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -495,7 +573,6 @@ class SubmissionHistoryManager {
     }
 }
 
-// Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.submissionHistoryManager = new SubmissionHistoryManager();
 });

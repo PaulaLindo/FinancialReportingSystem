@@ -1,0 +1,204 @@
+/* Shared modal patterns — upload confirm, modal-system, legacy JS (upload.js) */
+
+/* Pattern A: overlay is the root (upload.html, modal-system.js) */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--fluid-space-md);
+    transition: opacity var(--transition-base);
+}
+
+.modal-overlay--hidden {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+.modal-overlay--visible,
+.modal-overlay.modal-visible {
+    display: flex !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+}
+
+.modal-container {
+    background: var(--bg-primary);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    max-width: min(400px, 100%);
+    width: min(90vw, 100%);
+    max-height: min(80vh, 100%);
+    overflow: hidden;
+    transform: scale(0.95);
+    transition: transform var(--transition-base);
+}
+
+.modal-overlay--visible .modal-container,
+.modal-overlay.modal-visible .modal-container {
+    transform: scale(1);
+}
+
+.modal-overlay .modal-header,
+.modal-container .modal-header {
+    padding: var(--fluid-space-lg);
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+}
+
+.modal-overlay .modal-header h3,
+.modal-container .modal-header h3 {
+    margin: 0;
+    font-size: var(--heading-lg);
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+}
+
+.modal-overlay .modal-body,
+.modal-container .modal-body {
+    padding: var(--fluid-space-xl);
+}
+
+.modal-overlay .modal-body p,
+.modal-container .modal-body p {
+    margin: 0;
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+    line-height: var(--leading-normal);
+}
+
+.modal-overlay .modal-footer,
+.modal-container .modal-footer {
+    padding: var(--fluid-space-lg);
+    border-top: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+    display: flex;
+    gap: var(--fluid-space-md);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.modal-overlay .modal-footer .btn,
+.modal-container .modal-footer .btn {
+    min-width: min(100px, 100%);
+}
+
+/* Pattern B: full-screen root with backdrop + panel (components/approval-workflow-modals.html) */
+.modal:has(> .modal-overlay):has(> .modal-content) {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--fluid-space-md);
+}
+
+.modal:has(> .modal-overlay):has(> .modal-content).element--hidden {
+    display: none !important;
+}
+
+.modal:has(> .modal-overlay) > .modal-overlay {
+    position: absolute;
+    inset: 0;
+}
+
+.modal:has(> .modal-content) > .modal-content {
+    position: relative;
+    z-index: 1;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    max-width: min(600px, 100%);
+    width: min(90vw, 100%);
+    max-height: min(80vh, 100%);
+    overflow-y: auto;
+}
+
+.modal:has(> .modal-content) .modal-content.modal-large {
+    max-width: min(960px, 100%);
+}
+
+.modal:has(> .modal-content) .modal-content.modal-medium {
+    max-width: min(720px, 100%);
+}
+
+@media (max-width: 768px) {
+    .modal:has(> .modal-content) > .modal-content {
+        width: min(95vw, 100%);
+        max-height: min(90vh, 100%);
+    }
+}
+
+/* Pattern C: page shell (root > *-overlay + *-content) — file & submission detail modals */
+.file-details-modal,
+.submission-details-modal {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--fluid-space-md);
+}
+
+.file-details-modal.element--hidden,
+.submission-details-modal.element--hidden {
+    display: none !important;
+}
+
+.file-details-modal.element--visible,
+.submission-details-modal.element--visible {
+    display: flex !important;
+}
+
+.file-details-overlay,
+.submission-details-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.file-details-content,
+.submission-details-content {
+    position: relative;
+    z-index: 1;
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    width: min(90vw, 100%);
+    max-height: min(90vh, 100%);
+    overflow-y: auto;
+}
+
+.file-details-content {
+    max-width: min(600px, 100%);
+    padding: var(--fluid-space-2xl);
+}
+
+.submission-details-content {
+    max-width: min(32rem, 100%);
+}
+
+@media (min-width: 768px) {
+    .file-details-content {
+        max-width: min(700px, 100%);
+        max-height: min(88vh, 100%);
+    }
+}
+
+@media (min-width: 1024px) {
+    .file-details-content {
+        max-width: min(800px, 100%);
+        max-height: min(95vh, 100%);
+    }
+}

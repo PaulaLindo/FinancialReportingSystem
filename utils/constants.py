@@ -128,6 +128,20 @@ class StatusMessages:
         """Get user-facing message for status"""
         return cls.MESSAGES.get(status, status)
 
+class ClerkWorkflowMessages:
+    """Finance Clerk workflow copy"""
+    FORWARDED_TO_MANAGER = "Data forwarded to Finance Manager for review."
+    BALANCE_REQUIRED = (
+        "Trial balance must be balanced before processing. Total debits must equal total credits."
+    )
+    INCOME_STATEMENT_REQUIRED = (
+        "Income statement must include at least one revenue or expense line before processing."
+    )
+    BUDGET_REPORT_REQUIRED = (
+        "Budget report must include budget and actual line amounts before processing."
+    )
+
+
 class WorkflowErrorMessages:
     """Workflow error messages"""
     SUBMISSION_ID_REQUIRED = "Submission ID required"
