@@ -157,7 +157,7 @@ class FinancialStatementReview {
 
     isStatementReviewReadOnly() {
         const role = window.currentUserRole || '';
-        if (role === 'FINANCE_CLERK') {
+        if (role === 'FINANCE_CLERK' || role === 'AUDITOR') {
             return true;
         }
         if (this._returnToUrl && (

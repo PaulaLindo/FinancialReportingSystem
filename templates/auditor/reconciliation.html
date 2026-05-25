@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Asset reconciliation (audit){% endblock %}
+
+{% block content %}
+<div class="page page--auditor page--asset-manager asset-reconciliation-page">
+    <div class="container-content">
+        <header class="asset-manager-hero">
+            <div class="asset-manager-hero__copy">
+                <p class="asset-manager-hero__eyebrow">Auditor · GRAP 17 · Read-only</p>
+                <h1>Asset reconciliation</h1>
+                <p class="asset-manager-hero__lead">
+                    Compare asset register carrying value to the general ledger PPE control balance.
+                </p>
+            </div>
+            <a href="/audit" class="btn btn-secondary">Audit workspace</a>
+        </header>
+
+        <div class="reconciliation-panel reconciliation-panel--readonly"
+             data-reconciled="{{ 'true' if reconciliation.reconciled else 'false' }}">
+            <div class="reconciliation-status reconciliation-status--{{ 'ok' if reconciliation.reconciled else 'warn' }}">
+                {% if reconciliation.reconciled %}
+                ✓ Register and GL are within tolerance
+                {% else %}
+                ⚠ Variance requires investigation
+                {% endif %}
+            </div>
+
+            <div class="reconciliation-grid">
+                <article class="reconciliation-card">
+                    <h2>Asset register</h2>
+                    <p class="reconciliation-amount">R {{ "{:,.2f}".format(reconciliation.register_total_carrying_value) }}</p>
+                    <p class="text-muted">{{ reconciliation.register_asset_count }} asset(s)</p>
+                </article>
+                <article class="reconciliation-card">
+                    <h2>General ledger (PPE control)</h2>
+                    <p class="reconciliation-amount">R {{ "{:,.2f}".format(reconciliation.gl_ppe_control_balance) }}</p>
+                    <p class="text-muted">{{ reconciliation.gl_balance_note }}</p>
+                </article>
+                <article class="reconciliation-card reconciliation-card--variance">
+                    <h2>Variance</h2>
+                    <p class="reconciliation-amount">R {{ "{:,.2f}".format(reconciliation.variance) }}</p>
+                    <p class="text-muted">Tolerance ± R {{ "{:,.2f}".format(reconciliation.tolerance) }}</p>
+                </article>
+            </div>
+        </div>
+
+        <p class="text-muted reconciliation-footnote">
+            {{ reconciliation.grap_reference }} · GL balance last updated {{ reconciliation.gl_balance_updated_at[:10] if reconciliation.gl_balance_updated_at else '—' }}
+            {% if reconciliation.gl_balance_source %} · Source: {{ reconciliation.gl_balance_source_label or reconciliation.gl_balance_source }}{% endif %}
+        </p>
+    </div>
+</div>
+{% endblock %}

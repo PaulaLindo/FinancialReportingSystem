@@ -23,6 +23,9 @@
                 {% if current_user.role == 'ASSET_MANAGER' %}
                 <a href="/asset-manager/register" class="btn btn-primary">Asset Register</a>
                 <a href="/asset-manager/reconciliation" class="btn btn-secondary">Reconciliation</a>
+                {% elif current_user.role == 'AUDITOR' %}
+                <a href="/audit" class="btn btn-primary">Audit workspace</a>
+                <a href="/audit/asset-register" class="btn btn-secondary">Asset register</a>
                 {% elif current_user.can_review() %}
                 <a href="/finance-manager/review-queue" class="btn btn-primary">View Queue</a>
                 <a href="/about" class="btn btn-secondary">Learn More</a>
@@ -337,6 +340,39 @@
             </footer>
         </section>
     </div>
+    {% elif current_user.role == 'AUDITOR' and auditor_stats %}
+    <div class="dashboard-content dashboard-auditor container-content">
+        <section class="audit-dashboard">
+            <header class="audit-workspace-hero audit-workspace-hero--compact">
+                <div class="audit-workspace-hero__inner">
+                    <p class="asset-manager-hero__eyebrow">AGSA · Read-only audit</p>
+                    <h2 class="audit-workspace-hero__heading">Audit overview</h2>
+                    <p class="audit-workspace-hero__lead">Review CFO-finalized submissions in locked reporting periods. No edits or approvals.</p>
+                </div>
+            </header>
+            <div class="asset-dashboard__metrics">
+                <article class="asset-metric-tile asset-metric-tile--highlight">
+                    <span class="asset-metric-tile__icon" aria-hidden="true">✓</span>
+                    <span class="asset-metric-tile__label">Finalized submissions</span>
+                    <span class="asset-metric-tile__value">{{ auditor_stats.finalized_count or 0 }}</span>
+                </article>
+            </div>
+            <div class="audit-dashboard-actions">
+                <a href="/audit" class="audit-dashboard-link">
+                    <strong>Audit workspace</strong>
+                    <small>Statement review, audit CSV, export log</small>
+                </a>
+                <a href="/audit/asset-register" class="audit-dashboard-link">
+                    <strong>Asset register</strong>
+                    <small>Read-only GRAP 17 register</small>
+                </a>
+                <a href="/audit/reconciliation" class="audit-dashboard-link">
+                    <strong>Asset reconciliation</strong>
+                    <small>Register vs GL variance</small>
+                </a>
+            </div>
+        </section>
+    </div>
     {% elif current_user.role == 'CFO' %}
     <!-- CFO strategic KPI strip -->
     {% if cfo_kpis %}
@@ -435,7 +471,7 @@
                 </div>
                 {% endif %}
                 
-                {% if current_user.can_view_all() and current_user.role not in ['FINANCE_MANAGER', 'CFO'] %}
+                {% if current_user.can_view_all() and current_user.role not in ['FINANCE_MANAGER', 'CFO', 'AUDITOR'] %}
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">

@@ -1,0 +1,214 @@
+.page--auditor {
+    padding-bottom: var(--fluid-space-xl);
+}
+
+.audit-workspace-hero {
+    padding: clamp(var(--fluid-space-lg), 3vw, var(--fluid-space-2xl)) 0;
+    margin-bottom: var(--fluid-space-lg);
+    background: linear-gradient(160deg, rgba(245, 158, 11, 0.1) 0%, rgba(255, 255, 255, 1) 55%, rgba(139, 92, 246, 0.05) 100%);
+    border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.audit-workspace-hero__inner {
+    text-align: center;
+    max-width: 42rem;
+    margin: 0 auto;
+}
+
+.audit-workspace-hero .asset-manager-hero__eyebrow {
+    color: #b45309;
+}
+
+.audit-workspace-hero h1 {
+    margin: 0 0 0.35rem;
+    font-size: clamp(1.4rem, 2.8vw, 1.9rem);
+}
+
+.audit-workspace-hero__lead {
+    margin: 0;
+    color: var(--text-muted, #64748b);
+    line-height: 1.55;
+}
+
+.audit-workspace-hero__meta {
+    margin: var(--fluid-space-sm) 0 0;
+    font-size: 0.85rem;
+}
+
+.audit-workspace-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fluid-space-xl);
+}
+
+.audit-workspace-panel,
+.audit-workspace-actions,
+.audit-workspace-log {
+    padding: clamp(var(--fluid-space-md), 2.5vw, var(--fluid-space-xl));
+    border-radius: 16px;
+    background: var(--bg-primary, #fff);
+    border: 1px solid rgba(245, 158, 11, 0.18);
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+}
+
+.audit-workspace-panel__title {
+    margin: 0 0 var(--fluid-space-sm);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #b45309;
+}
+
+.audit-session-select {
+    max-width: 36rem;
+    margin-top: var(--fluid-space-sm);
+}
+
+.audit-selection-notice {
+    margin-top: var(--fluid-space-sm);
+    font-size: 0.85rem;
+}
+
+.audit-action-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--fluid-space-md);
+    margin-top: var(--fluid-space-md);
+}
+
+.audit-action-card {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--fluid-space-sm);
+    padding: var(--fluid-space-md);
+    border-radius: 12px;
+    border: 1px solid var(--border-color, #e2e8f0);
+    background: var(--bg-secondary, #fafafa);
+    text-decoration: none;
+    color: inherit;
+}
+
+.audit-action-card--primary {
+    border-color: rgba(245, 158, 11, 0.35);
+    background: linear-gradient(145deg, rgba(254, 243, 199, 0.35), rgba(255, 255, 255, 1));
+}
+
+.audit-action-card--link:hover {
+    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: 0 6px 18px rgba(245, 158, 11, 0.1);
+    transform: translateY(-1px);
+}
+
+.audit-action-card__icon {
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+.audit-action-card__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.audit-action-card__body h3 {
+    margin: 0 0 0.25rem;
+    font-size: 0.95rem;
+}
+
+.audit-action-card__body p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-muted, #64748b);
+    line-height: 1.4;
+}
+
+.audit-action-card__chevron {
+    align-self: center;
+    color: #b45309;
+    font-weight: 700;
+}
+
+.audit-export-log__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: var(--fluid-space-sm);
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+    font-size: 0.85rem;
+}
+
+.audit-export-log__row:last-child {
+    border-bottom: none;
+}
+
+.dashboard-auditor .audit-dashboard-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--fluid-space-md);
+}
+
+.audit-workspace-hero--compact {
+    padding: 0 0 var(--fluid-space-md);
+    margin-bottom: 0;
+    border-bottom: none;
+    background: transparent;
+}
+
+.audit-workspace-hero__heading {
+    margin: 0 0 0.35rem;
+    font-size: clamp(1.25rem, 2.5vw, 1.6rem);
+}
+
+.dashboard-auditor .asset-dashboard__metrics {
+    display: grid;
+    grid-template-columns: minmax(160px, 240px);
+    gap: var(--fluid-space-sm);
+    margin-bottom: var(--fluid-space-lg);
+}
+
+.audit-dashboard-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: var(--fluid-space-md);
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    background: linear-gradient(145deg, rgba(254, 243, 199, 0.2), rgba(255, 255, 255, 1));
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.audit-dashboard-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.12);
+}
+
+.audit-dashboard-link strong {
+    font-size: 0.95rem;
+}
+
+.audit-dashboard-link small {
+    font-size: 0.78rem;
+    color: var(--text-muted, #64748b);
+}
+
+.asset-register-page--readonly .asset-register-card--readonly {
+    cursor: default;
+}
+
+.reconciliation-panel--readonly {
+    pointer-events: none;
+    user-select: text;
+}
+
+@media (max-width: 768px) {
+    .audit-action-grid,
+    .dashboard-auditor .audit-dashboard-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .audit-export-log__row {
+        grid-template-columns: 1fr;
+    }
+}

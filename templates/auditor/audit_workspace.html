@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Audit workspace{% endblock %}
+
+{% block content %}
+<div class="page page--auditor audit-workspace-page">
+    <header class="audit-workspace-hero">
+        <div class="container-content audit-workspace-hero__inner">
+            <p class="asset-manager-hero__eyebrow">AGSA · Read-only audit</p>
+            <h1>Audit workspace</h1>
+            <p class="audit-workspace-hero__lead">
+                Review CFO-finalized submissions in locked reporting periods. Export audit CSV and inspect statements and calculations — no changes are permitted.
+            </p>
+            <p class="text-muted audit-workspace-hero__meta">{{ finalized_count or 0 }} finalized submission(s) available</p>
+        </div>
+    </header>
+
+    <div class="audit-workspace-content container-content">
+        <section class="audit-workspace-panel" aria-labelledby="auditSessionLabel">
+            <h2 id="auditSessionLabel" class="audit-workspace-panel__title">1. Choose finalized submission</h2>
+            <p class="text-muted">Only CFO-approved submissions in locked periods appear here.</p>
+            <label for="auditSessionSelect" class="filter-label">Finalized submission</label>
+            <select id="auditSessionSelect" class="filter-select audit-session-select">
+                <option value="">Loading…</option>
+            </select>
+            <p class="text-muted audit-selection-notice" data-audit-selection-notice>Select a submission to enable audit actions.</p>
+        </section>
+
+        <section class="audit-workspace-actions" aria-labelledby="auditActionsLabel">
+            <h2 id="auditActionsLabel" class="audit-workspace-panel__title">2. Audit actions</h2>
+            <div class="audit-action-grid">
+                <article class="audit-action-card audit-action-card--primary">
+                    <span class="audit-action-card__icon" aria-hidden="true">📄</span>
+                    <div class="audit-action-card__body">
+                        <h3>Read-only statement review</h3>
+                        <p>Open the full statement, line-item comments, and formula transparency modal.</p>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm" data-audit-open-review disabled>Open review</button>
+                </article>
+                <article class="audit-action-card">
+                    <span class="audit-action-card__icon" aria-hidden="true">📋</span>
+                    <div class="audit-action-card__body">
+                        <h3>Export audit CSV</h3>
+                        <p>Mapped line data for external analysis and working papers.</p>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" data-audit-export-csv disabled>Export CSV</button>
+                </article>
+                <a href="/audit/asset-register" class="audit-action-card audit-action-card--link">
+                    <span class="audit-action-card__icon" aria-hidden="true">🏗️</span>
+                    <div class="audit-action-card__body">
+                        <h3>Asset register</h3>
+                        <p>Read-only GRAP 17 register carrying values and lifecycle status.</p>
+                    </div>
+                    <span class="audit-action-card__chevron" aria-hidden="true">→</span>
+                </a>
+                <a href="/audit/reconciliation" class="audit-action-card audit-action-card--link">
+                    <span class="audit-action-card__icon" aria-hidden="true">⚖️</span>
+                    <div class="audit-action-card__body">
+                        <h3>Asset reconciliation</h3>
+                        <p>Register vs GL control balance and variance (read-only).</p>
+                    </div>
+                    <span class="audit-action-card__chevron" aria-hidden="true">→</span>
+                </a>
+            </div>
+        </section>
+
+        <section class="audit-workspace-log" aria-labelledby="auditLogLabel">
+            <h2 id="auditLogLabel" class="audit-workspace-panel__title">CSV export log</h2>
+            <div id="auditExportLog" class="audit-export-log" data-audit-export-log>
+                <p class="text-muted">Loading export log…</p>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/audit-workspace.js') }}"></script>
+{% endblock %}

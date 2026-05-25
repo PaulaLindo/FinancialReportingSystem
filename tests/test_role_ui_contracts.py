@@ -195,6 +195,16 @@ class AssetManagerUiContractTests(unittest.TestCase):
         self.assertIn("'/dashboard'", read('static/js/auth.js'))
         self.assertIn("'ASSET_MANAGER'", read('static/js/auth.js'))
 
+    def test_auditor_pages_and_nav(self):
+        base = read('templates/base.html')
+        dash = read('templates/dashboard.html')
+        routes = read('controllers/routes_auditor.py')
+        self.assertIn('/audit', base)
+        self.assertIn('auditor_workspace_page', routes)
+        self.assertIn('dashboard-auditor', dash)
+        self.assertIn("'AUDITOR': '/audit'", read('static/js/auth.js'))
+        self.assertIn("role === 'AUDITOR'", read('static/js/financial-statement-review.js'))
+
 
 class RlsVerificationScriptTests(unittest.TestCase):
     def test_verify_sql_documents_four_policies(self):

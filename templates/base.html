@@ -44,7 +44,7 @@
                         {% endif %}
                         {% if current_user and current_user.can_review() %}
                         <li><a href="/finance-manager/history" class="nav-link {% if request.endpoint == 'finance_manager_history' %}active{% endif %}">History</a></li>
-                        {% elif current_user and current_user.can_view_all() %}
+                        {% elif current_user and current_user.can_view_all() and current_user.role != 'AUDITOR' %}
                         <li><a href="/reports" class="nav-link {% if request.endpoint == 'reports_page' %}active{% endif %}">File Management</a></li>
                         {% endif %}
                         {% if current_user and current_user.can_upload() %}
@@ -59,6 +59,11 @@
                         <li><a href="/asset-manager/register" class="nav-link {% if request.endpoint == 'asset_manager_register_page' %}active{% endif %}">Asset Register</a></li>
                         <li><a href="/asset-manager/journals" class="nav-link {% if request.endpoint == 'asset_manager_journals_page' %}active{% endif %}">My journals</a></li>
                         <li><a href="/asset-manager/reconciliation" class="nav-link {% if request.endpoint == 'asset_manager_reconciliation_page' %}active{% endif %}">Reconciliation</a></li>
+                        {% endif %}
+
+                        {% if current_user and current_user.role == 'AUDITOR' %}
+                        <li><a href="/audit" class="nav-link {% if request.endpoint == 'auditor_workspace_page' %}active{% endif %}">Audit workspace</a></li>
+                        <li><a href="/audit/asset-register" class="nav-link {% if request.endpoint == 'auditor_asset_register_page' %}active{% endif %}">Asset register</a></li>
                         {% endif %}
                         
                         {% if current_user and current_user.role in ['FINANCE_MANAGER', 'CFO'] %}
@@ -111,7 +116,7 @@
                     {% endif %}
                     {% if current_user and current_user.can_review() %}
                     <li><a href="/finance-manager/history" class="nav-link {% if request.endpoint == 'finance_manager_history' %}active{% endif %}">History</a></li>
-                    {% elif current_user and current_user.can_view_all() %}
+                    {% elif current_user and current_user.can_view_all() and current_user.role != 'AUDITOR' %}
                     <li><a href="/reports" class="nav-link {% if request.endpoint == 'reports_page' %}active{% endif %}">File Management</a></li>
                     {% endif %}
                     {% if current_user and current_user.can_upload() %}
@@ -126,6 +131,11 @@
                     <li><a href="/asset-manager/register" class="nav-link {% if request.endpoint == 'asset_manager_register_page' %}active{% endif %}">Asset Register</a></li>
                     <li><a href="/asset-manager/journals" class="nav-link {% if request.endpoint == 'asset_manager_journals_page' %}active{% endif %}">My journals</a></li>
                     <li><a href="/asset-manager/reconciliation" class="nav-link {% if request.endpoint == 'asset_manager_reconciliation_page' %}active{% endif %}">Reconciliation</a></li>
+                    {% endif %}
+
+                    {% if current_user and current_user.role == 'AUDITOR' %}
+                    <li><a href="/audit" class="nav-link {% if request.endpoint == 'auditor_workspace_page' %}active{% endif %}">Audit workspace</a></li>
+                    <li><a href="/audit/asset-register" class="nav-link {% if request.endpoint == 'auditor_asset_register_page' %}active{% endif %}">Asset register</a></li>
                     {% endif %}
                     
                     {% if current_user and current_user.role in ['FINANCE_MANAGER', 'CFO'] %}
@@ -208,11 +218,13 @@
             <script src="{{ url_for('static', filename='js/global-user-context.js') }}"></script>
             <script src="{{ url_for('static', filename='js/main.js') }}"></script>
             <script src="{{ url_for('static', filename='js/navigation-fluid.js') }}"></script>
-            {% if current_user and (current_user.can_review() or (current_user.role == 'FINANCE_CLERK' and current_user.can_process())) %}
+            {% if current_user and (current_user.can_review() or current_user.can_access_audit_workspace() or (current_user.role == 'FINANCE_CLERK' and current_user.can_process())) %}
             <script src="{{ url_for('static', filename='js/grap-standards.js') }}"></script>
             <script src="{{ url_for('static', filename='js/budget-variance-grap24.js') }}"></script>
             <script src="{{ url_for('static', filename='js/financial-statement-review.js') }}"></script>
+            {% if current_user.can_review() or (current_user.role == 'FINANCE_CLERK' and current_user.can_process()) %}
             <script src="{{ url_for('static', filename='js/line-item-comment-system.js') }}"></script>
+            {% endif %}
             {% endif %}
             <script src="{{ url_for('static', filename='js/draft-statement-viewer.js') }}"></script>
             <script src="{{ url_for('static', filename='js/processing-state.js') }}"></script>

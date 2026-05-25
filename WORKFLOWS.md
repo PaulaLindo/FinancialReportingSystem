@@ -465,6 +465,65 @@ Asset Manager sees journal status on each asset’s **Asset journals** section (
 | A10 | FM **History → Asset journals** shows settled decisions | Pass |
 | A11 | Inbox: FM notified on submit; Asset Manager on approve/reject | Pass |
 
+---
+
+## Auditor (AGSA read-only)
+
+**Primary goal:** Review **CFO-finalized** submissions in **locked** reporting periods. Inspect statements, formula breakdowns, and audit CSV exports. **No edits, approvals, or official AFS PDF generation.**
+
+**Out of scope (by design):** Upload, mapping, approve/reject, official AFS PDF (`generate_pdf` / Export Center for CFO/FM), asset lifecycle changes.
+
+### Where the Auditor works
+
+| Nav / page | Purpose |
+|------------|---------|
+| **Dashboard** (`/dashboard`) | Finalized submission count; links to audit workspace |
+| **Audit workspace** (`/audit`) | Pick finalized submission → read-only review or audit CSV |
+| **Statement review** (`/approvals?review=statement&transaction=<id>&type=<doc>&returnTo=/audit`) | Read-only SFP/SFPER, line comments, formula modal |
+| **Asset register** (`/audit/asset-register`) | Read-only GRAP 17 register list |
+| **Asset reconciliation** (`/audit/reconciliation`) | Read-only register vs GL variance |
+
+Login redirects to **`/audit`**. Demo user: `auditor@agsa.gov.za`.
+
+### Access rules
+
+- Session must be **CFO-approved** (`workflow_status` effective = `approved`) **and** reporting period **locked**.
+- Same gate as Export Center finalized list (`export_center_service.is_auditor_viewable`).
+- If not finalized/locked → session API returns 403 for auditor.
+
+### Typical journey
+
+1. **Audit workspace** — Select a finalized submission from the dropdown.
+2. **Read-only review** — **Open review** → full statement, existing FM/CFO line comments, **View Calculations** → formula modal → **Export This Breakdown (PDF)**.
+3. **Audit CSV** — Download mapped line data for working papers (`POST /api/export/csv`).
+4. **Asset register / reconciliation** — Read-only GRAP 17 views (separate from trial balance workflow).
+
+### APIs (Auditor)
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/export/sessions` | List finalized, locked submissions |
+| `POST /api/export/csv` | Audit CSV export |
+| `GET /api/export/log` | CSV export log (auditor-scoped) |
+| `GET /api/universal/session/<id>` | Read-only session (finalized + locked only) |
+| `GET /api/universal/session/<id>/formula-breakdown` | Formula transparency |
+| `POST /api/formula/export/formula-breakdown-pdf` | Calculation audit PDF |
+| `GET /api/asset-manager/assets` | Read-only asset list (`view_assets`) |
+| `GET /api/asset-manager/reconciliation` | Read-only reconciliation (`view_assets`) |
+
+### UAT checklist (Auditor)
+
+| # | Test | Pass |
+|---|------|------|
+| U1 | Login as Auditor → lands on **Audit workspace** | |
+| U2 | Dashboard shows finalized submission count | |
+| U3 | Audit workspace lists only CFO-finalized, locked submissions | |
+| U4 | **Open review** — read-only statement; no Approve/Reject | |
+| U5 | Formula modal → **Export This Breakdown (PDF)** works | |
+| U6 | **Export CSV** downloads mapped data | |
+| U7 | Non-finalized session → 403 on session API | |
+| U8 | Read-only **Asset register** and **Reconciliation** | |
+
 ### Sign-off
 
 | Role | Name | Date | Signature / OK |

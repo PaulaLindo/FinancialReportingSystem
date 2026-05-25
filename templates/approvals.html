@@ -7,7 +7,7 @@
     <div id="statementReviewPanel" class="statement-review-panel" aria-live="polite">
         <div class="container-content statement-review-panel__inner">
             <div class="statement-review-panel__bar">
-                <a id="statementReviewBackLink" href="{% if current_user and current_user.role == 'FINANCE_CLERK' %}/submission-history{% else %}/finance-manager/review-queue{% endif %}" class="btn btn-secondary btn-sm">← Back</a>
+                <a id="statementReviewBackLink" href="{% if current_user and current_user.role == 'AUDITOR' %}/audit{% elif current_user and current_user.role == 'FINANCE_CLERK' %}/submission-history{% else %}/finance-manager/review-queue{% endif %}" class="btn btn-secondary btn-sm">← Back</a>
             </div>
             <div id="statementReviewContent" class="statement-review-content">
                 <div class="approval-empty-state">

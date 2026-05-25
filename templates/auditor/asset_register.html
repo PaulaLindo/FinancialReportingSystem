@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Asset register (audit){% endblock %}
+
+{% block content %}
+<div class="page page--auditor page--asset-manager asset-register-page asset-register-page--readonly">
+    <div class="container-content">
+        <header class="asset-manager-hero">
+            <div class="asset-manager-hero__copy">
+                <p class="asset-manager-hero__eyebrow">Auditor · GRAP 17 · Read-only</p>
+                <h1>Asset register</h1>
+                <p class="asset-manager-hero__lead">
+                    View the municipal asset sub-ledger. Lifecycle changes are managed by the Asset Manager and approved by the Finance Manager.
+                </p>
+            </div>
+            <a href="/audit" class="btn btn-secondary">Audit workspace</a>
+        </header>
+
+        <div id="assetRegisterSummary" class="asset-summary-strip" aria-live="polite"></div>
+
+        <div id="assetRegisterList" class="asset-register-list">
+            <div class="queue-loading">
+                <div class="loading-spinner"></div>
+                <p>Loading asset register…</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/audit-asset-register.js') }}"></script>
+{% endblock %}

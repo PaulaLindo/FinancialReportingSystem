@@ -312,6 +312,14 @@ class ExportCenterService:
         summary.setdefault("document_type", document_type)
         return summary
 
+    def is_auditor_viewable(self, session_id: str, document_type: str) -> bool:
+        """True when session is CFO-approved and period-locked (auditor read-only access)."""
+        ok, _ = self.session_is_exportable(
+            self.load_session(session_id, document_type),
+            document_type,
+        )
+        return ok
+
     def list_exportable_sessions(self, *, limit: int = 50) -> List[Dict[str, Any]]:
         rows: List[Dict[str, Any]] = []
         seen: set = set()

@@ -1289,6 +1289,35 @@ def dashboard():
             asset_stats=asset_stats,
         )
 
+    if user and user.role == 'AUDITOR':
+        auditor_stats = {'finalized_count': 0}
+        try:
+            from services.export_center_service import export_center_service
+
+            sessions = export_center_service.list_exportable_sessions(limit=200)
+            auditor_stats = {
+                'finalized_count': len(sessions),
+                'success': True,
+            }
+        except Exception as e:
+            app.logger.error(f"Error loading auditor dashboard: {str(e)}")
+
+        stats = {
+            'open_periods': 0,
+            'pending_uploads': 0,
+            'pending_approvals': 0,
+            'completed_reports': auditor_stats.get('finalized_count', 0),
+            'total_assets': 0,
+            'total_liabilities': 0,
+        }
+        return render_template(
+            'dashboard.html',
+            user=user,
+            current_user=user,
+            stats=stats,
+            auditor_stats=auditor_stats,
+        )
+
     else:
 
         # Provide default stats data to prevent template errors
@@ -1330,6 +1359,9 @@ def approvals_page():
     review_statement = request.args.get('review') == 'statement'
 
     if review_statement and user.role == 'FINANCE_CLERK' and user.has_permission('process'):
+        return render_template('approvals.html', user=user)
+
+    if review_statement and user.role == 'AUDITOR' and user.can_access_audit_workspace():
         return render_template('approvals.html', user=user)
 
     if not user.can_review():

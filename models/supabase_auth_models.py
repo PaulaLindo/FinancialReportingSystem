@@ -214,7 +214,7 @@ class SupabaseUser:
             'FINANCE_MANAGER': ['review', 'approve', 'process', 'view_all', 'download_pdf'],
             'CFO': ['final_approve', 'generate_pdf', 'view_all', 'export', 'export_audit', 'review', 'process'],
             'ASSET_MANAGER': ['manage_assets', 'view_assets'],
-            'AUDITOR': ['view_all', 'export_audit'],
+            'AUDITOR': ['view_all', 'export_audit', 'view_assets'],
             'SYSTEM_ADMIN': ['manage_users', 'system_settings', 'view_logs'],
             # Additional active roles for compatibility
             'ACCOUNTANT': ['review', 'approve', 'view_all', 'process'],
@@ -244,13 +244,20 @@ class SupabaseUser:
         return self.has_permission('generate_pdf') or self.has_permission('download_pdf')
 
     def can_access_export_center(self):
-        return self.can_export() or self.can_download_pdf()
+        return self.can_export() or self.can_download_pdf() or self.can_access_audit_workspace()
+
+    def can_access_audit_workspace(self):
+        """Auditor audit workspace — CSV and read-only review, not official AFS PDF."""
+        return self.can_export_audit() and not self.can_export() and not self.can_download_pdf()
     
     def can_view_all(self):
         return self.has_permission('view_all')
     
     def can_manage_assets(self):
         return self.has_permission('manage_assets')
+
+    def can_view_assets(self):
+        return self.has_permission('view_assets')
     
     def can_manage_users(self):
         return self.has_permission('manage_users')

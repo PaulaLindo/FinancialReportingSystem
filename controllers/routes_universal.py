@@ -189,6 +189,14 @@ def _session_view_json_error(session_id: str, document_type: str, user) -> tuple
         return jsonify({'success': False, 'error': 'User not authenticated'}), 401
     if getattr(user, 'can_review', lambda: False)():
         return None
+    if getattr(user, 'role', '') == 'AUDITOR' and getattr(user, 'can_export_audit', lambda: False)():
+        from services.export_center_service import export_center_service
+        if export_center_service.is_auditor_viewable(session_id, document_type):
+            return None
+        return jsonify({
+            'success': False,
+            'error': 'Auditor access requires a CFO-finalized submission in a locked reporting period.',
+        }), 403
     sess = _load_document_session(session_id, document_type)
     if not sess:
         return None

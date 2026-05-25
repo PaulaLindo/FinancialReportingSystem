@@ -249,7 +249,7 @@ class AuthenticationModule {
             'ASSET_MANAGER': '/dashboard',
             'FINANCE_CLERK': '/dashboard',
             'FINANCIAL_CLERK': '/dashboard',
-            'AUDITOR': '/reports'
+            'AUDITOR': '/audit'
         };
         
         const targetRoute = roleRoutes[role] || '/dashboard';

@@ -55,6 +55,13 @@ except ImportError as e:
     print(f"Warning: Could not register asset manager routes: {e}")
 
 try:
+    from controllers.routes_auditor import register_auditor_routes
+
+    register_auditor_routes(app)
+except ImportError as e:
+    print(f"Warning: Could not register auditor routes: {e}")
+
+try:
     from controllers.routes_inbox import register_inbox_routes
 
     register_inbox_routes(app)
