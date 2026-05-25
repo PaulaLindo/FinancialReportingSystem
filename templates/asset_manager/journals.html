@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}My asset journals{% endblock %}
+
+{% block content %}
+<div class="page page--asset-manager asset-journals-page">
+    <div class="container-content">
+        <header class="asset-manager-hero">
+            <div class="asset-manager-hero__copy">
+                <p class="asset-manager-hero__eyebrow">Asset Manager · GRAP 17</p>
+                <h1>My asset journals</h1>
+                <p class="asset-manager-hero__lead">
+                    Useful life, impairment, and disposal proposals you submitted — pending FM review or settled.
+                </p>
+            </div>
+            <a href="{{ url_for('asset_manager_register_page') }}" class="btn btn-secondary">Asset register</a>
+        </header>
+
+        <div class="asset-journals-filters">
+            <label class="asset-field asset-field--inline">
+                <span class="asset-field__label">Status</span>
+                <select id="journalStatusFilter" class="asset-field__control asset-field__control--select">
+                    <option value="">All</option>
+                    <option value="pending_review">Pending review</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </label>
+        </div>
+
+        <div id="assetManagerJournalsList" class="asset-journals-list">
+            <div class="queue-loading">
+                <div class="loading-spinner"></div>
+                <p>Loading journals…</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/asset-journals.js') }}"></script>
+{% endblock %}

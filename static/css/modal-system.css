@@ -50,31 +50,31 @@ body.modal-system-open {
 }
 
 /* Modal Header */
-.modal-header {
+#modalSystem > .modal-overlay > .modal-container .modal-header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    gap: var(--fluid-space-md);
-    padding: var(--fluid-space-lg) var(--fluid-space-xl);
+    gap: var(--fluid-space-sm);
+    padding: 0.625rem 1.25rem;
     border-bottom: 1px solid var(--gray-200);
     background: var(--gray-50);
     flex-shrink: 0;
 }
 
-.modal-title {
+#modalSystem > .modal-overlay > .modal-container .modal-title {
     margin: 0;
     flex: 1 1 auto;
     min-width: 0;
-    font-size: var(--heading-md, 1.125rem);
+    font-size: clamp(0.9375rem, 2vw, 1.0625rem);
     font-weight: 600;
     color: var(--gray-900);
-    line-height: 1.35;
+    line-height: 1.3;
 }
 
-.modal-close {
+#modalSystem > .modal-overlay > .modal-container .modal-close {
     background: none;
     border: none;
-    padding: var(--fluid-space-sm);
+    padding: 0.25rem;
     border-radius: var(--radius-md);
     cursor: pointer;
     color: var(--gray-500);
@@ -83,21 +83,26 @@ body.modal-system-open {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    margin-top: -0.125rem;
+    margin-top: 0;
 }
 
-.modal-close:hover {
+#modalSystem > .modal-overlay > .modal-container .modal-close svg {
+    width: 18px;
+    height: 18px;
+}
+
+#modalSystem > .modal-overlay > .modal-container .modal-close:hover {
     background: var(--gray-200);
     color: var(--gray-700);
 }
 
-.modal-close:focus {
+#modalSystem > .modal-overlay > .modal-container .modal-close:focus {
     outline: 2px solid var(--primary-500);
     outline-offset: 2px;
 }
 
 /* Modal Body */
-.modal-body {
+#modalSystem > .modal-overlay > .modal-container .modal-body {
     padding: var(--fluid-space-lg) var(--fluid-space-xl);
     flex: 1 1 auto;
     min-height: 0;
@@ -105,7 +110,7 @@ body.modal-system-open {
     overscroll-behavior: contain;
 }
 
-.modal-message {
+#modalSystem > .modal-overlay > .modal-container .modal-message {
     margin: 0;
     font-size: var(--body-text-sm, 0.9375rem);
     color: var(--gray-700);
@@ -114,7 +119,7 @@ body.modal-system-open {
     word-break: break-word;
 }
 
-.modal-input {
+#modalSystem > .modal-overlay > .modal-container .modal-input {
     width: 100%;
     padding: var(--fluid-space-md);
     border: 2px solid var(--gray-300);
@@ -125,71 +130,73 @@ body.modal-system-open {
     background: var(--white);
 }
 
-.modal-input:focus {
+#modalSystem > .modal-overlay > .modal-container .modal-input:focus {
     outline: none;
     border-color: var(--primary-500);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.modal-input::placeholder {
+#modalSystem > .modal-overlay > .modal-container .modal-input::placeholder {
     color: var(--gray-500);
 }
 
 /* Modal Footer */
-.modal-footer {
+#modalSystem > .modal-overlay > .modal-container .modal-footer {
     display: flex;
-    gap: var(--fluid-space-md);
-    padding: var(--fluid-space-md) var(--fluid-space-xl);
+    gap: var(--fluid-space-sm);
+    padding: 0.625rem 1.25rem;
     border-top: 1px solid var(--gray-200);
     background: var(--gray-50);
-    justify-content: flex-end;
+    justify-content: stretch;
     flex-shrink: 0;
 }
 
-/* Modal Buttons */
-.modal-confirm,
-.modal-ok {
+/* Modal Buttons — equal width in footer */
+#modalSystem > .modal-overlay > .modal-container .modal-footer .btn.modal-cancel,
+#modalSystem > .modal-overlay > .modal-container .modal-footer .btn.modal-confirm,
+#modalSystem > .modal-overlay > .modal-container .modal-footer .btn.modal-ok {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 2.25rem;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    box-sizing: border-box;
+}
+
+#modalSystem > .modal-overlay > .modal-container .modal-confirm,
+#modalSystem > .modal-overlay > .modal-container .modal-ok {
     background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
     color: var(--white);
     border: none;
-    padding: var(--fluid-space-md) var(--fluid-space-lg);
-    border-radius: var(--radius-md);
-    font-size: var(--body-text-sm);
-    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-width: 80px;
 }
 
-.modal-confirm:hover,
-.modal-ok:hover {
+#modalSystem > .modal-overlay > .modal-container .modal-confirm:hover,
+#modalSystem > .modal-overlay > .modal-container .modal-ok:hover {
     background: linear-gradient(135deg, var(--primary-700) 0%, var(--primary-800) 100%);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-.modal-cancel {
+#modalSystem > .modal-overlay > .modal-container .modal-cancel {
     background: var(--gray-200);
     color: var(--gray-700);
     border: none;
-    padding: var(--fluid-space-md) var(--fluid-space-lg);
-    border-radius: var(--radius-md);
-    font-size: var(--body-text-sm);
-    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-width: 80px;
 }
 
-.modal-cancel:hover {
+#modalSystem > .modal-overlay > .modal-container .modal-cancel:hover {
     background: var(--gray-300);
     transform: translateY(-1px);
 }
 
 /* Focus styles for all modal buttons */
-.modal-confirm:focus,
-.modal-ok:focus,
-.modal-cancel:focus {
+#modalSystem > .modal-overlay > .modal-container .modal-confirm:focus,
+#modalSystem > .modal-overlay > .modal-container .modal-ok:focus,
+#modalSystem > .modal-overlay > .modal-container .modal-cancel:focus {
     outline: 2px solid var(--primary-500);
     outline-offset: 2px;
 }
@@ -323,11 +330,11 @@ body.modal-system-open {
         width: 95vw;
     }
     
-    .modal-header,
-    .modal-body,
-    .modal-footer {
-        padding-left: var(--fluid-space-lg);
-        padding-right: var(--fluid-space-lg);
+    #modalSystem > .modal-overlay > .modal-container .modal-header,
+    #modalSystem > .modal-overlay > .modal-container .modal-body,
+    #modalSystem > .modal-overlay > .modal-container .modal-footer {
+        padding-left: var(--fluid-space-md);
+        padding-right: var(--fluid-space-md);
     }
     
     .toast-container {
@@ -346,13 +353,13 @@ body.modal-system-open {
 
 /* Small Mobile */
 @media (max-width: 480px) {
-    .modal-footer {
+    #modalSystem > .modal-overlay > .modal-container .modal-footer {
         flex-direction: column;
     }
     
-    .modal-confirm,
-    .modal-ok,
-    .modal-cancel {
+    #modalSystem > .modal-overlay > .modal-container .modal-confirm,
+    #modalSystem > .modal-overlay > .modal-container .modal-ok,
+    #modalSystem > .modal-overlay > .modal-container .modal-cancel {
         width: 100%;
     }
 }

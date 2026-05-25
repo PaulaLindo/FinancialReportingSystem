@@ -230,6 +230,106 @@ def notify_workflow_comment(
         )
 
 
+def notify_asset_journal_pending_review(
+    *,
+    journal_id: str,
+    journal_type: str,
+    asset_id: str,
+    asset_name: str,
+    submitter_id: str,
+    submitter_name: str = "",
+) -> int:
+    label = journal_type.replace("_", " ")
+    return notify_users_by_role(
+        "FINANCE_MANAGER",
+        message_type="asset_journal_pending_review",
+        title="Asset journal awaiting review",
+        body=(
+            f"{submitter_name or 'Asset Manager'} submitted a {label} for "
+            f"{asset_name or asset_id} — approval required before the register updates."
+        ),
+        severity="info",
+        metadata={
+            "journal_id": journal_id,
+            "journal_type": journal_type,
+            "asset_id": asset_id,
+            "asset_name": asset_name,
+            "submitter_id": submitter_id,
+            "action_url": "/finance-manager/asset-journals",
+            "action_label": "Open asset journals",
+        },
+        actor_id=submitter_id,
+    )
+
+
+def notify_asset_journal_approved(
+    submitter_user_id: Optional[str],
+    *,
+    journal_id: str,
+    journal_type: str,
+    asset_id: str,
+    asset_name: str,
+    reviewer_id: str,
+    reviewer_name: str = "",
+) -> Optional[Dict[str, Any]]:
+    if not submitter_user_id:
+        return None
+    label = journal_type.replace("_", " ")
+    return notify_user(
+        str(submitter_user_id),
+        message_type="asset_journal_approved",
+        title="Asset journal approved",
+        body=(
+            f"Your {label} for {asset_name or asset_id} was approved by "
+            f"{reviewer_name or 'Finance Manager'}. The asset register has been updated."
+        ),
+        severity="info",
+        metadata={
+            "journal_id": journal_id,
+            "journal_type": journal_type,
+            "asset_id": asset_id,
+            "action_url": f"/asset-manager/assets/{asset_id}",
+            "action_label": "View asset",
+        },
+        actor_id=reviewer_id,
+    )
+
+
+def notify_asset_journal_rejected(
+    submitter_user_id: Optional[str],
+    *,
+    journal_id: str,
+    journal_type: str,
+    asset_id: str,
+    asset_name: str,
+    reason: str,
+    reviewer_id: str,
+    reviewer_name: str = "",
+) -> Optional[Dict[str, Any]]:
+    if not submitter_user_id:
+        return None
+    label = journal_type.replace("_", " ")
+    body = (
+        f"Your {label} for {asset_name or asset_id} was rejected by "
+        f"{reviewer_name or 'Finance Manager'}.\n\n{reason.strip()}"
+    )
+    return notify_user(
+        str(submitter_user_id),
+        message_type="asset_journal_rejected",
+        title="Asset journal rejected",
+        body=body,
+        severity="high",
+        metadata={
+            "journal_id": journal_id,
+            "journal_type": journal_type,
+            "asset_id": asset_id,
+            "action_url": f"/asset-manager/assets/{asset_id}",
+            "action_label": "View asset",
+        },
+        actor_id=reviewer_id,
+    )
+
+
 def notify_submitter_of_rejection(
     submitter_user_id: Optional[str],
     *,

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Asset Register — GRAP 17{% endblock %}
+
+{% block content %}
+<div class="page page--asset-manager asset-register-page">
+    <div class="container-content">
+        <header class="asset-manager-hero">
+            <div class="asset-manager-hero__copy">
+                <p class="asset-manager-hero__eyebrow">Asset Manager · GRAP 17</p>
+                <h1>Asset Register</h1>
+                <p class="asset-manager-hero__lead">
+                    Maintain the municipal asset sub-ledger. Lifecycle changes (useful life, impairment) submit as asset journals for Finance Manager approval — they do not post directly to the trial balance.
+                </p>
+            </div>
+            <button type="button" class="btn btn-primary" id="btnOpenRegisterAsset">Register asset</button>
+            <a href="/api/asset-manager/export/register.csv" class="btn btn-secondary" download>Export CSV</a>
+            <button type="button" class="btn btn-secondary" id="btnRunDepreciation">Run depreciation</button>
+        </header>
+
+        <div id="assetRegisterSummary" class="asset-summary-strip" aria-live="polite"></div>
+
+        <div id="assetRegisterList" class="asset-register-list">
+            <div class="queue-loading">
+                <div class="loading-spinner"></div>
+                <p>Loading asset register…</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="registerAssetModal" class="submission-details-modal element--hidden" role="dialog" aria-labelledby="registerAssetTitle" aria-modal="true">
+    <div class="submission-details-overlay" data-action="close-register-asset"></div>
+    <div class="submission-details-content asset-modal-content">
+        <div class="submission-details-header asset-modal-header">
+            <div>
+                <p class="asset-manager-hero__eyebrow">New asset</p>
+                <h3 id="registerAssetTitle">Register asset</h3>
+                <p class="asset-modal-header__lead">Add an item to the GRAP 17 asset sub-ledger.</p>
+            </div>
+            <button type="button" class="btn-close" data-action="close-register-asset" aria-label="Close">&times;</button>
+        </div>
+        <form id="registerAssetForm" class="asset-form asset-form--modal">
+            <div class="asset-form-grid">
+                <label class="asset-field asset-form-grid__full">
+                    <span class="asset-field__label">Asset name</span>
+                    <input type="text" name="asset_name" class="asset-field__control" required maxlength="200" placeholder="e.g. Municipal fleet vehicle" autocomplete="off">
+                </label>
+                <label class="asset-field">
+                    <span class="asset-field__label">Category</span>
+                    <select name="asset_category" class="asset-field__control asset-field__control--select" required>
+                        <option value="property_plant_equipment">Property, plant &amp; equipment</option>
+                        <option value="intangible_assets">Intangible assets</option>
+                        <option value="investment_property">Investment property</option>
+                        <option value="financial_assets">Financial assets</option>
+                    </select>
+                </label>
+                <label class="asset-field">
+                    <span class="asset-field__label">Purchase date</span>
+                    <input type="date" name="purchase_date" class="asset-field__control" required>
+                </label>
+                <label class="asset-field">
+                    <span class="asset-field__label">Purchase cost</span>
+                    <div class="asset-field__input-wrap asset-field__input-wrap--currency">
+                        <span class="asset-field__prefix" aria-hidden="true">R</span>
+                        <input type="text" name="purchase_cost" class="asset-field__control" required placeholder="0,00" data-currency-input data-min="0">
+                    </div>
+                </label>
+                <label class="asset-field">
+                    <span class="asset-field__label">Residual value</span>
+                    <div class="asset-field__input-wrap asset-field__input-wrap--currency">
+                        <span class="asset-field__prefix" aria-hidden="true">R</span>
+                        <input type="text" name="residual_value" class="asset-field__control" value="0" placeholder="0,00" data-currency-input data-min="0">
+                    </div>
+                </label>
+                <label class="asset-field asset-form-grid__full">
+                    <span class="asset-field__label">Useful life (years)</span>
+                    <input type="number" name="useful_life_years" class="asset-field__control" min="1" max="50" required placeholder="e.g. 5" inputmode="numeric">
+                </label>
+            </div>
+            <div class="submission-details-footer asset-modal-footer">
+                <button type="button" class="btn btn-secondary" data-action="close-register-asset">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save to register</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/asset-register.js') }}"></script>
+{% endblock %}

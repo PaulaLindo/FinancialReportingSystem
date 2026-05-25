@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Asset reconciliation{% endblock %}
+
+{% block content %}
+<div class="page page--asset-manager asset-reconciliation-page">
+    <div class="container-content">
+        <header class="asset-manager-hero">
+            <div class="asset-manager-hero__copy">
+                <p class="asset-manager-hero__eyebrow">Asset Manager · GRAP 17</p>
+                <h1>Reconciliation</h1>
+                <p class="asset-manager-hero__lead">
+                    Compare the asset register carrying value total to the General Ledger PPE control balance.
+                </p>
+            </div>
+            <a href="{{ url_for('asset_manager_register_page') }}" class="btn btn-secondary">Asset register</a>
+            <button type="button" class="btn btn-primary" id="btnSyncGlFromTb">Sync from trial balance</button>
+        </header>
+
+        <div id="reconciliationPanel" class="reconciliation-panel"
+             data-reconciled="{{ 'true' if reconciliation.reconciled else 'false' }}">
+            <div class="reconciliation-status reconciliation-status--{{ 'ok' if reconciliation.reconciled else 'warn' }}">
+                {% if reconciliation.reconciled %}
+                ✓ Register and GL are within tolerance
+                {% else %}
+                ⚠ Variance requires investigation
+                {% endif %}
+            </div>
+
+            <div class="reconciliation-grid">
+                <article class="reconciliation-card">
+                    <h2>Asset register</h2>
+                    <p class="reconciliation-amount">R {{ "{:,.2f}".format(reconciliation.register_total_carrying_value) }}</p>
+                    <p class="text-muted">{{ reconciliation.register_asset_count }} asset(s) · total cost R {{ "{:,.2f}".format(reconciliation.register_total_cost) }}</p>
+                </article>
+                <article class="reconciliation-card">
+                    <h2>General ledger (PPE control)</h2>
+                    <p class="reconciliation-amount">R {{ "{:,.2f}".format(reconciliation.gl_ppe_control_balance) }}</p>
+                    <p class="text-muted">{{ reconciliation.gl_balance_note }}</p>
+                </article>
+                <article class="reconciliation-card reconciliation-card--variance">
+                    <h2>Variance</h2>
+                    <p class="reconciliation-amount">R {{ "{:,.2f}".format(reconciliation.variance) }}</p>
+                    <p class="text-muted">Tolerance ± R {{ "{:,.2f}".format(reconciliation.tolerance) }}</p>
+                </article>
+            </div>
+        </div>
+
+        <p class="text-muted reconciliation-footnote">
+            {{ reconciliation.grap_reference }} · GL balance last updated {{ reconciliation.gl_balance_updated_at[:10] if reconciliation.gl_balance_updated_at else '—' }}
+            {% if reconciliation.gl_balance_source %} · Source: {{ reconciliation.gl_balance_source_label or reconciliation.gl_balance_source }}{% endif %}
+        </p>
+
+        <details class="reconciliation-manual-gl">
+            <summary>Manual GL balance override</summary>
+            <p class="text-muted reconciliation-manual-gl__hint">
+                Edit the current GL balance if it differs from trial balance. Sync details remain on the GL card above.
+            </p>
+            <form id="manualGlForm" class="asset-form asset-form--compact">
+                <label class="asset-field">
+                    <span class="asset-field__label">GL balance (R)</span>
+                    <input type="number" name="balance" class="asset-field__control" step="0.01" value="{{ reconciliation.gl_ppe_control_balance }}" required>
+                </label>
+                <label class="asset-field">
+                    <span class="asset-field__label">Note</span>
+                    <input type="text" name="note" class="asset-field__control"
+                           value=""
+                           placeholder="Optional reason for manual adjustment"
+                           autocomplete="off">
+                </label>
+                <div class="reconciliation-manual-gl__actions">
+                    <button type="submit" class="btn btn-primary btn-sm">Update GL balance</button>
+                </div>
+            </form>
+        </details>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/asset-reconciliation.js') }}"></script>
+{% endblock %}

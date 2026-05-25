@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}{{ asset.asset_name }} — Asset detail{% endblock %}
+
+{% block content %}
+<div class="page page--asset-manager asset-detail-page">
+    <div class="container-content">
+        <header class="asset-detail-hero">
+            <a href="{{ url_for('asset_manager_register_page') }}" class="asset-detail-hero__back btn btn-secondary btn-sm">← Back to register</a>
+            <div class="asset-detail-hero__body">
+                <div class="asset-detail-hero__copy">
+                    <p class="asset-manager-hero__eyebrow">{{ (asset.category_details.name if asset.category_details else none) or asset.asset_category | replace('_', ' ') | title }}</p>
+                    <h1>{{ asset.asset_name }}</h1>
+                    <p class="asset-detail-hero__meta">
+                        <span>Asset ID: <strong>{{ asset.asset_id }}</strong></span>
+                        <span class="asset-status asset-status--{{ asset.status | replace(' ', '_') }}">{{ asset.status }}</span>
+                    </p>
+                </div>
+            </div>
+        </header>
+
+        <div class="asset-metric-strip" aria-label="Carrying value summary">
+            <div class="asset-metric-tile">
+                <span class="asset-metric-tile__label">Purchase cost</span>
+                <span class="asset-metric-tile__value">R {{ "{:,.2f}".format(asset.purchase_cost) }}</span>
+            </div>
+            <div class="asset-metric-tile">
+                <span class="asset-metric-tile__label">Accumulated depreciation</span>
+                <span class="asset-metric-tile__value">R {{ "{:,.2f}".format(asset.accumulated_depreciation) }}</span>
+            </div>
+            <div class="asset-metric-tile asset-metric-tile--highlight">
+                <span class="asset-metric-tile__label">Carrying value</span>
+                <span class="asset-metric-tile__value">R {{ "{:,.2f}".format(asset.carrying_value) }}</span>
+            </div>
+            <div class="asset-metric-tile">
+                <span class="asset-metric-tile__label">Remaining useful life</span>
+                <span class="asset-metric-tile__value">{{ asset.remaining_useful_life }} years</span>
+            </div>
+        </div>
+
+        <div class="asset-lifecycle-grid">
+            <section class="asset-detail-card asset-detail-card--action">
+                <div class="asset-detail-card__head">
+                    <span class="asset-detail-card__icon" aria-hidden="true">📅</span>
+                    <div>
+                        <h2>Useful life review</h2>
+                        <p class="asset-detail-card__lead">GRAP 17.16 — submit a useful life change for Finance Manager approval.</p>
+                    </div>
+                </div>
+                <form id="usefulLifeJournalForm" class="asset-form asset-form--compact">
+                    <div class="asset-form-row">
+                        <label class="asset-field">
+                            <span class="asset-field__label">New remaining useful life (years)</span>
+                            <input type="number" name="new_useful_life" class="asset-field__control" min="1" max="50" value="{{ asset.remaining_useful_life }}" required inputmode="numeric">
+                        </label>
+                        <label class="asset-field">
+                            <span class="asset-field__label">Effective date</span>
+                            <input type="date" name="effective_date" class="asset-field__control">
+                        </label>
+                    </div>
+                    <label class="asset-field">
+                        <span class="asset-field__label">Reason <span class="asset-field__hint">(required, min. 10 characters)</span></span>
+                        <textarea name="reason" class="asset-field__control asset-field__control--textarea" rows="4" required minlength="10" placeholder="Document the basis for the useful life change…"></textarea>
+                    </label>
+                    <button type="submit" class="btn btn-primary btn-block">Submit useful life journal</button>
+                </form>
+            </section>
+
+            <section class="asset-detail-card asset-detail-card--action asset-detail-card--impairment">
+                <div class="asset-detail-card__head">
+                    <span class="asset-detail-card__icon" aria-hidden="true">⚠️</span>
+                    <div>
+                        <h2>Impairment</h2>
+                        <p class="asset-detail-card__lead">GRAP 17 — record an impairment proposal. Amount applies only after FM approval.</p>
+                    </div>
+                </div>
+                <form id="impairmentJournalForm" class="asset-form asset-form--compact">
+                    <div class="asset-form-row">
+                        <label class="asset-field">
+                            <span class="asset-field__label">Impairment amount</span>
+                            <div class="asset-field__input-wrap asset-field__input-wrap--currency">
+                                <span class="asset-field__prefix" aria-hidden="true">R</span>
+                                <input type="text" name="impairment_amount" class="asset-field__control" required placeholder="0,00" data-currency-input data-min="0.01" data-max="{{ asset.carrying_value }}">
+                            </div>
+                        </label>
+                        <label class="asset-field">
+                            <span class="asset-field__label">Recoverable amount <span class="asset-field__hint">(optional)</span></span>
+                            <div class="asset-field__input-wrap asset-field__input-wrap--currency">
+                                <span class="asset-field__prefix" aria-hidden="true">R</span>
+                                <input type="text" name="recoverable_amount" class="asset-field__control" placeholder="0,00" data-currency-input data-min="0">
+                            </div>
+                        </label>
+                    </div>
+                    <label class="asset-field">
+                        <span class="asset-field__label">Reason <span class="asset-field__hint">(required, min. 10 characters)</span></span>
+                        <textarea name="reason" class="asset-field__control asset-field__control--textarea" rows="4" required minlength="10" placeholder="Indicators of impairment and measurement basis…"></textarea>
+                    </label>
+                    <button type="submit" class="btn btn-warning btn-block">Submit impairment journal</button>
+                </form>
+            </section>
+
+            {% if asset.status != 'disposed' %}
+            <section class="asset-detail-card asset-detail-card--action asset-detail-card--disposal">
+                <div class="asset-detail-card__head">
+                    <span class="asset-detail-card__icon" aria-hidden="true">📤</span>
+                    <div>
+                        <h2>Disposal</h2>
+                        <p class="asset-detail-card__lead">GRAP 17 — propose derecognition. Asset is removed from the register only after FM approval.</p>
+                    </div>
+                </div>
+                <form id="disposalJournalForm" class="asset-form asset-form--compact">
+                    <div class="asset-form-row">
+                        <label class="asset-field">
+                            <span class="asset-field__label">Disposal proceeds</span>
+                            <div class="asset-field__input-wrap asset-field__input-wrap--currency">
+                                <span class="asset-field__prefix" aria-hidden="true">R</span>
+                                <input type="text" name="disposal_proceeds" class="asset-field__control" value="0" required placeholder="0,00" data-currency-input data-min="0">
+                            </div>
+                        </label>
+                        <label class="asset-field">
+                            <span class="asset-field__label">Disposal date</span>
+                            <input type="date" name="disposal_date" class="asset-field__control">
+                        </label>
+                    </div>
+                    <label class="asset-field">
+                        <span class="asset-field__label">Reason <span class="asset-field__hint">(required, min. 10 characters)</span></span>
+                        <textarea name="reason" class="asset-field__control asset-field__control--textarea" rows="4" required minlength="10" placeholder="Basis for disposal (sale, scrapping, transfer…)"></textarea>
+                    </label>
+                    <button type="submit" class="btn btn-secondary btn-block">Submit disposal journal</button>
+                </form>
+            </section>
+            {% endif %}
+        </div>
+
+        <section class="asset-journals-section">
+            <div class="asset-journals-section__head">
+                <h2>Asset journals</h2>
+                <p class="text-muted">Lifecycle changes submitted for this asset</p>
+            </div>
+            <div id="assetJournalsList" class="asset-journals-list" data-asset-id="{{ asset.asset_id }}">
+                {% if journals %}
+                {% for j in journals %}
+                <article class="asset-journal-card asset-journal-card--{{ j.status }}">
+                    <div class="asset-journal-card__head">
+                        <span class="asset-journal-type">{{ j.journal_type | replace('_', ' ') | title }}</span>
+                        <span class="asset-journal-status status-{{ j.status }}">{{ j.status | replace('_', ' ') }}</span>
+                    </div>
+                    <p>{{ j.description }}</p>
+                    {% if j.amount %}<p class="text-muted">Amount: R {{ "{:,.2f}".format(j.amount) }}</p>{% endif %}
+                    <p class="text-muted">Submitted {{ j.submitted_at[:10] if j.submitted_at else '—' }}{% if j.submitter_name %} by {{ j.submitter_name }}{% endif %}</p>
+                    {% if j.status == 'approved' and j.reviewed_at %}
+                    <p class="asset-journal-outcome asset-journal-outcome--approved">
+                        Approved by {{ j.reviewer_name or j.reviewed_by or 'Finance Manager' }} on {{ j.reviewed_at[:10] }}
+                    </p>
+                    {% elif j.status == 'rejected' %}
+                    <p class="asset-journal-outcome asset-journal-outcome--rejected">
+                        Rejected by {{ j.reviewer_name or j.reviewed_by or 'Finance Manager' }}{% if j.reviewed_at %} on {{ j.reviewed_at[:10] }}{% endif %}
+                    </p>
+                    {% if j.rejection_reason %}
+                    <p class="asset-journal-rejection"><strong>FM reason:</strong> {{ j.rejection_reason }}</p>
+                    {% endif %}
+                    {% elif j.status == 'pending_review' %}
+                    <p class="asset-journal-outcome asset-journal-outcome--pending text-muted">Awaiting Finance Manager approval</p>
+                    {% endif %}
+                </article>
+                {% endfor %}
+                {% else %}
+                <div class="asset-journals-empty">
+                    <span class="asset-journals-empty__icon" aria-hidden="true">📋</span>
+                    <p>No journals submitted yet.</p>
+                    <p class="text-muted">Useful life and impairment proposals will appear here after submission.</p>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+window.assetDetailId = {{ asset.asset_id | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/asset-detail.js') }}"></script>
+{% endblock %}

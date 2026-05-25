@@ -52,6 +52,15 @@ class FluidNavigation {
             this.closeMenu();
         });
         
+        // Close menu when a nav link is tapped
+        this.navMenu.querySelectorAll('.nav-menu a').forEach((link) => {
+            link.addEventListener('click', () => {
+                if (this.isOpen) {
+                    this.closeMenu();
+                }
+            });
+        });
+
         // Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isOpen) {
@@ -117,11 +126,11 @@ class FluidNavigation {
         document.body.classList.add('body-scroll-locked');
         document.body.classList.remove('body-scroll-unlocked');
         
-        // Focus first menu item
-        const firstMenuItem = this.navMenu.querySelector('.nav-menu a');
-        if (firstMenuItem) {
+        // Focus close control — avoid highlighting Dashboard via first-link focus
+        const focusTarget = this.mobileClose || this.menuToggle;
+        if (focusTarget) {
             setTimeout(() => {
-                firstMenuItem.focus();
+                focusTarget.focus({ preventScroll: true });
             }, 100);
         }
     }

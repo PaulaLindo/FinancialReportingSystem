@@ -39,8 +39,8 @@
     display: flex;
     align-items: center;
     gap: var(--fluid-space-sm);
-    flex-shrink: 0;
-    min-width: clamp(180px, 20vw, 280px);
+    flex-shrink: 1;
+    min-width: clamp(140px, 14vw, 220px);
 }
 
 .nav-logo {
@@ -275,6 +275,10 @@
 }
 
 .nav-menu a:focus {
+    outline: none;
+}
+
+.nav-menu a:focus-visible {
     outline: 2px solid var(--primary-500);
     outline-offset: 2px;
 }
@@ -554,38 +558,15 @@
     }
 }
 
-/* Emergency breakpoint for very small screens with many tabs */
-@media (max-width: 1200px) {
+/* Legacy tight-nav helpers — desktop only above 1024px */
+@media (min-width: 1024px) and (max-width: 1200px) {
     .nav-desktop-menu .nav-menu {
-        gap: var(--fluid-space-3xs); /* Ultra minimal gap */
-    }
-    
-    .nav-desktop-menu .nav-menu a {
-        padding: var(--fluid-space-3xs) var(--fluid-space-3xs); /* Ultra minimal padding */
-        min-height: clamp(24px, 3vw, 28px); /* Even smaller height */
-        min-width: clamp(40px, 5vw, 60px); /* Ultra small minimum */
-        max-width: clamp(60px, 8vw, 90px); /* Ultra small maximum */
-        font-size: clamp(9px, 1vw, 11px); /* Much smaller text */
-        line-height: 1.0; /* Tightest line height */
+        gap: 0.15rem;
     }
 }
 
-/* Ultra emergency breakpoint for extremely crowded navigation */
-@media (max-width: 1000px) {
-    .nav-desktop-menu .nav-menu {
-        gap: var(--fluid-space-3xs); /* Ultra minimal gap */
-    }
-    
-    .nav-desktop-menu .nav-menu a {
-        padding: var(--fluid-space-3xs) var(--fluid-space-3xs); /* Ultra minimal padding */
-        min-height: clamp(22px, 2.5vw, 26px); /* Smallest possible height */
-        min-width: clamp(35px, 4.5vw, 55px); /* Smallest possible width */
-        max-width: clamp(55px, 7vw, 85px); /* Smallest maximum */
-        font-size: clamp(8px, 0.9vw, 10px); /* Smallest readable text */
-        line-height: 1.0; /* Tightest line height */
-        letter-spacing: -0.02em; /* Slightly condensed text */
-    }
-    
+/* Mobile layout helpers — below desktop breakpoint only */
+@media (max-width: 1023px) {
     .nav-user-info-mobile .nav-user-details {
         display: flex;
         flex-direction: column;
@@ -622,6 +603,17 @@
         width: 100%;
         text-align: center;
         padding: var(--fluid-space-md) var(--fluid-space-lg);
+    }
+
+    .nav-mobile-body .nav-menu a.active {
+        background: var(--primary-100);
+        color: var(--primary-800);
+        font-weight: 600;
+    }
+
+    .nav-mobile-body .nav-menu a:not(.active):focus {
+        outline: none;
+        box-shadow: none;
     }
 }
 
@@ -688,48 +680,58 @@
     
     /* Desktop navigation button standardization */
     .nav-menu a {
-        padding: var(--fluid-space-sm) var(--fluid-space-md); /* Increased padding */
-        min-height: clamp(36px, 4.5vw, 42px); /* Increased height */
-        min-width: clamp(65px, 8vw, 95px); /* Increased minimum width */
-        max-width: clamp(100px, 12vw, 140px); /* Increased maximum width */
-        width: auto; /* Allow natural width */
-        flex-shrink: 0; /* Don't allow items to shrink below minimum */
-        white-space: nowrap; /* Prevent text wrapping */
-        overflow: hidden; /* Hide overflow text */
-        text-overflow: ellipsis; /* Show ellipsis for very long text */
+        padding: var(--fluid-space-xs) clamp(0.35rem, 0.9vw, 0.65rem);
+        min-height: clamp(32px, 3.5vw, 38px);
+        min-width: unset;
+        max-width: none;
+        width: auto;
+        flex-shrink: 0;
+        white-space: nowrap;
+        overflow: visible;
+        text-overflow: unset;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: clamp(13px, 1.4vw, 15px); /* Increased font size */
+        font-size: clamp(11px, 1vw, 13px);
         text-align: center;
-        line-height: 1.2; /* Better line height */
+        line-height: 1.2;
     }
     
         
-    /* Desktop navigation menu layout */
+    /* Desktop navigation menu layout — single row */
     .nav-desktop-menu .nav-menu {
         display: flex;
         flex-direction: row;
+        flex-wrap: nowrap;
         align-items: center;
-        gap: var(--fluid-space-xs);
+        gap: clamp(0.15rem, 0.5vw, 0.5rem);
         flex: 1 1 auto;
         min-width: 0;
-        flex-wrap: wrap;
         overflow: visible;
     }
 }
 
-/* Tight desktop: keep logout visible — trim link padding before clipping user block */
-@media (min-width: 1024px) and (max-width: 1280px) {
+/* Tight desktop: keep all links on one line */
+@media (min-width: 1024px) and (max-width: 1400px) {
     .nav-desktop-menu .nav-menu a {
-        padding: var(--fluid-space-xs) var(--fluid-space-sm);
-        min-width: unset;
-        max-width: none;
-        font-size: var(--text-xs);
+        padding: var(--fluid-space-3xs) clamp(0.3rem, 0.75vw, 0.5rem);
+        font-size: clamp(10px, 0.95vw, 12px);
+    }
+
+    .nav-brand {
+        min-width: clamp(120px, 12vw, 180px);
+    }
+
+    .nav-brand h2 {
+        font-size: clamp(1rem, 2vw, 1.25rem);
+    }
+
+    .nav-brand .tagline {
+        font-size: clamp(0.65rem, 1.2vw, 0.75rem);
     }
 
     .nav-user-name {
-        max-width: 7rem;
+        max-width: 6rem;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;

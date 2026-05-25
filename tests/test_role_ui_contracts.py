@@ -170,6 +170,32 @@ class LegacyRoutesRemovedTests(unittest.TestCase):
         self.assertIn('renderCategories()', js)
 
 
+class AssetManagerUiContractTests(unittest.TestCase):
+    def test_asset_manager_pages_and_nav(self):
+        html = read('templates/asset_manager/register.html')
+        base = read('templates/base.html')
+        routes = read('controllers/routes_asset_manager.py')
+        self.assertIn('asset-register-page', html)
+        self.assertIn('btnOpenRegisterAsset', html)
+        self.assertIn('asset-manager/reconciliation', base)
+        self.assertIn('asset-manager/journals', base)
+        self.assertIn('dashboard-asset-manager', read('templates/dashboard.html'))
+        self.assertIn('disposal-journal', read('static/js/asset-detail.js'))
+        self.assertIn('ASSET_MANAGER', base)
+        self.assertIn('asset_manager_register_page', routes)
+        self.assertIn('/api/asset-journals/pending', routes)
+
+    def test_asset_manager_js_wired(self):
+        reg_js = read('static/js/asset-register.js')
+        self.assertIn('/api/asset-manager', reg_js)
+        self.assertIn('useful-life-journal', read('static/js/asset-detail.js'))
+        self.assertIn('/api/asset-journals/', read('static/js/fm-asset-journals.js'))
+
+    def test_auth_redirects_asset_manager_to_dashboard(self):
+        self.assertIn("'/dashboard'", read('static/js/auth.js'))
+        self.assertIn("'ASSET_MANAGER'", read('static/js/auth.js'))
+
+
 class RlsVerificationScriptTests(unittest.TestCase):
     def test_verify_sql_documents_four_policies(self):
         sql = read('scripts/verify_supabase_cfo_migrations.sql')

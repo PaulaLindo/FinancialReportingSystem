@@ -1261,6 +1261,34 @@ def dashboard():
             cfo_kpis=cfo_kpis,
         )
 
+    if user and user.role == 'ASSET_MANAGER':
+        asset_stats = {}
+        try:
+            from services.asset_register_service import asset_register_service
+
+            asset_register_service.seed_demo_assets_if_empty(user.id)
+            stats_result = asset_register_service.get_dashboard_stats(user.id)
+            if stats_result.get('success'):
+                asset_stats = stats_result
+        except Exception as e:
+            app.logger.error(f"Error loading asset manager dashboard: {str(e)}")
+
+        stats = {
+            'open_periods': 0,
+            'pending_uploads': 0,
+            'pending_approvals': asset_stats.get('pending_journals_total', 0),
+            'completed_reports': 0,
+            'total_assets': asset_stats.get('asset_count', 0),
+            'total_liabilities': 0,
+        }
+        return render_template(
+            'dashboard.html',
+            user=user,
+            current_user=user,
+            stats=stats,
+            asset_stats=asset_stats,
+        )
+
     else:
 
         # Provide default stats data to prevent template errors

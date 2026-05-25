@@ -116,7 +116,8 @@ class AssetLifecycleModel:
             'created_at': datetime.now().isoformat(),
             'created_by': asset_data.get('created_by', 'system'),
             'last_reviewed': None,
-            'review_history': []
+            'review_history': [],
+            'impairment_history': []
         }
         
         # Calculate initial carrying value
@@ -404,6 +405,113 @@ class AssetLifecycleModel:
         
         return depreciation_results
     
+    def list_assets(self) -> List[Dict[str, Any]]:
+        """All assets in register order (newest first)."""
+        assets = list(self.asset_register.values())
+        assets.sort(key=lambda a: a.get('created_at') or '', reverse=True)
+        return assets
+    
+    def record_impairment(
+        self,
+        asset_id: str,
+        impairment_amount: float,
+        reason: str,
+        user_id: str,
+        *,
+        recoverable_amount: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Record impairment (GRAP 17) — reduces carrying value."""
+        if asset_id not in self.asset_register:
+            return {'success': False, 'error': f'Asset {asset_id} not found'}
+
+        amount = float(impairment_amount or 0)
+        if amount <= 0:
+            return {'success': False, 'error': 'Impairment amount must be greater than zero'}
+        if not str(reason or '').strip():
+            return {'success': False, 'error': 'Impairment reason is required'}
+
+        asset = self.asset_register[asset_id]
+        carrying = float(asset.get('carrying_value') or 0)
+        if amount > carrying:
+            return {
+                'success': False,
+                'error': f'Impairment amount (R {amount:,.2f}) exceeds carrying value (R {carrying:,.2f})',
+            }
+
+        entry = {
+            'impairment_id': f"IMP_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            'recorded_at': datetime.now().isoformat(),
+            'impairment_amount': amount,
+            'carrying_value_before': carrying,
+            'carrying_value_after': carrying - amount,
+            'recoverable_amount': recoverable_amount,
+            'reason': str(reason).strip(),
+            'recorded_by': user_id,
+            'grap_reference': 'GRAP 17 — Impairment of Assets',
+        }
+        asset.setdefault('impairment_history', []).append(entry)
+        asset['carrying_value'] = carrying - amount
+        asset['last_reviewed'] = datetime.now().isoformat()
+
+        return {
+            'success': True,
+            'asset_id': asset_id,
+            'impairment_entry': entry,
+            'updated_asset': asset,
+            'message': f'Impairment of R {amount:,.2f} recorded',
+        }
+
+    def dispose_asset(
+        self,
+        asset_id: str,
+        *,
+        disposal_proceeds: float,
+        reason: str,
+        user_id: str,
+        disposal_date: Optional[date] = None,
+    ) -> Dict[str, Any]:
+        """Record asset disposal (GRAP 17) — removes asset from active register."""
+        if asset_id not in self.asset_register:
+            return {'success': False, 'error': f'Asset {asset_id} not found'}
+
+        asset = self.asset_register[asset_id]
+        if asset.get('status') == 'disposed':
+            return {'success': False, 'error': 'Asset is already disposed'}
+
+        proceeds = float(disposal_proceeds or 0)
+        if proceeds < 0:
+            return {'success': False, 'error': 'Disposal proceeds cannot be negative'}
+        if not str(reason or '').strip():
+            return {'success': False, 'error': 'Disposal reason is required'}
+
+        carrying = float(asset.get('carrying_value') or 0)
+        gain_loss = proceeds - carrying
+        disp_date = disposal_date or datetime.now().date()
+
+        entry = {
+            'disposal_id': f"DISP_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            'disposed_at': datetime.now().isoformat(),
+            'disposal_date': disp_date.isoformat(),
+            'carrying_value_before': carrying,
+            'disposal_proceeds': proceeds,
+            'gain_loss_on_disposal': gain_loss,
+            'reason': str(reason).strip(),
+            'disposed_by': user_id,
+            'grap_reference': 'GRAP 17 — Derecognition of Assets',
+        }
+        asset.setdefault('disposal_history', []).append(entry)
+        asset['carrying_value'] = 0.0
+        asset['status'] = 'disposed'
+        asset['last_reviewed'] = datetime.now().isoformat()
+
+        return {
+            'success': True,
+            'asset_id': asset_id,
+            'disposal_entry': entry,
+            'updated_asset': asset,
+            'message': f'Asset disposed — gain/(loss) R {gain_loss:,.2f}',
+        }
+
     def generate_asset_register_report(self) -> Dict[str, Any]:
         """Generate comprehensive asset register report"""
         report = {

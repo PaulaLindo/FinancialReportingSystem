@@ -20,7 +20,10 @@
             </div>
             {% else %}
             <div class="hero-actions">
-                {% if current_user.can_review() %}
+                {% if current_user.role == 'ASSET_MANAGER' %}
+                <a href="/asset-manager/register" class="btn btn-primary">Asset Register</a>
+                <a href="/asset-manager/reconciliation" class="btn btn-secondary">Reconciliation</a>
+                {% elif current_user.can_review() %}
                 <a href="/finance-manager/review-queue" class="btn btn-primary">View Queue</a>
                 <a href="/about" class="btn btn-secondary">Learn More</a>
                 {% else %}
@@ -252,6 +255,87 @@
                 </div>
             </div>
         </div>
+    </div>
+    {% elif current_user.role == 'ASSET_MANAGER' and asset_stats %}
+    <div class="dashboard-content dashboard-asset-manager container-content">
+        <section class="asset-dashboard" aria-label="Asset Manager overview">
+            <header class="asset-dashboard__intro">
+                <p class="asset-manager-hero__eyebrow">GRAP 17 · Asset register</p>
+                <h2 class="asset-dashboard__heading">Overview</h2>
+                <p class="asset-dashboard__lead">Track carrying value, journal approvals, and GL reconciliation at a glance.</p>
+            </header>
+
+            <div class="asset-dashboard__metrics">
+                <article class="asset-metric-tile">
+                    <span class="asset-metric-tile__icon" aria-hidden="true">🏗️</span>
+                    <span class="asset-metric-tile__label">Active assets</span>
+                    <span class="asset-metric-tile__value">{{ asset_stats.active_asset_count or 0 }}</span>
+                </article>
+                <article class="asset-metric-tile asset-metric-tile--highlight">
+                    <span class="asset-metric-tile__icon" aria-hidden="true">💰</span>
+                    <span class="asset-metric-tile__label">Carrying value</span>
+                    <span class="asset-metric-tile__value asset-metric-tile__value--currency">R {{ "{:,.2f}".format(asset_stats.total_carrying_value or 0) }}</span>
+                </article>
+                <article class="asset-metric-tile{% if asset_stats.pending_journals_mine %} asset-metric-tile--pending{% endif %}">
+                    <span class="asset-metric-tile__icon" aria-hidden="true">📝</span>
+                    <span class="asset-metric-tile__label">My pending journals</span>
+                    <span class="asset-metric-tile__value">{{ asset_stats.pending_journals_mine or 0 }}</span>
+                </article>
+                <article class="asset-metric-tile {% if asset_stats.reconciled %}asset-metric-tile--success{% else %}asset-metric-tile--warn{% endif %}">
+                    <span class="asset-metric-tile__icon" aria-hidden="true">{% if asset_stats.reconciled %}✓{% else %}⚠{% endif %}</span>
+                    <span class="asset-metric-tile__label">GL variance{% if asset_stats.reconciled %} · reconciled{% endif %}</span>
+                    <span class="asset-metric-tile__value asset-metric-tile__value--currency">R {{ "{:,.2f}".format(asset_stats.variance or 0) }}</span>
+                </article>
+            </div>
+
+            <div class="asset-dashboard__panel">
+                <h3 class="asset-dashboard__panel-title">Quick actions</h3>
+                <div class="asset-dashboard__actions">
+                    <a href="/asset-manager/register" class="asset-dashboard__action asset-dashboard__action--primary">
+                        <span class="asset-dashboard__action-icon" aria-hidden="true">📋</span>
+                        <span class="asset-dashboard__action-copy">
+                            <strong>Open register</strong>
+                            <small>View and manage assets</small>
+                        </span>
+                    </a>
+                    <a href="/asset-manager/journals" class="asset-dashboard__action">
+                        <span class="asset-dashboard__action-icon" aria-hidden="true">📝</span>
+                        <span class="asset-dashboard__action-copy">
+                            <strong>My journals</strong>
+                            <small>Lifecycle change requests</small>
+                        </span>
+                    </a>
+                    <a href="/asset-manager/reconciliation" class="asset-dashboard__action">
+                        <span class="asset-dashboard__action-icon" aria-hidden="true">⚖️</span>
+                        <span class="asset-dashboard__action-copy">
+                            <strong>Reconciliation</strong>
+                            <small>Register vs general ledger</small>
+                        </span>
+                    </a>
+                    <a href="/api/asset-manager/export/register.csv" class="asset-dashboard__action" download>
+                        <span class="asset-dashboard__action-icon" aria-hidden="true">⬇️</span>
+                        <span class="asset-dashboard__action-copy">
+                            <strong>Export CSV</strong>
+                            <small>Download asset register</small>
+                        </span>
+                    </a>
+                </div>
+            </div>
+
+            <footer class="asset-dashboard__footer">
+                <span class="asset-dashboard__chip">
+                    GL source: {{ asset_stats.gl_balance_source_label or asset_stats.gl_balance_source or 'Manual entry' }}
+                </span>
+                <span class="asset-dashboard__chip">
+                    GL balance: R {{ "{:,.2f}".format(asset_stats.gl_balance or 0) }}
+                </span>
+                {% if asset_stats.reconciled %}
+                <span class="asset-dashboard__chip asset-dashboard__chip--ok">Within tolerance</span>
+                {% else %}
+                <span class="asset-dashboard__chip asset-dashboard__chip--warn">Variance requires review</span>
+                {% endif %}
+            </footer>
+        </section>
     </div>
     {% elif current_user.role == 'CFO' %}
     <!-- CFO strategic KPI strip -->

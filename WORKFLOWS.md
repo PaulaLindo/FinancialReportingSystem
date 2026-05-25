@@ -363,11 +363,113 @@ Use this checklist for user acceptance testing before production sign-off. Recor
 | X4 | Line-item comments persist on metadata after approve (not cleared) | Pass |
 | X5 | Formula breakdown PDF available in review (not gated on period lock) | Pass |
 
+---
+
+## Asset Manager (GRAP 17)
+
+**Primary goal:** Maintain the asset register; submit lifecycle changes as **asset journals** for Finance Manager approval (separate from the trial balance workflow).
+
+**Out of scope (by design):** Depreciation and asset lifecycle changes do **not** post to the trial balance / balance sheet workflow. Reconciliation compares register totals to a GL control balance synced from an approved balance sheet or entered manually.
+
+### Where the Asset Manager works
+
+| Nav / page | Purpose |
+|------------|---------|
+| **Dashboard** (`/dashboard`) | Overview panel: active assets, carrying value, pending journals, GL variance, quick actions |
+| **Asset Register** (`/asset-manager/register`) | Summary strip, list, register, export CSV, run annual depreciation |
+| **My journals** (`/asset-manager/journals`) | All journals you submitted (filter by status) |
+| **Asset detail** (`/asset-manager/assets/<id>`) | Useful life, impairment, and disposal journals |
+| **Reconciliation** (`/asset-manager/reconciliation`) | Register vs GL; preview + sync from approved trial balance or manual override |
+
+Finance Manager: **Asset journals** (`/finance-manager/asset-journals`) — approve or reject pending asset journals (nav badge shows pending count). Settled asset journal decisions appear under **History → Asset journals**.
+
+**Persistence:** Supabase only — tables `assets`, `asset_journals`, `asset_gl_balances`. No JSON file fallback.
+
+**SQL run order (Supabase SQL Editor):**
+
+1. If `financial_periods.id` is `text` (demo slugs like `may-2026-period`), run `scripts/migrate_financial_periods_id_to_uuid.sql` first. It assigns UUIDs, keeps old slugs in `period_code` / `metadata.legacy_id`, and updates `metadata.period_id` on session rows.
+2. Run `scripts/create_asset_register_tables.sql`.
+
+```sql
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'financial_periods' AND column_name = 'id';
+-- Expected after step 1: data_type = uuid
+```
+
+### Notifications (inbox)
+
+| Event | Who is notified | Inbox action |
+|-------|-----------------|--------------|
+| Asset Manager submits useful life / impairment / disposal journal | Finance Manager | Open **Asset journals** |
+| FM approves journal | Asset Manager (submitter) | View asset detail |
+| FM rejects journal | Asset Manager (submitter) | View asset detail (includes rejection reason) |
+
+Asset Manager sees journal status on each asset’s **Asset journals** section (pending / approved / rejected, reviewer, date, FM rejection reason when applicable).
+
+### Typical journey
+
+1. **Register** — Add assets (GRAP 17 category, cost, useful life). Demo seed on first register visit if empty. Money fields use live **en-ZA** formatting (thousands + cents).
+2. **Lifecycle** — Submit **Useful life review** (GRAP 17.16), **Impairment**, or **Disposal** with mandatory reason.
+3. **FM approval** — Status `pending_review` until FM approves/rejects. Register updates **only on approval** (disposal sets status `disposed`, carrying value zero).
+4. **Depreciation** — **Run depreciation** on the register page applies annual charges for the **current calendar year** to active assets whose schedule row is still `projected`. Re-running the same year processes **0** assets (no double-charge).
+5. **Reconciliation** — Compare register carrying value total to GL PPE control balance.
+   - **Sync from trial balance** — previews first (`GET .../sync-tb/preview`), shows current vs proposed balance and line count, then confirms before writing.
+   - If already synced from the same approved session with the same total, shows *no changes* and skips the write.
+   - **Fixed-asset GL matching** — rows mapped to PPE / intangibles / investments (GRAP labels such as *Property, Plant and Equipment*, chart codes 2100–2399, municipal 1600–1799, or matching account descriptions).
+   - Sync audit note example: `Synced from sample_balanced_trial_balance.xlsx (session 86be47f2…) — 1 fixed-asset GL line (PPE, intangibles, investments).`
+   - **Manual GL override** — separate form; note field is not pre-filled from sync text. Sync details stay on the GL card above.
+6. **Export** — **Export CSV** downloads the GRAP 17 asset register report (logged in export audit).
+
+### Verify depreciation applied
+
+| Check | What to look for |
+|-------|------------------|
+| Toast | e.g. *Annual depreciation for 2026 applied to N asset(s)* |
+| Register / detail | Lower carrying value, higher accumulated depreciation, remaining life −1 |
+| API | `POST /api/asset-manager/depreciation/run` → `success: true`, `depreciation_results.assets_processed` |
+| Supabase | `assets.updated_at` recent; schedule entry for year → `processed` |
+| Idempotency | Second run same year → **0** assets processed |
+
+### APIs
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET/POST /api/asset-manager/assets` | List / register |
+| `POST .../useful-life-journal` \| `.../impairment-journal` \| `.../disposal-journal` | Queue lifecycle change |
+| `POST /api/asset-manager/depreciation/run` | Annual depreciation run |
+| `GET /api/asset-manager/reconciliation` | Register vs GL |
+| `GET /api/asset-manager/reconciliation/sync-tb/preview` | Preview TB sync (no write) |
+| `POST /api/asset-manager/reconciliation/sync-tb` | Apply GL from approved balance sheet |
+| `PUT /api/asset-manager/reconciliation/gl-balance` | Manual GL override |
+| `GET /api/asset-manager/dashboard-stats` | Dashboard KPIs |
+| `GET /api/asset-manager/export/register.csv` | CSV export |
+| `GET /api/asset-manager/journals` | Asset Manager’s journals (scoped by role) |
+| `GET /api/asset-journals/pending` | FM queue |
+| `GET /api/asset-journals/history` | FM/CFO settled asset journals |
+| `POST /api/asset-journals/<id>/approve` \| `/reject` | FM decision |
+
+### UAT checklist (Asset Manager)
+
+| # | Test | Pass |
+|---|------|------|
+| A1 | Login as Asset Manager → **Dashboard** KPIs and quick actions | Pass |
+| A2 | Register asset → appears with carrying value | Pass |
+| A3 | Useful life journal pending until FM approves | Pass |
+| A4 | Impairment reduces carrying value only after FM approve | Pass |
+| A5 | Disposal journal marks asset disposed only after FM approve | Pass |
+| A6 | FM **Asset journals** approve/reject (nav badge) | Pass |
+| A7 | **Reconciliation** preview sync, confirm apply, or manual GL; source shows *Trial balance* / *Manual entry* | Pass |
+| A8 | **Run depreciation** updates carrying values; second run same year → 0 assets | Pass |
+| A9 | **Export CSV** downloads register | Pass |
+| A10 | FM **History → Asset journals** shows settled decisions | Pass |
+| A11 | Inbox: FM notified on submit; Asset Manager on approve/reject | Pass |
+
 ### Sign-off
 
 | Role | Name | Date | Signature / OK |
 |------|------|------|----------------|
-| Finance Clerk (UAT) | | | |
-| Finance Manager (UAT) | | | |
-| CFO (UAT) | | | |
+| Finance Clerk (UAT) | Paula | 25/05/2026 | OK |
+| Finance Manager (UAT) | Paula | 25/05/2026 | OK |
+| CFO (UAT) | Paula | 25/05/2026 | OK |
 | Technical / Dev | Paula | 25/05/2026 | OK |

@@ -54,9 +54,16 @@
                         {% if current_user and current_user.role == 'FINANCE_CLERK' %}
                         <li><a href="/submission-history" class="nav-link {% if request.endpoint == 'submission_history_page' %}active{% endif %}">History</a></li>
                         {% endif %}
+
+                        {% if current_user and current_user.role == 'ASSET_MANAGER' %}
+                        <li><a href="/asset-manager/register" class="nav-link {% if request.endpoint == 'asset_manager_register_page' %}active{% endif %}">Asset Register</a></li>
+                        <li><a href="/asset-manager/journals" class="nav-link {% if request.endpoint == 'asset_manager_journals_page' %}active{% endif %}">My journals</a></li>
+                        <li><a href="/asset-manager/reconciliation" class="nav-link {% if request.endpoint == 'asset_manager_reconciliation_page' %}active{% endif %}">Reconciliation</a></li>
+                        {% endif %}
                         
                         {% if current_user and current_user.role in ['FINANCE_MANAGER', 'CFO'] %}
                         <li><a href="/finance-manager/review-queue" class="nav-link {% if request.endpoint == 'finance_manager_review_queue' %}active{% endif %}">Review</a></li>
+                        <li><a href="/finance-manager/asset-journals" class="nav-link {% if request.endpoint == 'finance_manager_asset_journals_page' %}active{% endif %}">Asset journals<span class="nav-pending-badge" id="navAssetJournalBadge" hidden aria-label="Pending asset journals"></span></a></li>
                         {% endif %}
                         {% if current_user and current_user.can_access_export_center() %}
                         <li><a href="/export" class="nav-link {% if request.endpoint == 'export_page' %}active{% endif %}">Export</a></li>
@@ -114,9 +121,16 @@
                     {% if current_user and current_user.role == 'FINANCE_CLERK' %}
                     <li><a href="/submission-history" class="nav-link {% if request.endpoint == 'submission_history_page' %}active{% endif %}">History</a></li>
                     {% endif %}
+
+                    {% if current_user and current_user.role == 'ASSET_MANAGER' %}
+                    <li><a href="/asset-manager/register" class="nav-link {% if request.endpoint == 'asset_manager_register_page' %}active{% endif %}">Asset Register</a></li>
+                    <li><a href="/asset-manager/journals" class="nav-link {% if request.endpoint == 'asset_manager_journals_page' %}active{% endif %}">My journals</a></li>
+                    <li><a href="/asset-manager/reconciliation" class="nav-link {% if request.endpoint == 'asset_manager_reconciliation_page' %}active{% endif %}">Reconciliation</a></li>
+                    {% endif %}
                     
                     {% if current_user and current_user.role in ['FINANCE_MANAGER', 'CFO'] %}
                     <li><a href="/finance-manager/review-queue" class="nav-link {% if request.endpoint == 'finance_manager_review_queue' %}active{% endif %}">Review</a></li>
+                    <li><a href="/finance-manager/asset-journals" class="nav-link {% if request.endpoint == 'finance_manager_asset_journals_page' %}active{% endif %}">Asset journals</a></li>
                     {% endif %}
                     {% if current_user and current_user.can_access_export_center() %}
                     <li><a href="/export" class="nav-link {% if request.endpoint == 'export_page' %}active{% endif %}">Export</a></li>
@@ -179,6 +193,9 @@
             <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
             {% if current_user %}
             <script src="{{ url_for('static', filename='js/inbox-nav.js') }}" defer></script>
+            {% if current_user.role in ['FINANCE_MANAGER', 'CFO'] %}
+            <script src="{{ url_for('static', filename='js/asset-journal-nav-badge.js') }}" defer></script>
+            {% endif %}
             {% endif %}
             <script src="{{ url_for('static', filename='js/transaction-card-ui.js') }}"></script>
             <script src="{{ url_for('static', filename='js/modal-system.js') }}"></script>

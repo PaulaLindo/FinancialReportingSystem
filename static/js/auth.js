@@ -246,7 +246,7 @@ class AuthenticationModule {
             'SYSTEM_ADMIN': '/admin',
             'CFO': '/finance-manager/review-queue',
             'FINANCE_MANAGER': '/finance-manager/review-queue',
-            'ASSET_MANAGER': '/upload',
+            'ASSET_MANAGER': '/dashboard',
             'FINANCE_CLERK': '/dashboard',
             'FINANCIAL_CLERK': '/dashboard',
             'AUDITOR': '/reports'

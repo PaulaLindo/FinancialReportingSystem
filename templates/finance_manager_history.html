@@ -8,13 +8,20 @@
         <header class="content-page-header">
             <h1>Submission history</h1>
             {% if current_user and current_user.role == 'CFO' %}
-            <p>CFO final decisions only. Status badges show whether the Finance Manager or CFO acted. Pending items remain on <strong>Review</strong>.</p>
+            <p>CFO final decisions and asset journal outcomes. Pending items remain on <strong>Review</strong> or <strong>Asset journals</strong>.</p>
             {% else %}
-            <p>Decisions by the Finance Manager and CFO. Status badges show who approved or rejected. Pending items remain on <strong>Review</strong>.</p>
+            <p>Financial submission decisions and asset journal approve/reject outcomes. Pending items remain on <strong>Review</strong> or <strong>Asset journals</strong>.</p>
             {% endif %}
         </header>
 
         <div class="queue-filters">
+            <div class="filter-group">
+                <label for="fmHistoryRecordTypeFilter" class="filter-label">Record type</label>
+                <select id="fmHistoryRecordTypeFilter" class="filter-select">
+                    <option value="submissions">Financial submissions</option>
+                    <option value="asset_journals">Asset journals</option>
+                </select>
+            </div>
             <div class="filter-group">
                 <label for="fmHistoryStatusFilter" class="filter-label">Status</label>
                 <select id="fmHistoryStatusFilter" class="filter-select" data-user-role="{{ current_user.role if current_user else '' }}">

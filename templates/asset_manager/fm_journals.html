@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Asset journals — pending approval{% endblock %}
+
+{% block content %}
+<div class="page page--asset-manager fm-asset-journals-page">
+    <div class="container-content">
+        <header class="asset-manager-hero asset-manager-hero--compact">
+            <div class="asset-manager-hero__copy">
+                <p class="asset-manager-hero__eyebrow">Finance Manager · GRAP 17</p>
+                <h1>Asset journals</h1>
+                <p class="asset-manager-hero__lead">
+                    Useful life reviews and impairments from Asset Manager awaiting your approval. Approved changes update the asset register only — not the trial balance workflow.
+                </p>
+                <p class="asset-manager-hero__count"><span id="assetJournalCount" class="review-queue-count" aria-live="polite">—</span> journal(s) pending review.</p>
+            </div>
+        </header>
+
+        <div id="fmAssetJournalsList" class="asset-journals-list asset-journals-list--fm">
+            <div class="queue-loading">
+                <div class="loading-spinner"></div>
+                <p>Loading pending asset journals…</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/fm-asset-journals.js') }}"></script>
+{% endblock %}

@@ -74,6 +74,172 @@ class VarydianUtils {
         });
     }
 
+    /** Parse user-entered money (supports en-ZA: 1 234 567,89 and 1234567.89). */
+    static parseMoneyInput(raw) {
+        if (raw == null || String(raw).trim() === '') return NaN;
+        let s = String(raw).trim().replace(/\u00a0/g, ' ').replace(/\s/g, '');
+        const lastComma = s.lastIndexOf(',');
+        const lastDot = s.lastIndexOf('.');
+        if (lastComma >= 0 && lastDot >= 0) {
+            if (lastComma > lastDot) {
+                s = s.replace(/\./g, '').replace(',', '.');
+            } else {
+                s = s.replace(/,/g, '');
+            }
+        } else if (lastComma >= 0) {
+            s = s.replace(',', '.');
+        }
+        const n = parseFloat(s);
+        return Number.isFinite(n) ? n : NaN;
+    }
+
+    /** Format amount for currency input display (no R prefix). */
+    static formatMoneyInput(amount) {
+        if (amount == null || amount === '') return '';
+        if (typeof amount === 'number' && Number.isFinite(amount)) {
+            const [intPart, decPart] = amount.toFixed(2).split('.');
+            return VarydianUtils.formatMoneyInputLive(`${intPart},${decPart}`, { finalize: true });
+        }
+        const n = VarydianUtils.parseMoneyInput(amount);
+        if (!Number.isFinite(n)) return String(amount);
+        const [intPart, decPart] = n.toFixed(2).split('.');
+        return VarydianUtils.formatMoneyInputLive(`${intPart},${decPart}`, { finalize: true });
+    }
+
+    /**
+     * Format while typing (finalize=false) or on blur (finalize=true, always 2 decimals).
+     * en-ZA: space thousands, comma decimals — e.g. 1 234 567,89
+     */
+    static formatMoneyInputLive(raw, { finalize = false } = {}) {
+        if (raw == null) return '';
+        let s = String(raw).replace(/\u00a0/g, ' ').trim();
+        if (!s) return '';
+
+        s = s.replace(/\./g, ',');
+        const commaIdx = s.indexOf(',');
+        const hasComma = commaIdx >= 0;
+
+        let intRaw = (hasComma ? s.slice(0, commaIdx) : s).replace(/\D/g, '');
+        let decRaw = hasComma ? s.slice(commaIdx + 1).replace(/\D/g, '').slice(0, 2) : '';
+
+        if (!intRaw && !decRaw && !hasComma) return '';
+
+        if (intRaw) {
+            intRaw = intRaw.replace(/^0+(?=\d)/, '');
+        }
+
+        let intFormatted = '';
+        if (intRaw) {
+            intFormatted = parseInt(intRaw, 10).toLocaleString('en-ZA');
+        }
+
+        if (finalize) {
+            const dec = decRaw.padEnd(2, '0').slice(0, 2);
+            if (intFormatted) return `${intFormatted},${dec}`;
+            if (decRaw || hasComma) return `0,${dec}`;
+            return intFormatted;
+        }
+
+        if (hasComma) {
+            return `${intFormatted || '0'},${decRaw}`;
+        }
+
+        return intFormatted;
+    }
+
+    static _currencyEditState(value, cursorPos) {
+        const left = value.slice(0, cursorPos);
+        const split = left.split(/[,.]/);
+        const intDigits = (split[0] || '').replace(/\D/g, '').length;
+        const decDigits = split.length > 1
+            ? split.slice(1).join('').replace(/\D/g, '').length
+            : 0;
+        const inDecimal = /[,.]/.test(left);
+        return { intDigits, decDigits, inDecimal };
+    }
+
+    static _cursorAfterIntDigits(str, digitCount) {
+        if (digitCount <= 0) return 0;
+        let seen = 0;
+        for (let i = 0; i < str.length; i++) {
+            if (/\d/.test(str[i])) {
+                seen++;
+                if (seen >= digitCount) return i + 1;
+            }
+        }
+        return str.length;
+    }
+
+    static _currencyCursorFromState(formatted, state) {
+        const commaIdx = formatted.indexOf(',');
+        if (!state.inDecimal || commaIdx < 0) {
+            return VarydianUtils._cursorAfterIntDigits(formatted, state.intDigits);
+        }
+        return commaIdx + 1 + state.decDigits;
+    }
+
+    static bindCurrencyInputs(root = document) {
+        root.querySelectorAll('[data-currency-input]').forEach((input) => {
+            VarydianUtils.bindCurrencyInput(input);
+        });
+    }
+
+    /** Text input with live en-ZA thousands + cents formatting. */
+    static bindCurrencyInput(input) {
+        if (!input || input.dataset.currencyBound === '1') return;
+        input.dataset.currencyBound = '1';
+        input.setAttribute('type', 'text');
+        input.setAttribute('inputmode', 'decimal');
+        input.setAttribute('autocomplete', 'off');
+
+        const validate = () => {
+            const raw = input.value.trim();
+            if (!raw) {
+                input.setCustomValidity(input.required ? 'Please enter an amount.' : '');
+                return;
+            }
+            const n = VarydianUtils.parseMoneyInput(raw);
+            if (!Number.isFinite(n)) {
+                input.setCustomValidity('Enter a valid amount (e.g. 1 234 567,89).');
+                return;
+            }
+            const min = input.dataset.min != null && input.dataset.min !== ''
+                ? parseFloat(input.dataset.min) : null;
+            const max = input.dataset.max != null && input.dataset.max !== ''
+                ? parseFloat(input.dataset.max) : null;
+            if (min != null && Number.isFinite(min) && n < min) {
+                input.setCustomValidity(`Amount must be at least ${VarydianUtils.formatMoneyInput(min)}.`);
+                return;
+            }
+            if (max != null && Number.isFinite(max) && n > max) {
+                input.setCustomValidity(`Amount must not exceed ${VarydianUtils.formatMoneyInput(max)}.`);
+                return;
+            }
+            input.setCustomValidity('');
+        };
+
+        const applyLive = () => {
+            const state = VarydianUtils._currencyEditState(input.value, input.selectionStart ?? 0);
+            const formatted = VarydianUtils.formatMoneyInputLive(input.value, { finalize: false });
+            input.value = formatted;
+            const pos = VarydianUtils._currencyCursorFromState(formatted, state);
+            input.setSelectionRange(pos, pos);
+            validate();
+        };
+
+        const finalize = () => {
+            input.value = VarydianUtils.formatMoneyInputLive(input.value, { finalize: true });
+            validate();
+        };
+
+        input.addEventListener('input', applyLive);
+        input.addEventListener('blur', finalize);
+
+        if (input.value.trim()) {
+            finalize();
+        }
+    }
+
     /**
      * Human-readable workflow status (no underscores), e.g. pending_review → Pending Review.
      */
@@ -169,7 +335,14 @@ class VarydianUtils {
     }
 
     /**
-     * Show error message
+     * Show success toast (pages without a dedicated success banner).
+     */
+    static showSuccess(message) {
+        this.showToast(message, 'success');
+    }
+
+    /**
+     * Show error message (inline banner when present, otherwise toast).
      */
     static showError(message, errorElement = null) {
         const errorEl = errorElement || document.getElementById('errorMessage');
@@ -178,6 +351,8 @@ class VarydianUtils {
             errorEl.classList.add('error-message--visible');
             errorEl.classList.remove('error-message--hidden');
             this.scrollToElement(errorEl, { block: 'center' });
+        } else {
+            this.showToast(message, 'error');
         }
     }
 
@@ -361,9 +536,11 @@ class VarydianUtils {
                         try {
                             responseData = JSON.parse(errorText);
                             if (responseData.error) {
-                                errorMessage = `HTTP error! status: ${response.status} - ${JSON.stringify(responseData)}`;
+                                errorMessage = String(responseData.error);
+                            } else if (responseData.message) {
+                                errorMessage = String(responseData.message);
                             } else {
-                                errorMessage += ` - ${errorText}`;
+                                errorMessage = `Request failed (${response.status})`;
                             }
                         } catch (_parseErr) {
                             errorMessage += ` - ${errorText}`;
