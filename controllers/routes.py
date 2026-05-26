@@ -843,11 +843,13 @@ def get_current_user():
 @app.context_processor
 def inject_template_globals():
     """Expose current_user and role helpers to all Jinja templates (base.html, dashboard, etc.)."""
+    maroon_url = (os.environ.get('MAROON_APP_URL') or '').strip().rstrip('/')
     return {
         'current_user': get_current_user(),
         'get_role_description': get_role_description,
         'get_role_color': get_role_color,
         'get_role_label': get_role_label,
+        'maroon_app_url': maroon_url or None,
     }
 
 

@@ -176,6 +176,8 @@ WHERE table_name = 'financial_periods' AND column_name = 'id';
 
 ## Maroon Traceability integration
 
+See **`docs/INTEGRATION_MAROON.md`** for how Maroon pricing tiers map to Varydian (especially **Government & SOEs** = GRAP reporting).
+
 **Maroon:** [lungelomyamya-rgb/maroon_traceability](https://github.com/lungelomyamya-rgb/maroon_traceability) — Next.js + Supabase Auth, agricultural supply-chain traceability (farm → retail).
 
 **This app (Varydian FRS):** Flask + custom `users` table + Flask sessions — municipal GRAP financial reporting.
