@@ -30,7 +30,8 @@ def extract_centered_icon_mark(logo_path: Path) -> Image.Image:
     src = Image.open(logo_path).convert("RGBA")
     w, h = src.size
     icon_h = max(1, int(h * ICON_TOP_FRACTION))
-    band = np.array(src.crop((0, 0, w, icon_h)))
+    icon_strip = src.crop((0, 0, w, icon_h))
+    band = np.array(icon_strip)
 
     bbox = _content_bbox(band)
     if bbox is None:
@@ -40,26 +41,16 @@ def extract_centered_icon_mark(logo_path: Path) -> Image.Image:
         return src.crop((left, top, left + side, top + side))
 
     x0, y0, x1, y1 = bbox
-    cx = (x0 + x1) / 2
-    cy = (y0 + y1) / 2
-    content_side = max(x1 - x0, y1 - y0)
+    patch = icon_strip.crop((x0, y0, x1 + 1, y1 + 1))
+    pw, ph = patch.size
+    content_side = max(pw, ph)
     pad = int(content_side * PADDING_RATIO)
-    side = int(content_side + 2 * pad)
-
-    left = int(round(cx - side / 2))
-    top = int(round(cy - side / 2))
-    right = left + side
-    bottom = top + side
+    side = content_side + 2 * pad
 
     canvas = Image.new("RGBA", (side, side), (255, 255, 255, 0))
-    src_x0 = max(0, left)
-    src_y0 = max(0, top)
-    src_x1 = min(w, right)
-    src_y1 = min(icon_h, bottom)
-    dest_x0 = src_x0 - left
-    dest_y0 = src_y0 - top
-    patch = src.crop((src_x0, src_y0, src_x1, src_y1))
-    canvas.paste(patch, (dest_x0, dest_y0), patch)
+    paste_x = (side - pw) // 2
+    paste_y = (side - ph) // 2
+    canvas.paste(patch, (paste_x, paste_y), patch)
     return canvas
 
 
