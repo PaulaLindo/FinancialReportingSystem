@@ -14,7 +14,8 @@ OUT_DIR = ROOT / "static" / "images"
 
 # Rows above this fraction are treated as the square icon (excludes "VARYDIAN" text).
 ICON_TOP_FRACTION = 0.48
-PADDING_RATIO = 0.14
+# Tight padding so the mark reads larger in browser tabs (16–32px).
+PADDING_RATIO = 0.05
 CONTENT_THRESHOLD = 250
 
 
