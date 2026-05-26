@@ -17,6 +17,7 @@ from decimal import Decimal
 
 from supabase import create_client, Client
 from models.supabase_auth_models import supabase_auth
+from utils.document_format_detection import document_type_label
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -180,9 +181,26 @@ class FinancialDocumentService(ABC):
                 attach_period_to_session_metadata(session, period_id)
             else:
                 from utils.period_lock import find_open_period_for_today, attach_period_to_session_metadata
+                from services.period_management_service import period_management_service
+
+                open_periods = period_management_service.dedupe_open_periods(
+                    period_management_service.model.get_open_periods()
+                )
+                if len(open_periods) > 1:
+                    raise Exception(
+                        "Multiple reporting periods are open. "
+                        "Choose a period from the dashboard task card or the upload page before uploading."
+                    )
                 fallback = find_open_period_for_today()
                 if fallback:
                     attach_period_to_session_metadata(session, fallback.id)
+                elif len(open_periods) == 1:
+                    attach_period_to_session_metadata(session, open_periods[0].id)
+                else:
+                    raise Exception(
+                        "No open reporting period is available. "
+                        "Ask your system administrator to open a period first."
+                    )
             session.metadata['column_mapping'] = column_mapping
             session.metadata['validation_result'] = validation_result
             session.metadata['file_columns'] = [str(col) for col in df.columns]
@@ -209,7 +227,7 @@ class FinancialDocumentService(ABC):
                 'column_mapping': column_mapping,
                 'validation_result': validation_result,
                 'data_rows_count': len(data_rows),
-                'message': f'{self.document_type.replace("_", " ").title()} processed successfully'
+                'message': f'{document_type_label(self.document_type)} processed successfully'
             }
             
         except Exception as e:
@@ -220,9 +238,10 @@ class FinancialDocumentService(ABC):
                     CleanupService().cleanup_specific_session(stored_session.id)
                 except Exception as cleanup_err:
                     logger.warning(f"Staging cleanup after failed upload: {cleanup_err}")
+            label = document_type_label(self.document_type)
             return {
                 'success': False,
-                'error': f'Error processing {self.document_type}: {str(e)}',
+                'error': f'Error processing {label}: {str(e)}',
                 'document_type': self.document_type
             }
     
@@ -310,8 +329,6 @@ class FinancialDocumentService(ABC):
                 return hashlib.md5(f.read()).hexdigest()
         except:
             return ""
-    
-        return model.create_session(session)
     
     def get_session_summary(self, session_id: str) -> Dict[str, Any]:
         """Get session summary for display"""

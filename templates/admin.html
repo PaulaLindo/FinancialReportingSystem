@@ -1,124 +1,182 @@
 {% extends "base.html" %}
 
-{% block title %}Admin - Varydian{% endblock %}
+{% block title %}System Admin - Varydian{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/admin.css') }}">
+{% endblock %}
 
 {% block content %}
-
 <div class="page page--admin admin-page">
-    <div class="admin-header">
+    <header class="admin-header">
         <div class="container-content">
+            <p class="admin-header__eyebrow">System Admin · No financial workflow access</p>
             <h1>Administration</h1>
-            <p>System administration and user management</p>
+            <p class="admin-header__lead">Manage reporting periods and user accounts. Clerks need open periods in Supabase before they can upload.</p>
         </div>
-    </div>
+    </header>
 
-    <div class="admin-content">
-        <div class="container-content">
-            <div class="admin-stats">
-                <div class="admin-stat-card">
-                    <div class="admin-stat-icon">👥</div>
-                    <div class="admin-stat-value">24</div>
-                    <div class="admin-stat-label">Total Users</div>
-                </div>
-                <div class="admin-stat-card">
-                    <div class="admin-stat-icon">📊</div>
-                    <div class="admin-stat-value">156</div>
-                    <div class="admin-stat-label">Reports Generated</div>
-                </div>
-                <div class="admin-stat-card">
-                    <div class="admin-stat-icon">💾</div>
-                    <div class="admin-stat-value">2.4GB</div>
-                    <div class="admin-stat-label">Storage Used</div>
-                </div>
-                <div class="admin-stat-card">
-                    <div class="admin-stat-icon">⚡</div>
-                    <div class="admin-stat-value">99.9%</div>
-                    <div class="admin-stat-label">Uptime</div>
-                </div>
+    <div class="admin-content container-content">
+        <section class="admin-overview" aria-label="Overview">
+            <div class="admin-stats" id="adminOverviewStats">
+                <article class="admin-stat-card">
+                    <div class="admin-stat-icon" aria-hidden="true">👥</div>
+                    <div class="admin-stat-value" data-stat="active_user_count">—</div>
+                    <div class="admin-stat-label">Active users</div>
+                </article>
+                <article class="admin-stat-card">
+                    <div class="admin-stat-icon" aria-hidden="true">📅</div>
+                    <div class="admin-stat-value" data-stat="open_period_count">—</div>
+                    <div class="admin-stat-label">Open periods</div>
+                </article>
+                <article class="admin-stat-card">
+                    <div class="admin-stat-icon" aria-hidden="true">🔒</div>
+                    <div class="admin-stat-value" data-stat="locked_period_count">—</div>
+                    <div class="admin-stat-label">Locked periods</div>
+                </article>
+                <article class="admin-stat-card">
+                    <div class="admin-stat-icon" aria-hidden="true">🗄️</div>
+                    <div class="admin-stat-value" data-stat="migrations_ok">—</div>
+                    <div class="admin-stat-label">Schema migrations</div>
+                </article>
+            </div>
+        </section>
+
+        <section class="admin-panel" aria-labelledby="adminPeriodsHeading">
+            <div class="admin-panel__head">
+                <h2 id="adminPeriodsHeading">Financial periods</h2>
+                <p>Create and open reporting periods for Finance Clerk uploads. Periods close automatically when all three documents are submitted.</p>
             </div>
 
-            <div class="admin-actions">
-                <div class="admin-action-card">
-                    <h3>👥 User Management</h3>
-                    <p>Manage user accounts and permissions</p>
-                    {% if current_user and current_user.can_manage_users() %}
-                    <button class="btn btn-primary">Manage Users</button>
-                    {% endif %}
+            <form id="adminCreatePeriodForm" class="admin-form admin-form--inline">
+                <div class="admin-form__grid">
+                    <label class="admin-field">
+                        <span>Period name</span>
+                        <input type="text" name="name" required placeholder="May 2026 reporting">
+                    </label>
+                    <label class="admin-field">
+                        <span>Start date</span>
+                        <input type="date" name="start_date" required>
+                    </label>
+                    <label class="admin-field">
+                        <span>End date</span>
+                        <input type="date" name="end_date" required>
+                    </label>
+                    <label class="admin-field">
+                        <span>Due date</span>
+                        <input type="date" name="due_date" required>
+                    </label>
+                    <label class="admin-field admin-field--wide">
+                        <span>Description (optional)</span>
+                        <input type="text" name="description" placeholder="Balance sheet, income statement, budget">
+                    </label>
                 </div>
-                
-                <div class="admin-action-card">
-                    <h3>🔧 System Settings</h3>
-                    <p>Configure system parameters and GRAP mappings</p>
-                    {% if current_user and current_user.can_manage_users() %}
-                    <button class="btn btn-primary">Settings</button>
-                    {% endif %}
+                <div class="admin-form__required-note" aria-label="Required uploads per period">
+                    <input type="hidden" name="required_uploads" value="3">
+                    <span class="admin-form__required-note__label">Required uploads</span>
+                    <span class="admin-form__required-note__value">3</span>
+                    <span class="admin-form__required-note__detail">Balance sheet, income statement, budget report</span>
                 </div>
-                
-                <div class="admin-action-card">
-                    <h3>📊 System Logs</h3>
-                    <p>View system activity and audit logs</p>
-                    {% if current_user and current_user.can_manage_users() %}
-                    <button class="btn btn-primary">View Logs</button>
-                    {% endif %}
+                <div class="admin-form__actions">
+                    <button type="submit" class="btn btn-primary btn-sm">Create period</button>
                 </div>
-                
-                <div class="admin-action-card">
-                    <h3>💾 Data Backup</h3>
-                    <p>Backup and restore system data</p>
-                    {% if current_user and current_user.can_manage_users() %}
-                    <button class="btn btn-primary">Backup Data</button>
-                    {% endif %}
-                </div>
+            </form>
+
+            <div id="adminPeriodsList" class="admin-periods">
+                <div class="queue-loading"><div class="loading-spinner"></div><p>Loading periods…</p></div>
+            </div>
+        </section>
+
+        <section class="admin-panel" aria-labelledby="adminUsersHeading">
+            <div class="admin-panel__head">
+                <h2 id="adminUsersHeading">Users</h2>
+                <p>Create accounts and assign roles. Passwords are stored hashed in Supabase.</p>
             </div>
 
-            <div class="admin-status">
-                <h2>System Status</h2>
-                <div class="admin-stats">
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-icon">🗄️</div>
-                        <div class="admin-stat-value status-ok">✅</div>
-                        <div class="admin-stat-label">Database</div>
-                    </div>
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-icon">📁</div>
-                        <div class="admin-stat-value status-ok">✅</div>
-                        <div class="admin-stat-label">File Storage</div>
-                    </div>
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-icon">📄</div>
-                        <div class="admin-stat-value status-ok">✅</div>
-                        <div class="admin-stat-label">PDF Generation</div>
-                    </div>
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-icon">⚙️</div>
-                        <div class="admin-stat-value status-ok">✅</div>
-                        <div class="admin-stat-label">GRAP Engine</div>
-                    </div>
+            <form id="adminCreateUserForm" class="admin-form admin-form--inline">
+                <div class="admin-form__grid">
+                    <label class="admin-field">
+                        <span>Full name</span>
+                        <input type="text" name="full_name" required>
+                    </label>
+                    <label class="admin-field">
+                        <span>Email / username</span>
+                        <input type="email" name="email" required placeholder="user@sadpmr.gov.za">
+                    </label>
+                    <label class="admin-field">
+                        <span>Password</span>
+                        <input type="password" name="password" required minlength="6" autocomplete="new-password">
+                    </label>
+                    <label class="admin-field">
+                        <span>Role</span>
+                        <select name="role" required>
+                            <option value="FINANCE_CLERK">Finance Clerk</option>
+                            <option value="FINANCE_MANAGER">Finance Manager</option>
+                            <option value="CFO">CFO</option>
+                            <option value="ASSET_MANAGER">Asset Manager</option>
+                            <option value="AUDITOR">Auditor</option>
+                            <option value="SYSTEM_ADMIN">System Admin</option>
+                        </select>
+                    </label>
                 </div>
-            </div>
+                <div class="admin-form__actions">
+                    <button type="submit" class="btn btn-primary btn-sm">Create user</button>
+                </div>
+            </form>
 
-            <div class="admin-activity">
-                <h2>Recent Activity</h2>
-                <div class="export-history-list">
-                    <div class="export-history-item">
-                        <div class="export-history-date">2 hours ago</div>
-                        <div class="export-history-title">Balance Sheet Uploaded</div>
-                        <div class="export-history-status">By Thabo Mthembu (Accountant)</div>
-                    </div>
-                    <div class="export-history-item">
-                        <div class="export-history-date">4 hours ago</div>
-                        <div class="export-history-title">Financial Statements Generated</div>
-                        <div class="export-history-status">By Sarah Nkosi (CFO)</div>
-                    </div>
-                    <div class="export-history-item">
-                        <div class="export-history-date">1 day ago</div>
-                        <div class="export-history-title">PDF Report Downloaded</div>
-                        <div class="export-history-status">By AGSA Auditor</div>
-                    </div>
+            <div id="adminUsersList" class="admin-users">
+                <div class="queue-loading"><div class="loading-spinner"></div><p>Loading users…</p></div>
+            </div>
+        </section>
+
+        <section class="admin-panel admin-panel--migrations" aria-labelledby="adminMigrationsHeading">
+            <div class="admin-panel__head admin-panel__head--split">
+                <div class="admin-panel__head-text">
+                    <h2 id="adminMigrationsHeading">Schema migrations</h2>
+                    <p>CFO period-lock and asset-register probes — run scripts in Supabase if any check fails.</p>
                 </div>
             </div>
-        </div>
+            <div id="adminMigrationsPanel" class="admin-migrations">
+                <div class="queue-loading"><div class="loading-spinner"></div><p>Checking migrations…</p></div>
+            </div>
+            <aside class="admin-panel__footnote admin-info-strip" aria-label="Asset register setup">
+                <span class="admin-info-strip__icon" aria-hidden="true">📦</span>
+                <p><strong>Asset register</strong> — apply <code>scripts/create_asset_register_tables.sql</code> and optional <code>scripts/migrate_asset_journals_pending_cfo.sql</code> in the Supabase SQL editor.</p>
+            </aside>
+        </section>
+
+        <section class="admin-panel admin-panel--tools" aria-labelledby="adminSystemToolsHeading">
+            <div class="admin-panel__head admin-panel__head--split">
+                <div class="admin-panel__head-text">
+                    <h2 id="adminSystemToolsHeading">System tools</h2>
+                    <p>Operational maintenance — no financial workflow access from this role.</p>
+                </div>
+            </div>
+            <div class="admin-system-tools-grid">
+                <article class="admin-tool-card admin-tool-card--active">
+                    <div class="admin-tool-card__icon" aria-hidden="true">🧹</div>
+                    <h3 class="admin-tool-card__title">Database cleanup</h3>
+                    <p class="admin-tool-card__desc">Remove stale unbalanced uploads, failed sessions, and orphaned records.</p>
+                    <a href="/admin/cleanup" class="btn btn-secondary btn-sm admin-tool-card__action">Open cleanup</a>
+                </article>
+                <article class="admin-tool-card admin-tool-card--planned">
+                    <div class="admin-tool-card__icon" aria-hidden="true">📋</div>
+                    <h3 class="admin-tool-card__title">Audit log viewer</h3>
+                    <p class="admin-tool-card__desc">Structured activity logs (<code>view_logs</code>) — planned. Use the Supabase dashboard for now.</p>
+                    <span class="admin-tool-card__badge">Coming soon</span>
+                </article>
+                <article class="admin-tool-card admin-tool-card--planned">
+                    <div class="admin-tool-card__icon" aria-hidden="true">⚙️</div>
+                    <h3 class="admin-tool-card__title">System settings</h3>
+                    <p class="admin-tool-card__desc">Environment configuration (<code>system_settings</code>) is managed via deployment, not this UI.</p>
+                    <span class="admin-tool-card__badge">Deployment managed</span>
+                </article>
+            </div>
+        </section>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin-page.js') }}"></script>
 {% endblock %}

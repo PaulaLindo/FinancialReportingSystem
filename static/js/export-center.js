@@ -22,7 +22,7 @@
             VarydianUtils.showToast(msg, isError ? 'error' : 'success');
             return;
         }
-        window.alert(msg);
+        console.warn('[export-center]', msg);
     }
 
     function setBusy(btn, busy, label) {

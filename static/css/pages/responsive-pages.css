@@ -1,9 +1,9 @@
 /* Scoped responsive tweaks — mapping, FM history, statement review pages */
 
 .page--fm-history {
-    min-height: 100vh;
-    background: var(--bg-secondary);
-    padding: var(--fluid-space-lg) 0 var(--fluid-space-2xl);
+    min-height: auto;
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 12rem);
+    padding: clamp(1rem, 3vw, 2rem) 0 clamp(2rem, 5vw, 3rem);
 }
 
 @media (max-width: 768px) {

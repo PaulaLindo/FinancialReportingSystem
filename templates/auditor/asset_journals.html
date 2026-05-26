@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Material asset journal trail (audit){% endblock %}
+
+{% block content %}
+<div class="page page--auditor page--asset-manager fm-asset-journals-page asset-journals-page--readonly">
+    <div class="container-content">
+        <header class="asset-manager-hero">
+            <div class="asset-manager-hero__copy">
+                <p class="asset-manager-hero__eyebrow">Auditor · GRAP 17 · Read-only</p>
+                <h1>Material asset journal trail</h1>
+                <p class="asset-manager-hero__lead">
+                    CFO-approved disposals and material impairments from the asset register.
+                    This trail is separate from the trial balance workflow — no edits or approvals.
+                </p>
+            </div>
+            <a href="/audit" class="btn btn-secondary">Audit workspace</a>
+        </header>
+
+        <div id="auditAssetJournalsSummary" class="asset-summary-strip" aria-live="polite"></div>
+
+        <div id="auditAssetJournalsList" class="asset-journals-list asset-journals-list--fm asset-journals-list--history">
+            <div class="queue-loading">
+                <div class="loading-spinner"></div>
+                <p>Loading material journal trail…</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/audit-asset-journals.js') }}"></script>
+{% endblock %}

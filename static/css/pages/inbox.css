@@ -154,6 +154,13 @@
     margin-top: var(--fluid-space-md);
     padding-top: var(--fluid-space-md);
     border-top: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.inbox-msg__panel[hidden] {
+    display: none !important;
 }
 
 .inbox-msg__main {
@@ -198,6 +205,7 @@
 
 .inbox-msg__body {
     margin: 0;
+    align-self: stretch;
     white-space: pre-wrap;
     word-break: break-word;
     color: var(--text-body, #2d3748);
@@ -208,7 +216,9 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
     gap: var(--fluid-space-sm);
+    width: 100%;
 }
 
 .inbox-msg__meta.muted,

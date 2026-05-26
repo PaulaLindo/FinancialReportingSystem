@@ -55,12 +55,12 @@
                     `${preview.matched_lines} fixed-asset line(s) from ${preview.session_label || 'trial balance'}.`,
                 ].join('\n');
 
-                const ok = typeof window.showConfirm === 'function'
-                    ? await window.showConfirm('Sync from trial balance', message, {
+                const ok = window.varydianAppConfirm
+                    ? await window.varydianAppConfirm('Sync from trial balance', message, {
                         confirmText: 'Apply sync',
                         cancelText: 'Cancel',
                     })
-                    : window.confirm(message.replace(/\n/g, '\n'));
+                    : false;
                 if (!ok) return;
 
                 if (btn) btn.textContent = 'Syncing…';

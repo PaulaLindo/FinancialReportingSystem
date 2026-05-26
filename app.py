@@ -76,6 +76,13 @@ except ImportError as e:
     print(f"Warning: Could not register system routes: {e}")
 
 try:
+    from controllers.routes_admin import register_admin_routes
+
+    register_admin_routes(app)
+except ImportError as e:
+    print(f"Warning: Could not register admin routes: {e}")
+
+try:
     from utils.period_lock_guard import register_period_lock_middleware
 
     register_period_lock_middleware(app)

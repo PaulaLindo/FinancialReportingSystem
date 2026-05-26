@@ -437,69 +437,49 @@ class FormulaModalController {
         modalBody.appendChild(section);
     }
     
+    _setModalActionVisible(button, visible) {
+        if (!button) return;
+        button.hidden = !visible;
+        button.classList.toggle('display-none', !visible);
+        if (!visible) {
+            button.setAttribute('aria-hidden', 'true');
+            button.tabIndex = -1;
+        } else {
+            button.removeAttribute('aria-hidden');
+            button.tabIndex = 0;
+        }
+    }
+
     updateModalFooter(accessMode, processingStatus) {
         const modalActions = document.querySelector('.modal-actions');
         if (!modalActions) return;
-        
-        // Adjust button visibility based on access mode
-        const exportButton = modalActions.querySelector('button[onclick="exportBreakdownPDF()"]');
-        const sourceLedgerButton = modalActions.querySelector('button[onclick="viewRawBalanceSheet()"]');
+
+        const exportButton = modalActions.querySelector('[data-action="export-breakdown-pdf"]');
+        const sourceLedgerButton = modalActions.querySelector('[data-action="view-raw-balance-sheet"]');
         const modalFooter = modalActions.closest('.formula-modal-footer');
-        
-        // Clear existing read-only indicators
+        const isAuditor = String(window.currentUserRole || '').toUpperCase() === 'AUDITOR';
+        const readOnlyMode = isAuditor || accessMode === 'readonly' || accessMode === 'audit';
+
         const existingReadOnlyIndicator = modalActions.querySelector('.read-only-indicator');
         if (existingReadOnlyIndicator) {
             existingReadOnlyIndicator.remove();
         }
-        
-        if (accessMode === 'readonly' || accessMode === 'audit') {
-            // Audit mode - read-only access
-            if (exportButton) {
-                exportButton.classList.add('display-inline-flex');
-                exportButton.innerHTML = `
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                        <polyline points="7,10 12,15 17,10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                    Export Audit Report
-                `;
-            }
-            
-            if (sourceLedgerButton) {
-                sourceLedgerButton.classList.add('display-inline-flex');
-                sourceLedgerButton.innerHTML = `
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                        <polyline points="14,2 14,8 20,8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
-                        <polyline points="10,9 9,9 8,9"/>
-                    </svg>
-                    View Source Ledger (Read-Only)
-                `;
-            }
-            
-            // Add read-only indicator
-            this.addReadOnlyIndicator(modalActions, accessMode, processingStatus);
-            
-            // Add audit seal to footer
+
+        if (readOnlyMode) {
+            this._setModalActionVisible(exportButton, false);
+            this._setModalActionVisible(sourceLedgerButton, false);
+            this.addReadOnlyIndicator(modalActions, 'audit', processingStatus);
             if (modalFooter) {
                 this.addAuditSeal(modalFooter);
             }
-            
         } else if (accessMode === 'limited') {
-            // Limited access - hide some features
-            if (exportButton) exportButton.classList.add('display-none');
-            if (sourceLedgerButton) sourceLedgerButton.classList.add('display-inline-flex');
-            
-            // Add limited access indicator
+            this._setModalActionVisible(exportButton, false);
+            this._setModalActionVisible(sourceLedgerButton, true);
             this.addReadOnlyIndicator(modalActions, accessMode, processingStatus);
-            
         } else {
-            // Full access - show all features
+            this._setModalActionVisible(exportButton, true);
+            this._setModalActionVisible(sourceLedgerButton, true);
             if (exportButton) {
-                exportButton.classList.add('display-inline-flex');
                 exportButton.innerHTML = `
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
@@ -509,9 +489,8 @@ class FormulaModalController {
                     Export This Breakdown (PDF)
                 `;
             }
-            
+
             if (sourceLedgerButton) {
-                sourceLedgerButton.classList.add('display-inline-flex');
                 sourceLedgerButton.innerHTML = `
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
@@ -524,9 +503,10 @@ class FormulaModalController {
                 `;
             }
         }
-        
-        // Add processing status indicator
-        if (processingStatus) {
+
+        if (isAuditor) {
+            modalActions.querySelector('.processing-status-indicator')?.remove();
+        } else if (processingStatus) {
             const statusIndicator = document.createElement('div');
             statusIndicator.className = 'processing-status-indicator';
             statusIndicator.innerHTML = `

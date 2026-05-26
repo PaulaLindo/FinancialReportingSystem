@@ -853,6 +853,18 @@ def inject_template_globals():
 
 # Authentication Routes
 
+def _login_redirect_for_role(role: str):
+    """Post-login landing page by role."""
+    role = (role or '').upper()
+    if role == 'SYSTEM_ADMIN':
+        return redirect(url_for('admin_page'))
+    if role == 'AUDITOR':
+        return redirect(url_for('auditor_workspace_page'))
+    if role in ('FINANCE_MANAGER', 'CFO'):
+        return redirect(url_for('finance_manager_review_queue'))
+    return redirect(url_for('dashboard'))
+
+
 @app.route('/login', methods=['GET', 'POST'])
 
 def login():
@@ -888,7 +900,7 @@ def login():
 
             # DON'T flash message - just redirect
 
-            return redirect(url_for('dashboard'))
+            return _login_redirect_for_role(user_data['role'])
 
         else:
 
@@ -1123,6 +1135,16 @@ def logout():
 
 
 
+@app.route('/health')
+def health():
+    """Lightweight health check for Render / load balancers (no auth)."""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'varydian-financial-reporting',
+        'timestamp': datetime.utcnow().isoformat() + 'Z',
+    })
+
+
 @app.route('/')
 
 def index():
@@ -1171,8 +1193,6 @@ def dashboard():
 
     if user and user.role == 'FINANCE_CLERK':
 
-        print("DEBUG: Entering FINANCE_CLERK dashboard logic")
-
         from services.period_management_service import period_management_service
 
         
@@ -1213,6 +1233,11 @@ def dashboard():
 
         clerk_stats = {
             'open_periods': period_stats.get('open_periods', 0),
+            'closed_periods': period_stats.get('closed_periods', 0),
+            'recent_closed_periods': period_stats.get('recent_closed_periods', 0),
+            'older_closed_count': period_stats.get('older_closed_count', 0),
+            'has_more_closed': period_stats.get('has_more_closed', False),
+            'closed_scope': period_stats.get('closed_scope', 'preview'),
             'available_periods': period_stats.get('available_periods', 0),
             'urgent_periods': period_stats.get('urgent_periods', 0),
             'submitted_today': submission_counts.get('submitted_today', 0),
@@ -1224,13 +1249,29 @@ def dashboard():
             'total_liabilities': 0,
         }
 
+        open_period_rows = [
+            p for p in periods
+            if str(p.get('status', '')).lower() == 'open' and not p.get('is_locked')
+        ]
+        closed_period_rows = [
+            p for p in periods
+            if p not in open_period_rows
+        ]
+
         return render_template(
-            'dashboard.html', user=user, current_user=user, periods=periods, stats=clerk_stats
+            'dashboard.html',
+            user=user,
+            current_user=user,
+            periods=periods,
+            open_periods=open_period_rows,
+            closed_periods=closed_period_rows,
+            stats=clerk_stats,
         )
 
     if user and user.role == 'CFO':
         cfo_kpis = {
             'pending_finalization_count': 0,
+            'pending_material_journals_count': 0,
             'surplus_deficit_total': None,
             'surplus_deficit_submission_count': 0,
             'budget_variance_total': None,
@@ -1241,9 +1282,18 @@ def dashboard():
 
             kpi_result = UniversalWorkflowService().get_cfo_dashboard_kpis(user.id)
             if kpi_result.get('success'):
-                cfo_kpis = kpi_result
+                cfo_kpis.update(kpi_result)
         except Exception as e:
             app.logger.error(f"Error loading CFO dashboard KPIs: {str(e)}")
+
+        try:
+            from services.asset_register_service import asset_register_service
+
+            cfo_kpis['pending_material_journals_count'] = (
+                asset_register_service.count_pending_cfo_journals()
+            )
+        except Exception as e:
+            app.logger.error(f"Error loading CFO material journal count: {str(e)}")
 
         stats = {
             'open_periods': 0,
@@ -1290,17 +1340,62 @@ def dashboard():
         )
 
     if user and user.role == 'AUDITOR':
-        auditor_stats = {'finalized_count': 0}
+        auditor_stats = {
+            'finalized_count': 0,
+            'locked_periods_count': 0,
+            'active_asset_count': 0,
+            'material_journals_count': 0,
+            'unread_inbox_count': 0,
+            'success': False,
+        }
         try:
             from services.export_center_service import export_center_service
 
             sessions = export_center_service.list_exportable_sessions(limit=200)
-            auditor_stats = {
-                'finalized_count': len(sessions),
-                'success': True,
+            auditor_stats['finalized_count'] = len(sessions)
+            period_names = {
+                (s.get('period_name') or s.get('period') or '').strip()
+                for s in sessions
+                if (s.get('period_name') or s.get('period') or '').strip()
             }
+            auditor_stats['locked_periods_count'] = len(period_names)
+            auditor_stats['success'] = True
         except Exception as e:
             app.logger.error(f"Error loading auditor dashboard: {str(e)}")
+
+        try:
+            from services.period_management_service import PeriodManagementService
+
+            periods = PeriodManagementService().model.get_all_periods()
+            locked = sum(
+                1
+                for p in periods
+                if getattr(p, 'is_locked', False) or (getattr(p, 'metadata', None) or {}).get('is_locked')
+            )
+            if locked:
+                auditor_stats['locked_periods_count'] = locked
+        except Exception as e:
+            app.logger.error(f"Error loading auditor locked period count: {str(e)}")
+
+        try:
+            from services.asset_register_service import asset_register_service
+
+            assets = asset_register_service.list_assets()
+            auditor_stats['active_asset_count'] = len(
+                [a for a in assets if str(a.get('status') or '').lower() == 'active']
+            )
+            auditor_stats['material_journals_count'] = len(
+                asset_register_service.list_material_journal_audit_trail()
+            )
+        except Exception as e:
+            app.logger.error(f"Error loading auditor asset count: {str(e)}")
+
+        try:
+            from services.inbox_service import unread_count
+
+            auditor_stats['unread_inbox_count'] = unread_count(str(user.id))
+        except Exception as e:
+            app.logger.error(f"Error loading auditor inbox count: {str(e)}")
 
         stats = {
             'open_periods': 0,
@@ -1316,6 +1411,96 @@ def dashboard():
             current_user=user,
             stats=stats,
             auditor_stats=auditor_stats,
+        )
+
+    if user and user.role == 'FINANCE_MANAGER':
+        fm_kpis = {
+            'pending_review_count': 0,
+            'pending_asset_journals_count': 0,
+            'unread_inbox_count': 0,
+        }
+        try:
+            from services.universal_workflow_service import UniversalWorkflowService
+
+            review_result = UniversalWorkflowService().get_pending_approvals(user.id, limit=1)
+            if review_result.get('success'):
+                fm_kpis['pending_review_count'] = int(review_result.get('total_count') or 0)
+        except Exception as e:
+            app.logger.error(f"Error loading FM dashboard review count: {str(e)}")
+
+        try:
+            from services.asset_register_service import asset_register_service
+
+            fm_kpis['pending_asset_journals_count'] = asset_register_service.count_pending_journals()
+        except Exception as e:
+            app.logger.error(f"Error loading FM dashboard asset journal count: {str(e)}")
+
+        try:
+            from services.inbox_service import unread_count
+
+            fm_kpis['unread_inbox_count'] = unread_count(str(user.id))
+        except Exception as e:
+            app.logger.error(f"Error loading FM dashboard inbox count: {str(e)}")
+
+        stats = {
+            'open_periods': 0,
+            'pending_uploads': 0,
+            'pending_approvals': fm_kpis['pending_review_count'],
+            'completed_reports': 0,
+            'total_assets': 0,
+            'total_liabilities': 0,
+        }
+        return render_template(
+            'dashboard.html',
+            user=user,
+            current_user=user,
+            stats=stats,
+            fm_kpis=fm_kpis,
+        )
+
+    if user and user.role == 'SYSTEM_ADMIN':
+        admin_stats = {
+            'user_count': 0,
+            'active_user_count': 0,
+            'open_period_count': 0,
+            'locked_period_count': 0,
+            'migrations_ok': False,
+        }
+        try:
+            from models.supabase_auth_models import supabase_auth
+            from services.period_management_service import period_management_service
+            from services.schema_migration_service import check_cfo_period_lock_migrations
+
+            users = supabase_auth.get_all_users()
+            periods = period_management_service.model.get_all_periods()
+            migrations = check_cfo_period_lock_migrations()
+            admin_stats = {
+                'user_count': len(users),
+                'active_user_count': len([u for u in users if u.get('is_active', True)]),
+                'open_period_count': len([p for p in periods if getattr(p, 'status', '') == 'open']),
+                'locked_period_count': len([
+                    p for p in periods
+                    if getattr(p, 'is_locked', False) or (getattr(p, 'metadata', None) or {}).get('is_locked')
+                ]),
+                'migrations_ok': bool(migrations.get('all_applied')),
+            }
+        except Exception as e:
+            app.logger.error(f"Error loading system admin dashboard: {str(e)}")
+
+        stats = {
+            'open_periods': admin_stats.get('open_period_count', 0),
+            'pending_uploads': 0,
+            'pending_approvals': 0,
+            'completed_reports': 0,
+            'total_assets': 0,
+            'total_liabilities': 0,
+        }
+        return render_template(
+            'dashboard.html',
+            user=user,
+            current_user=user,
+            stats=stats,
+            admin_stats=admin_stats,
         )
 
     else:
@@ -1402,7 +1587,27 @@ def upload_page():
 
         return redirect(url_for('dashboard'))
 
-    return render_template('upload.html', user=user)
+    period_context = None
+    period_id = request.args.get('period')
+    open_periods = []
+    try:
+        from services.period_management_service import period_management_service
+        open_periods = period_management_service.dedupe_open_periods(
+            period_management_service.model.get_open_periods()
+        )
+        if period_id:
+            period_context = period_management_service.get_period_summary(period_id)
+    except Exception:
+        period_context = None
+        open_periods = []
+
+    return render_template(
+        'upload.html',
+        user=user,
+        period=period_context,
+        period_id=period_id,
+        open_periods=[p.to_dict() for p in open_periods],
+    )
 
 
 
@@ -2778,20 +2983,15 @@ def about_page():
 
 
 @app.route('/reports')
-
 @login_required
-
 def reports_page():
-
-    """
-
-    File Management Page - All authenticated users
-
-    """
-
+    """Retired — redirect legacy bookmarks to the appropriate workflow page."""
     user = get_current_user()
-
-    return render_template('reports.html', user=user)
+    if user.role == 'FINANCE_CLERK':
+        return redirect(url_for('submission_history_page'))
+    if user.can_review():
+        return redirect(url_for('finance_manager_history'))
+    return redirect(url_for('dashboard'))
 
 
 
@@ -2902,6 +3102,9 @@ def export_page():
         flash('Access denied. Export privileges required.', 'error')
 
         return redirect(url_for('index'))
+
+    if user.role == 'AUDITOR':
+        return redirect(url_for('auditor_workspace_page'))
 
     return render_template('export.html', user=user, read_only_export=user.can_download_pdf() and not user.can_export())
 
@@ -3249,21 +3452,17 @@ def submission_status_page(submission_id):
 
 def admin_page():
 
-    """
-
-    Admin Page - CFO only
-
-    """
+    """System Admin — users, reporting periods, schema health, and data cleanup."""
 
     user = get_current_user()
 
-    if user.role != 'CFO':
+    if not user or not user.can_manage_users():
 
-        flash('Access denied. CFO privileges required.', 'error')
+        flash('Access denied. System Administrator privileges required.', 'error')
 
-        return redirect(url_for('index'))
+        return redirect(url_for('dashboard'))
 
-    return render_template('admin.html', user=user)
+    return render_template('admin.html', user=user, current_user=user)
 
 
 
@@ -3693,7 +3892,13 @@ def get_dashboard_periods():
 
         from services.period_management_service import period_management_service
 
-        dashboard_data = period_management_service.get_dashboard_data()
+        closed_scope = (request.args.get('closed_scope') or 'preview').strip().lower()
+        if closed_scope not in ('preview', 'all'):
+            closed_scope = 'preview'
+        if closed_scope == 'all' and user.role != 'FINANCE_CLERK':
+            return jsonify({'success': False, 'error': 'Permission denied'}), 403
+
+        dashboard_data = period_management_service.get_dashboard_data(closed_scope=closed_scope)
 
         
 
@@ -4385,7 +4590,7 @@ def cleanup_user_session():
 
 @login_required
 
-@permission_required('admin')  # Only admins can clean up data
+@permission_required('manage_users')  # System Admin only
 
 def cleanup_unbalanced_balance_sheets():
 
@@ -4443,7 +4648,7 @@ def cleanup_unbalanced_balance_sheets():
 
 @login_required
 
-@permission_required('admin')  # Only admins can clean up data
+@permission_required('manage_users')  # System Admin only
 
 def cleanup_failed_uploads():
 
@@ -4489,7 +4694,7 @@ def cleanup_failed_uploads():
 
 @login_required
 
-@permission_required('admin')  # Only admins can clean up data
+@permission_required('manage_users')  # System Admin only
 
 def cleanup_orphaned_data():
 
@@ -4529,7 +4734,7 @@ def cleanup_orphaned_data():
 
 @login_required
 
-@permission_required('admin')  # Only admins can clean up data
+@permission_required('manage_users')  # System Admin only
 
 def cleanup_all():
 

@@ -354,6 +354,20 @@ window.showPrompt = (title, message, defaultValue, options) => window.modalSyste
 window.showConfirm = (title, message, options) => window.modalSystem.confirm(title, message, options);
 window.showAlert = (title, message, options) => window.modalSystem.alert(title, message, options);
 
+/** In-app confirm — never falls back to native window.confirm. */
+window.varydianAppConfirm = async (title, message, options = {}) => {
+    if (window.modalSystem && typeof window.modalSystem.confirm === 'function') {
+        return window.modalSystem.confirm(title, message, options);
+    }
+    if (typeof window.showConfirm === 'function') {
+        return window.showConfirm(title, message, options);
+    }
+    if (window.VarydianUtils && typeof window.VarydianUtils.showToast === 'function') {
+        window.VarydianUtils.showToast('Confirmation dialog unavailable. Please refresh the page.', 'error');
+    }
+    return false;
+};
+
 // Toast notifications
 window.showSuccess = (message, options) => window.modalSystem.showSuccess(message, options);
 window.showError = (message, options) => window.modalSystem.showError(message, options);

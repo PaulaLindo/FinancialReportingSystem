@@ -18,6 +18,19 @@ Varydian Financial Reporting System — **client demos (free)** and **growth to 
 
 ## Free client demo (recommended): Render + Supabase
 
+### Is Render free?
+
+**Yes — for demos.** Render’s **free Web Service** tier costs **$0/month** and is enough to host this Flask app for client walkthroughs.
+
+| Free tier | Limitation |
+|-----------|------------|
+| **$0/month** | Service **sleeps after ~15 min** idle — first load can take 30–60s |
+| **750 hours/month** | One always-on instance would exceed this; sleep is expected |
+| **512 MB RAM** | Fine for demos; upgrade for production |
+| **Ephemeral disk** | Upload temp files OK; use Supabase for durable storage |
+
+When you need always-on or more RAM, move to Render **Starter** (~$7/mo) or Azure App Service.
+
 ### What stays free
 
 | Service | Free tier | Role |
@@ -43,17 +56,18 @@ Varydian Financial Reporting System — **client demos (free)** and **growth to 
    ```
    SUPABASE_URL=https://xxxx.supabase.co
    SUPABASE_ANON_KEY=your_anon_key
+   SUPABASE_SECRET_KEY=your_service_role_key
    SECRET_KEY=long_random_string_at_least_32_chars
    FLASK_ENV=production
+   MAROON_APP_URL=https://your-maroon-app.vercel.app
    ```
 
-   Optional (if you use service-role features in code):
+   `SUPABASE_SECRET_KEY` is **required** on Render for period lock, inbox, asset register, and admin writes.
 
-   ```
-   SUPABASE_SECRET_KEY=your_service_role_key
-   ```
+5. Deploy. Health check: `GET /health` → `{"status":"healthy",...}`.  
+   Your URL will look like: `https://varydian-financial-reporting.onrender.com`
 
-5. Deploy. Your URL will look like: `https://varydian-financial-reporting.onrender.com`
+6. **Before first demo:** System Admin → create and **open** a reporting period; wake the URL 2 minutes early.
 
 ### Local demo fallback (100% free, no sleep)
 
@@ -120,11 +134,89 @@ Neither is a good **long-term free** host for this stack today.
 |----------|----------|-------------|
 | `SUPABASE_URL` | Yes | Supabase project URL |
 | `SUPABASE_ANON_KEY` | Yes | Public API key |
+| `SUPABASE_SECRET_KEY` | Yes (Render/prod) | Service role — period lock, inbox, assets; **never** expose to browser |
 | `SECRET_KEY` | Yes | Flask session signing (random, 32+ chars) |
-| `SUPABASE_SECRET_KEY` | If used in code | Service role — **never** expose to browser |
 | `FLASK_ENV` | Recommended | `production` on Render/Azure |
+| `MAROON_APP_URL` | Optional | Maroon Traceability base URL for cross-app links |
 
 Copy from `.env.example` for local development.
+
+---
+
+## Supabase SQL — run order (your project)
+
+Your migration check already passed CFO period-lock scripts:
+
+```bash
+python scripts/check_supabase_migrations.py
+# ✅ all_applied: true
+```
+
+| Step | Script | Status / action |
+|------|--------|-----------------|
+| 1 | `add_period_lock_and_variance_explanations.sql` | ✅ Applied |
+| 2 | `enable_financial_periods_cfo_lock_rls.sql` | ✅ Applied |
+| 3 | `consolidate_financial_periods_rls.sql` | ✅ Applied |
+| 4 | `migrate_financial_periods_id_to_uuid.sql` | **Skip** — error *"already UUID"* means this ran successfully |
+| 5 | `create_asset_register_tables.sql` | Run if using Asset Manager |
+| 6 | `migrate_asset_journals_pending_cfo.sql` | Optional — CFO escalation on asset journals |
+| 7 | `create_app_audit_and_inbox.sql` | Run for in-app inbox + audit trail |
+| 8 | `add_session_queue_indexes.sql` | Run before scale / Render demo under load |
+
+Verify UUID type (optional):
+
+```sql
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'financial_periods' AND column_name = 'id';
+-- Expected: uuid
+```
+
+---
+
+## Maroon Traceability integration
+
+**Maroon:** [lungelomyamya-rgb/maroon_traceability](https://github.com/lungelomyamya-rgb/maroon_traceability) — Next.js + Supabase Auth, agricultural supply-chain traceability (farm → retail).
+
+**This app (Varydian FRS):** Flask + custom `users` table + Flask sessions — municipal GRAP financial reporting.
+
+They are **complementary products**, not a single monolith. Recommended hosting split:
+
+| App | Stack | Host (demo) |
+|-----|-------|-------------|
+| **Maroon** | Next.js | Vercel / GitHub Pages (already in Maroon repo) |
+| **Varydian FRS** | Flask | **Render free** (this repo) |
+| **Database** | Supabase Postgres | Same project *or* separate projects |
+
+### Phase 1 — Side-by-side (now)
+
+1. Deploy Varydian FRS to Render (steps above).
+2. Deploy Maroon to Vercel (Maroon’s existing `vercel.json` / GitHub Actions).
+3. Set cross-links:
+   - Render: `MAROON_APP_URL=https://…`
+   - Maroon: `NEXT_PUBLIC_FINANCE_APP_URL=https://varydian-financial-reporting.onrender.com` (add in Maroon `.env` when you wire nav).
+4. **Separate logins** — users sign in to each app independently until SSO is built.
+
+### Phase 2 — Shared Supabase (optional)
+
+Use **one Supabase project** with **separate table sets**:
+
+- Maroon: `profiles`, products, traceability tables (Supabase Auth `auth.users`)
+- Varydian: `users`, `financial_periods`, session tables, `assets`, `asset_journals`
+
+Do **not** merge auth models without a deliberate design — Maroon uses Supabase Auth JWT; Varydian uses Flask cookie sessions against `public.users`.
+
+### Phase 3 — API bridge (when needed)
+
+Expose read-only endpoints from Varydian for Maroon **Government** / reporting roles:
+
+| Event / data | Varydian API | Maroon consumer |
+|--------------|--------------|-----------------|
+| Period locked / audit pack ready | `GET /api/export/sessions` | Government dashboard widget |
+| Finalized PDF available | Export Center + download URLs | Compliance link |
+| Schema health | `GET /api/system/schema-migrations` | Admin ops panel |
+
+Add CORS + API keys only on endpoints Maroon actually calls. The legacy `api.py` FastAPI file is **not** the integration path — use the Flask universal workflow APIs in `WORKFLOWS.md`.
 
 ---
 
@@ -157,8 +249,10 @@ Response includes `total_count`, `has_more`, `limit`, `offset`.
 - [x] Render + Supabase free
 - [x] Session queue indexes (SQL script)
 - [x] Pending API pagination
-- [ ] Run index SQL on your Supabase project
+- [x] CFO period-lock migrations verified (`check_supabase_migrations.py`)
+- [ ] Run remaining SQL: inbox, asset register, queue indexes (see table above)
 - [ ] Deploy to Render and rehearse wake-up + full workflow
+- [ ] Deploy Maroon to Vercel; set `MAROON_APP_URL` / `NEXT_PUBLIC_FINANCE_APP_URL`
 
 ### Phase 1 — Pilot (first paying clients)
 

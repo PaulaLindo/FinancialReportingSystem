@@ -42,7 +42,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     """Simple token-based authentication"""
     # For demo purposes, accept any token
     # In production, validate against Supabase Auth
-    return {"user_id": "demo_user", "role": "accountant"}
+    return {"user_id": "demo_user", "role": "FINANCE_MANAGER"}
 
 @app.get("/")
 async def root():
@@ -216,54 +216,6 @@ async def generate_pdf_report(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"PDF generation error: {str(e)}")
-
-@app.get("/reports")
-async def get_user_reports(current_user: Dict = Depends(get_current_user)):
-    """Get all reports for the current user"""
-    try:
-        supabase = get_supabase_service()
-        if not supabase:
-            return {'success': False, 'reports': [], 'error': 'Database service not available'}
-            
-        reports = supabase.get_user_reports(current_user['user_id'])
-        return {
-            'success': True,
-            'reports': reports
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching reports: {str(e)}")
-
-@app.get("/stats")
-async def get_user_stats(current_user: Dict = Depends(get_current_user)):
-    """Get user statistics and storage info"""
-    try:
-        supabase = get_supabase_service()
-        if not supabase:
-            return {'success': False, 'stats': {}, 'error': 'Database service not available'}
-            
-        stats = supabase.get_storage_stats(current_user['user_id'])
-        return {
-            'success': True,
-            'stats': stats
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching stats: {str(e)}")
-
-@app.delete("/reports/{report_id}")
-async def delete_report(
-    report_id: str,
-    current_user: Dict = Depends(get_current_user)
-):
-    """Delete a report and associated files"""
-    try:
-        supabase = get_supabase_service()
-        if not supabase:
-            return {'success': False, 'error': 'Database service not available'}
-            
-        result = supabase.delete_report(report_id, current_user['user_id'])
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error deleting report: {str(e)}")
 
 @app.get("/download/{filename}")
 async def download_file(filename: str):

@@ -142,6 +142,10 @@ class SupabaseAuthModel:
     def deactivate_user(self, user_id: str) -> Dict[str, Any]:
         """Deactivate a user"""
         return self.update_user(user_id, {'is_active': False})
+
+    def activate_user(self, user_id: str) -> Dict[str, Any]:
+        """Re-enable a previously deactivated user account."""
+        return self.update_user(user_id, {'is_active': True})
     
     def get_all_users(self) -> List[Dict[str, Any]]:
         """Get all users"""
@@ -216,8 +220,6 @@ class SupabaseUser:
             'ASSET_MANAGER': ['manage_assets', 'view_assets'],
             'AUDITOR': ['view_all', 'export_audit', 'view_assets'],
             'SYSTEM_ADMIN': ['manage_users', 'system_settings', 'view_logs'],
-            # Additional active roles for compatibility
-            'ACCOUNTANT': ['review', 'approve', 'view_all', 'process'],
         }
         return permission in permissions.get(self.role, [])
     
@@ -293,7 +295,6 @@ def get_role_label(role):
         'ASSET_MANAGER': 'Asset Manager',
         'AUDITOR': 'Auditor',
         'SYSTEM_ADMIN': 'System Admin',
-        'ACCOUNTANT': 'Accountant',
         'CLERK': 'Clerk',
     }
     if role in labels:
@@ -313,7 +314,6 @@ def get_role_description(role):
         'ASSET_MANAGER': 'Asset Manager - Manage Asset Register & Impairments',
         'AUDITOR': 'Auditor - View Only Access (Read-Only)',
         'SYSTEM_ADMIN': 'System Administrator - User & System Management (No Financial Access)',
-        'ACCOUNTANT': 'Accountant - Review, Approve, Process & Generate Reports',
         'CLERK': 'Clerk - Upload Balance Sheets & View Own Files'
     }
     return descriptions.get(role, role)
@@ -328,7 +328,6 @@ def get_role_color(role):
         'ASSET_MANAGER': '#8b5cf6',  # Purple
         'AUDITOR': '#f59e0b',  # Orange
         'SYSTEM_ADMIN': '#ef4444',  # Red
-        'ACCOUNTANT': '#3182ce',  # Blue
         'CLERK': '#10b981'  # Green
     }
     return colors.get(role, '#6b7280')

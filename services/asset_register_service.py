@@ -20,12 +20,22 @@ from typing import Any, Dict, List, Optional
 
 from models.asset_lifecycle_models import AssetLifecycleModel
 from models.asset_register_models import AssetRegisterModel, InMemoryAssetRegisterModel, get_asset_register_model
+from utils.asset_journal_materiality import (
+    escalation_reason_label,
+    journal_materiality_amount,
+    materiality_threshold,
+    requires_cfo_escalation,
+)
 
 _LOCK = threading.Lock()
 
 JOURNAL_PENDING = 'pending_review'
+JOURNAL_PENDING_CFO = 'pending_cfo'
 JOURNAL_APPROVED = 'approved'
 JOURNAL_REJECTED = 'rejected'
+
+VALID_JOURNAL_TYPES = frozenset({'useful_life_review', 'impairment', 'disposal'})
+SETTLED_JOURNAL_STATUSES = frozenset({JOURNAL_APPROVED, JOURNAL_REJECTED})
 
 # GL account codes / GRAP lines used when syncing from trial balance
 _PPE_GRAP_CODES = {'NCA-001'}
@@ -528,18 +538,61 @@ class AssetRegisterService:
         journals.sort(key=lambda j: j.get('submitted_at') or '', reverse=True)
         return journals
 
+    @staticmethod
+    def is_asset_journal_record(journal: Dict[str, Any]) -> bool:
+        if not journal or not isinstance(journal, dict):
+            return False
+        if not journal.get('journal_id'):
+            return False
+        return (journal.get('journal_type') or '') in VALID_JOURNAL_TYPES
+
     def list_settled_journals(self, *, status_filter: str = 'all') -> List[Dict[str, Any]]:
         journals = self.list_journals()
-        settled = [j for j in journals if j.get('status') in (JOURNAL_APPROVED, JOURNAL_REJECTED)]
+        settled = [
+            j for j in journals
+            if j.get('status') in SETTLED_JOURNAL_STATUSES and self.is_asset_journal_record(j)
+        ]
         if status_filter == 'approved':
             settled = [j for j in settled if j.get('status') == JOURNAL_APPROVED]
         elif status_filter == 'rejected':
             settled = [j for j in settled if j.get('status') == JOURNAL_REJECTED]
         settled.sort(key=lambda j: j.get('reviewed_at') or j.get('submitted_at') or '', reverse=True)
-        return settled
+        return [self.enrich_journal_for_display(j) for j in settled]
+
+    def enrich_journal_for_display(self, journal: Dict[str, Any]) -> Dict[str, Any]:
+        row = dict(journal)
+        meta = dict(row.get('metadata') or {})
+        fm_forward = meta.get('fm_forward') if isinstance(meta.get('fm_forward'), dict) else None
+        row['requires_cfo_escalation'] = bool(meta.get('requires_cfo') or requires_cfo_escalation(row))
+        row['materiality_amount'] = journal_materiality_amount(row)
+        row['materiality_threshold'] = materiality_threshold()
+        row['escalation_reason'] = meta.get('escalation_reason') or (
+            escalation_reason_label(row) if row['requires_cfo_escalation'] else ''
+        )
+        row['fm_forwarded_at'] = (fm_forward or {}).get('at')
+        row['fm_reviewer_name'] = (fm_forward or {}).get('name')
+        return row
+
+    def list_pending_journals_for_role(self, role: str) -> List[Dict[str, Any]]:
+        status = JOURNAL_PENDING_CFO if role == 'CFO' else JOURNAL_PENDING
+        journals = [self.enrich_journal_for_display(j) for j in self.list_journals(status=status)]
+        return [j for j in journals if self.is_asset_journal_record(j)]
 
     def count_pending_journals(self) -> int:
         return len(self.list_journals(status=JOURNAL_PENDING))
+
+    def count_pending_cfo_journals(self) -> int:
+        return len(self.list_journals(status=JOURNAL_PENDING_CFO))
+
+    def count_pending_journals_for_user(self, user_id: str) -> int:
+        pending = self.list_journals(status=JOURNAL_PENDING)
+        uid = str(user_id)
+        return len([j for j in pending if str(j.get('submitted_by') or '') == uid])
+
+    def list_material_journal_audit_trail(self) -> List[Dict[str, Any]]:
+        """CFO-approved material asset journals (disposals / material impairments) for auditor read-only trail."""
+        settled = self.list_settled_journals(status_filter='approved')
+        return [j for j in settled if j.get('requires_cfo_escalation')]
 
     def _notify_journal_submitted(self, journal: Dict[str, Any], submitter_id: str) -> None:
         try:
@@ -555,6 +608,33 @@ class AssetRegisterService:
             )
         except Exception as exc:
             logger.warning('Could not notify FM of asset journal submission: %s', exc)
+
+    def _notify_journal_forwarded_to_cfo(self, journal: Dict[str, Any], fm_reviewer_id: str, fm_reviewer_name: str) -> None:
+        try:
+            from services.inbox_service import (
+                notify_asset_journal_forwarded_to_cfo,
+                notify_asset_journal_pending_cfo,
+            )
+
+            notify_asset_journal_pending_cfo(
+                journal_id=journal.get('journal_id', ''),
+                journal_type=journal.get('journal_type', ''),
+                asset_id=journal.get('asset_id', ''),
+                asset_name=journal.get('asset_name') or '',
+                fm_reviewer_id=fm_reviewer_id,
+                fm_reviewer_name=fm_reviewer_name or '',
+                escalation_reason=escalation_reason_label(journal),
+            )
+            notify_asset_journal_forwarded_to_cfo(
+                journal.get('submitted_by'),
+                journal_id=journal.get('journal_id', ''),
+                journal_type=journal.get('journal_type', ''),
+                asset_id=journal.get('asset_id', ''),
+                asset_name=journal.get('asset_name') or '',
+                fm_reviewer_name=fm_reviewer_name or '',
+            )
+        except Exception as exc:
+            logger.warning('Could not notify CFO of asset journal escalation: %s', exc)
 
     def _notify_journal_approved(self, journal: Dict[str, Any], reviewer_id: str, reviewer_name: str) -> None:
         try:
@@ -601,79 +681,153 @@ class AssetRegisterService:
                 return journal
         return None
 
-    def approve_journal(self, journal_id: str, reviewer_id: str, reviewer_name: str = '') -> Dict[str, Any]:
+    def _apply_journal_to_register(self, journal: Dict[str, Any], reviewer_id: str) -> Dict[str, Any]:
+        asset_id = journal.get('asset_id')
+        jtype = journal.get('journal_type')
+
+        if jtype == 'useful_life_review':
+            meta = journal.get('metadata') or {}
+            eff_raw = meta.get('effective_date')
+            eff_date = None
+            if eff_raw:
+                try:
+                    eff_date = date.fromisoformat(str(eff_raw)[:10])
+                except ValueError:
+                    eff_date = None
+            return self._lifecycle.review_useful_life(
+                asset_id,
+                int(meta.get('new_useful_life')),
+                journal.get('reason') or '',
+                reviewer_id,
+                effective_date=eff_date,
+            )
+        if jtype == 'impairment':
+            meta = journal.get('metadata') or {}
+            return self._lifecycle.record_impairment(
+                asset_id,
+                float(meta.get('impairment_amount') or journal.get('amount') or 0),
+                journal.get('reason') or '',
+                reviewer_id,
+                recoverable_amount=meta.get('recoverable_amount'),
+            )
+        if jtype == 'disposal':
+            meta = journal.get('metadata') or {}
+            eff_raw = meta.get('disposal_date')
+            disp_date = None
+            if eff_raw:
+                try:
+                    disp_date = date.fromisoformat(str(eff_raw)[:10])
+                except ValueError:
+                    disp_date = None
+            return self._lifecycle.dispose_asset(
+                asset_id,
+                disposal_proceeds=float(meta.get('disposal_proceeds') or journal.get('amount') or 0),
+                reason=journal.get('reason') or '',
+                user_id=reviewer_id,
+                disposal_date=disp_date,
+            )
+        return {'success': False, 'error': f'Unknown journal type: {jtype}'}
+
+    def approve_journal(
+        self,
+        journal_id: str,
+        reviewer_id: str,
+        reviewer_name: str = '',
+        *,
+        reviewer_role: str = 'FINANCE_MANAGER',
+    ) -> Dict[str, Any]:
+        role = (reviewer_role or '').upper()
+
         def mutate(store):
             journals = store.setdefault('journals', [])
             journal = next((j for j in journals if j.get('journal_id') == journal_id), None)
             if not journal:
                 return {'success': False, 'error': 'Journal not found'}
-            if journal.get('status') != JOURNAL_PENDING:
-                return {'success': False, 'error': f'Journal is not pending review (status: {journal.get("status")})'}
+            if not self.is_asset_journal_record(journal):
+                return {'success': False, 'error': 'Invalid asset journal record'}
 
-            asset_id = journal.get('asset_id')
-            jtype = journal.get('journal_type')
+            status = journal.get('status')
 
-            if jtype == 'useful_life_review':
-                meta = journal.get('metadata') or {}
-                eff_raw = meta.get('effective_date')
-                eff_date = None
-                if eff_raw:
-                    try:
-                        eff_date = date.fromisoformat(str(eff_raw)[:10])
-                    except ValueError:
-                        eff_date = None
-                result = self._lifecycle.review_useful_life(
-                    asset_id,
-                    int(meta.get('new_useful_life')),
-                    journal.get('reason') or '',
-                    reviewer_id,
-                    effective_date=eff_date,
-                )
-            elif jtype == 'impairment':
-                meta = journal.get('metadata') or {}
-                result = self._lifecycle.record_impairment(
-                    asset_id,
-                    float(meta.get('impairment_amount') or journal.get('amount') or 0),
-                    journal.get('reason') or '',
-                    reviewer_id,
-                    recoverable_amount=meta.get('recoverable_amount'),
-                )
-            elif jtype == 'disposal':
-                meta = journal.get('metadata') or {}
-                eff_raw = meta.get('disposal_date')
-                disp_date = None
-                if eff_raw:
-                    try:
-                        disp_date = date.fromisoformat(str(eff_raw)[:10])
-                    except ValueError:
-                        disp_date = None
-                result = self._lifecycle.dispose_asset(
-                    asset_id,
-                    disposal_proceeds=float(meta.get('disposal_proceeds') or journal.get('amount') or 0),
-                    reason=journal.get('reason') or '',
-                    user_id=reviewer_id,
-                    disposal_date=disp_date,
-                )
-            else:
-                return {'success': False, 'error': f'Unknown journal type: {jtype}'}
+            if status == JOURNAL_PENDING:
+                if role != 'FINANCE_MANAGER':
+                    return {
+                        'success': False,
+                        'error': 'Only the Finance Manager can approve at this stage',
+                    }
+                if requires_cfo_escalation(journal):
+                    meta = dict(journal.get('metadata') or {})
+                    meta['requires_cfo'] = True
+                    meta['materiality_amount'] = journal_materiality_amount(journal)
+                    meta['materiality_threshold'] = materiality_threshold()
+                    meta['escalation_reason'] = escalation_reason_label(journal)
+                    meta['fm_forward'] = {
+                        'at': _now_iso(),
+                        'by': reviewer_id,
+                        'name': reviewer_name or reviewer_id,
+                    }
+                    journal['metadata'] = meta
+                    journal['status'] = JOURNAL_PENDING_CFO
+                    return {
+                        'success': True,
+                        'journal': journal,
+                        'forwarded_to_cfo': True,
+                        'message': 'Journal forwarded to CFO for materiality sign-off',
+                    }
 
-            if not result.get('success'):
-                return result
+                result = self._apply_journal_to_register(journal, reviewer_id)
+                if not result.get('success'):
+                    return result
 
-            journal['status'] = JOURNAL_APPROVED
-            journal['reviewed_at'] = _now_iso()
-            journal['reviewed_by'] = reviewer_id
-            journal['reviewer_name'] = reviewer_name or reviewer_id
-            return {
-                'success': True,
-                'journal': journal,
-                'application_result': result,
-                'message': 'Asset journal approved and applied to the register',
-            }
+                journal['status'] = JOURNAL_APPROVED
+                journal['reviewed_at'] = _now_iso()
+                journal['reviewed_by'] = reviewer_id
+                journal['reviewer_name'] = reviewer_name or reviewer_id
+                return {
+                    'success': True,
+                    'journal': journal,
+                    'application_result': result,
+                    'message': 'Asset journal approved and applied to the register',
+                }
+
+            if status == JOURNAL_PENDING_CFO:
+                if role != 'CFO':
+                    return {
+                        'success': False,
+                        'error': 'Only the CFO can give final approval on material asset journals',
+                    }
+                result = self._apply_journal_to_register(journal, reviewer_id)
+                if not result.get('success'):
+                    return result
+
+                journal['status'] = JOURNAL_APPROVED
+                journal['reviewed_at'] = _now_iso()
+                journal['reviewed_by'] = reviewer_id
+                journal['reviewer_name'] = reviewer_name or reviewer_id
+                meta = dict(journal.get('metadata') or {})
+                meta['cfo_final_approval'] = {
+                    'at': journal['reviewed_at'],
+                    'by': reviewer_id,
+                    'name': reviewer_name or reviewer_id,
+                }
+                journal['metadata'] = meta
+                return {
+                    'success': True,
+                    'journal': journal,
+                    'application_result': result,
+                    'message': 'Asset journal approved by CFO and applied to the register',
+                }
+
+            return {'success': False, 'error': f'Journal is not pending review (status: {status})'}
 
         outcome = self._with_store(mutate)
-        if outcome.get('success') and outcome.get('journal'):
-            self._notify_journal_approved(outcome['journal'], reviewer_id, reviewer_name)
+        if not outcome.get('success') or not outcome.get('journal'):
+            return outcome
+
+        journal = outcome['journal']
+        if outcome.get('forwarded_to_cfo'):
+            self._notify_journal_forwarded_to_cfo(journal, reviewer_id, reviewer_name)
+        else:
+            self._notify_journal_approved(journal, reviewer_id, reviewer_name)
         return outcome
 
     def reject_journal(
@@ -682,7 +836,11 @@ class AssetRegisterService:
         reviewer_id: str,
         reason: str,
         reviewer_name: str = '',
+        *,
+        reviewer_role: str = 'FINANCE_MANAGER',
     ) -> Dict[str, Any]:
+        role = (reviewer_role or '').upper()
+
         def mutate(store):
             if not str(reason or '').strip():
                 return {'success': False, 'error': 'Rejection reason is required'}
@@ -690,8 +848,18 @@ class AssetRegisterService:
             journal = next((j for j in journals if j.get('journal_id') == journal_id), None)
             if not journal:
                 return {'success': False, 'error': 'Journal not found'}
-            if journal.get('status') != JOURNAL_PENDING:
-                return {'success': False, 'error': f'Journal is not pending review (status: {journal.get("status")})'}
+            if not self.is_asset_journal_record(journal):
+                return {'success': False, 'error': 'Invalid asset journal record'}
+
+            status = journal.get('status')
+            if status == JOURNAL_PENDING:
+                if role != 'FINANCE_MANAGER':
+                    return {'success': False, 'error': 'Only the Finance Manager can reject at this stage'}
+            elif status == JOURNAL_PENDING_CFO:
+                if role != 'CFO':
+                    return {'success': False, 'error': 'Only the CFO can reject at this stage'}
+            else:
+                return {'success': False, 'error': f'Journal is not pending review (status: {status})'}
 
             journal['status'] = JOURNAL_REJECTED
             journal['reviewed_at'] = _now_iso()

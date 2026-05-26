@@ -1,11 +1,12 @@
 # Render.com — recommended FREE tier for client demos (upload + PDF download).
-# See DEPLOYMENT.md for env vars and wake-up notes before presentations.
+# See DEPLOYMENT.md for env vars, Supabase SQL order, and Maroon integration notes.
 
 services:
   - type: web
     name: varydian-financial-reporting
     runtime: python
     plan: free
+    healthCheckPath: /health
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
     envVars:
@@ -18,4 +19,8 @@ services:
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: MAROON_APP_URL
         sync: false

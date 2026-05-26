@@ -3,7 +3,7 @@ Universal Workflow Service
 Handles workflow automation for all financial document types (Balance Sheets, Income Statements, Budget Reports)
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any, Tuple
 from enum import Enum
 from dataclasses import dataclass
@@ -357,6 +357,7 @@ class UniversalWorkflowService:
         notes: str = "",
         mapped_data: List[Dict] = None,
         clerk_correction_note: str = "",
+        period_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Submit document for review - universal method for all document types
@@ -443,6 +444,17 @@ class UniversalWorkflowService:
             if session.metadata is None:
                 session.metadata = {}
 
+            from utils.period_lock import attach_period_to_session_metadata, resolve_period_id_from_session
+
+            linked_period_id = (
+                period_id
+                or session.metadata.get('period_id')
+                or resolve_period_id_from_session(session)
+            )
+            if linked_period_id:
+                canonical_period_id = self.period_service.resolve_canonical_period_id(str(linked_period_id))
+                attach_period_to_session_metadata(session, canonical_period_id)
+
             # Persist clerk mapping payload before workflow checks
             if mapped_data:
                 session.metadata["mapped_data"] = mapped_data
@@ -495,7 +507,7 @@ class UniversalWorkflowService:
                 session.metadata = {}
             session.metadata = mark_session_committed_metadata(session.metadata)
             session.metadata['workflow_status'] = SubmissionStatus.PENDING_REVIEW.value
-            session.metadata['submitted_at'] = datetime.now().isoformat()
+            session.metadata['submitted_at'] = datetime.now(timezone.utc).isoformat()
             session.metadata['submitted_by'] = user_id
             session.metadata['submission_notes'] = notes
             if prior_status in CLERK_ACTIONABLE_REJECTION_STATUSES:
@@ -649,6 +661,22 @@ class UniversalWorkflowService:
                     meta_err,
                 )
 
+            period_id = (session.metadata or {}).get('period_id')
+            if period_id and prior_status not in CLERK_ACTIONABLE_REJECTION_STATUSES:
+                try:
+                    canonical_period_id = self.period_service.resolve_canonical_period_id(str(period_id))
+                    self.period_service.record_upload_for_period(str(canonical_period_id), {
+                        'session_id': session_id,
+                        'upload_date': datetime.now().isoformat(),
+                        'document_type': document_type,
+                    })
+                except Exception as period_err:
+                    logger.warning(
+                        "Failed to record upload for period %s: %s",
+                        period_id,
+                        period_err,
+                    )
+
             logger.info(f"✅ {document_type} submitted for review successfully")
             
             from utils.grap_standards_scope import (
@@ -794,6 +822,7 @@ class UniversalWorkflowService:
                     }
 
                 try:
+                    was_locked_before = self.period_service.is_period_locked(period_id)
                     locked_period = self.period_service.lock_period(period_id, user_id)
                     locked_period_name = locked_period.name
                 except Exception as lock_err:
@@ -870,6 +899,20 @@ class UniversalWorkflowService:
                     )
                 except Exception as notify_err:
                     logger.warning("Inbox notify submitter failed: %s", notify_err)
+
+                if not was_locked_before:
+                    try:
+                        from services.inbox_service import notify_auditors_audit_pack_ready
+
+                        notify_auditors_audit_pack_ready(
+                            period_id=period_id,
+                            period_name=locked_period_name or "",
+                            session_id=session_id,
+                            document_type=document_type,
+                            actor_id=user_id,
+                        )
+                    except Exception as audit_notify_err:
+                        logger.warning("Inbox notify auditors failed: %s", audit_notify_err)
 
                 return {
                     'success': True,
@@ -1328,6 +1371,45 @@ class UniversalWorkflowService:
             return {'success': False, 'error': f'Error getting pending approvals: {str(e)}'}
 
     @staticmethod
+    def _kpi_float(value: Any) -> Optional[float]:
+        if value is None:
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _surplus_deficit_from_metadata(md: Dict[str, Any]) -> Optional[float]:
+        for key in ('processing_summary', 'summary', 'financial_summary'):
+            block = md.get(key)
+            if isinstance(block, dict) and block.get('surplus_deficit') is not None:
+                parsed = UniversalWorkflowService._kpi_float(block['surplus_deficit'])
+                if parsed is not None:
+                    return parsed
+        fs = md.get('financial_statements') or {}
+        perf = fs.get('performance') or fs.get('sofe') or {}
+        if isinstance(perf, dict) and perf.get('surplus') is not None:
+            return UniversalWorkflowService._kpi_float(perf['surplus'])
+        return None
+
+    @staticmethod
+    def _session_has_processed_totals(session, document_type: str) -> bool:
+        if getattr(session, 'processed_at', None):
+            return True
+        if document_type == DocumentType.INCOME_STATEMENT.value:
+            for attr in ('total_revenue', 'total_expenses', 'net_income'):
+                val = UniversalWorkflowService._kpi_float(getattr(session, attr, None))
+                if val not in (None, 0.0):
+                    return True
+        elif document_type == DocumentType.BUDGET_REPORT.value:
+            for attr in ('total_budget', 'total_actual', 'total_variance'):
+                val = UniversalWorkflowService._kpi_float(getattr(session, attr, None))
+                if val not in (None, 0.0):
+                    return True
+        return False
+
+    @staticmethod
     def _session_kpi_snapshot(session, document_type: str) -> Dict[str, Any]:
         """Extract surplus/deficit or budget variance for CFO dashboard KPIs."""
         md = getattr(session, 'metadata', None) or {}
@@ -1336,34 +1418,27 @@ class UniversalWorkflowService:
             'budget_variance': None,
             'variance_percentage': None,
         }
-        if document_type == DocumentType.INCOME_STATEMENT.value:
-            try:
-                out['surplus_deficit'] = float(getattr(session, 'net_income', 0) or 0)
-            except (TypeError, ValueError):
-                pass
+        if document_type in (
+            DocumentType.INCOME_STATEMENT.value,
+            DocumentType.BALANCE_SHEET.value,
+        ):
+            out['surplus_deficit'] = UniversalWorkflowService._surplus_deficit_from_metadata(md)
+            if (
+                out['surplus_deficit'] is None
+                and document_type == DocumentType.INCOME_STATEMENT.value
+                and UniversalWorkflowService._session_has_processed_totals(session, document_type)
+            ):
+                out['surplus_deficit'] = UniversalWorkflowService._kpi_float(
+                    getattr(session, 'net_income', None)
+                )
         elif document_type == DocumentType.BUDGET_REPORT.value:
-            try:
-                out['budget_variance'] = float(getattr(session, 'total_variance', 0) or 0)
-                out['variance_percentage'] = float(getattr(session, 'variance_percentage', 0) or 0)
-            except (TypeError, ValueError):
-                pass
-        elif document_type == DocumentType.BALANCE_SHEET.value:
-            for key in ('processing_summary', 'summary', 'financial_summary'):
-                block = md.get(key)
-                if isinstance(block, dict) and block.get('surplus_deficit') is not None:
-                    try:
-                        out['surplus_deficit'] = float(block['surplus_deficit'])
-                    except (TypeError, ValueError):
-                        pass
-                    break
-            if out['surplus_deficit'] is None:
-                fs = md.get('financial_statements') or {}
-                perf = fs.get('performance') or fs.get('sofe') or {}
-                if isinstance(perf, dict) and perf.get('surplus') is not None:
-                    try:
-                        out['surplus_deficit'] = float(perf['surplus'])
-                    except (TypeError, ValueError):
-                        pass
+            if UniversalWorkflowService._session_has_processed_totals(session, document_type):
+                out['budget_variance'] = UniversalWorkflowService._kpi_float(
+                    getattr(session, 'total_variance', None)
+                )
+                out['variance_percentage'] = UniversalWorkflowService._kpi_float(
+                    getattr(session, 'variance_percentage', None)
+                )
         return out
 
     def get_cfo_dashboard_kpis(self, user_id: str) -> Dict[str, Any]:

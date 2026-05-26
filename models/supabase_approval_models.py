@@ -52,7 +52,6 @@ class SupabaseApprovalModel:
     def _map_legacy_role(self, role: str) -> str:
         """Map legacy roles to new roles for demo compatibility"""
         legacy_mapping = {
-            'ACCOUNTANT': 'FINANCE_MANAGER',
             'CLERK': 'FINANCE_CLERK',
             'AUDITOR': 'AUDITOR',
             'CFO': 'CFO',

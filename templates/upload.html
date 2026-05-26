@@ -21,6 +21,30 @@
 
         <div class="container-content">
 
+            {% if period %}
+            <div class="upload-period-banner" role="status" id="uploadPeriodBanner">
+                <strong>Reporting period:</strong> <span id="uploadPeriodBannerName">{{ period.name }}</span>
+                {% if period.due_date %}
+                <span class="upload-period-banner__meta">Due {{ period.due_date | display_datetime }}</span>
+                {% endif %}
+            </div>
+            {% elif open_periods %}
+            <div class="upload-period-section">
+                <h2 class="section-title">Select Reporting Period</h2>
+                {% if open_periods|length > 1 %}
+                <p class="upload-period-section__hint">Multiple periods are open — choose which month this upload belongs to.</p>
+                {% endif %}
+                <label class="upload-period-field" for="uploadPeriodSelect">
+                    <span class="upload-period-field__label">Reporting period</span>
+                    <select id="uploadPeriodSelect" name="period_id" class="upload-period-select" required>
+                        {% for p in open_periods %}
+                        <option value="{{ p.id }}" {% if period_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+            {% endif %}
+
             <!-- Document Type Selection -->
             <div class="document-type-section">
                 <h2 class="section-title">Select Document Type</h2>
@@ -87,7 +111,7 @@
             <p class="page-subtitle" id="pageSubtitle">Import your Balance Sheet from Pastel or Excel to generate GRAP-compliant financial statements</p>
 
            
-            <div class="upload-container">
+            <div class="upload-container"{% if period_id %} data-period-id="{{ period_id }}"{% endif %} data-open-period-count="{{ open_periods|length if open_periods else 0 }}">
 
                 <div class="upload-box" id="uploadBox" role="button" tabindex="0" aria-label="Upload file">
 

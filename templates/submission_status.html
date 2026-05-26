@@ -362,12 +362,14 @@
         .then(data => {
             if (data.success) {
                 window.location.href = '/dashboard';
-            } else {
-                alert('Error: ' + data.error);
+            } else if (window.VarydianUtils?.showToast) {
+                VarydianUtils.showToast('Error: ' + (data.error || 'Could not close submission'), 'error');
             }
         })
         .catch(error => {
-            alert('Error closing submission: ' + error.message);
+            if (window.VarydianUtils?.showToast) {
+                VarydianUtils.showToast('Error closing submission: ' + error.message, 'error');
+            }
         });
     }
     </script>

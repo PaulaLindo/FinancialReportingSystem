@@ -7,12 +7,16 @@
     <div class="container-content">
         <header class="asset-manager-hero asset-manager-hero--compact">
             <div class="asset-manager-hero__copy">
-                <p class="asset-manager-hero__eyebrow">Finance Manager · GRAP 17</p>
+                <p class="asset-manager-hero__eyebrow">{% if current_user.role == 'CFO' %}CFO{% else %}Finance Manager{% endif %} · GRAP 17</p>
                 <h1>Asset journals</h1>
                 <p class="asset-manager-hero__lead">
-                    Useful life reviews and impairments from Asset Manager awaiting your approval. Approved changes update the asset register only — not the trial balance workflow.
+                    {% if current_user.role == 'CFO' %}
+                    Material asset journals forwarded by the Finance Manager — disposals and impairments at or above the materiality threshold. Approved changes update the register only (not the trial balance workflow).
+                    {% else %}
+                    Useful life reviews, impairments, and disposals from the Asset Manager. Routine journals you can approve directly; material items forward to the CFO after your review.
+                    {% endif %}
                 </p>
-                <p class="asset-manager-hero__count"><span id="assetJournalCount" class="review-queue-count" aria-live="polite">—</span> journal(s) pending review.</p>
+                <p class="asset-manager-hero__count"><span id="assetJournalCount" class="review-queue-count" aria-live="polite">—</span> journal(s) pending {% if current_user.role == 'CFO' %}CFO sign-off{% else %}FM review{% endif %}.</p>
             </div>
         </header>
 

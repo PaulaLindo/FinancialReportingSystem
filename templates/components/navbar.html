@@ -20,9 +20,6 @@
                 <ul class="nav-menu">
                     <li><a href="/" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Dashboard</a></li>
                     
-                    {% if current_user and current_user.can_view_all() %}
-                    <li><a href="/reports" class="nav-link {% if request.endpoint == 'reports_page' %}active{% endif %}">File Management</a></li>
-                    {% endif %}
                     {% if current_user and current_user.can_upload() %}
                     <li><a href="/upload" class="nav-link {% if request.endpoint == 'upload_page' %}active{% endif %}">Upload</a></li>
                     {% endif %}
@@ -80,9 +77,6 @@
             <ul class="nav-menu">
                 <li><a href="/" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Dashboard</a></li>
                 
-                {% if current_user and current_user.can_view_all() %}
-                <li><a href="/reports" class="nav-link {% if request.endpoint == 'reports_page' %}active{% endif %}">File Management</a></li>
-                {% endif %}
                 {% if current_user and current_user.can_upload() %}
                 <li><a href="/upload" class="nav-link {% if request.endpoint == 'upload_page' %}active{% endif %}">Upload</a></li>
                 {% endif %}

@@ -502,6 +502,11 @@
     white-space: nowrap;
 }
 
+#formulaModal .modal-btn.display-none,
+#formulaModal .modal-btn[hidden] {
+    display: none !important;
+}
+
 @media (max-width: 639px) {
     #formulaModal .modal-btn {
         width: 100%;

@@ -427,15 +427,9 @@ class BudgetReportService(FinancialDocumentService):
                 session.reporting_period = f"{session.fiscal_year}"
     
     def _store_session(self, session: BudgetReportSession) -> BudgetReportSession:
-        """Store session in database using proper RLS handling"""
-        try:
-            # Use the new method that handles RLS properly
-            return self.create_session_with_user_context("", session.user_id, session.original_filename)
-        except Exception as e:
-            # Fallback to regular method
-            print(f"⚠️ RLS bypass failed, using regular method: {e}")
-            model = self.get_model()
-            return model.create_session(session)
+        """Persist the enriched upload session (period linkage, column mapping, validation)."""
+        model = self.get_model()
+        return model.create_session(session)
     
     def get_model(self):
         """Get the budget report model"""

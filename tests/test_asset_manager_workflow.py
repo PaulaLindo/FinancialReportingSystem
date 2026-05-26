@@ -155,7 +155,20 @@ class AssetRegisterServiceTests(unittest.TestCase):
         self.assertTrue(journal['success'])
         self.assertEqual(self.svc.get_asset(asset_id)['status'], 'active')
 
-        approved = self.svc.approve_journal(journal['journal']['journal_id'], 'fm-user-1')
+        forwarded = self.svc.approve_journal(
+            journal['journal']['journal_id'],
+            'fm-user-1',
+            reviewer_role='FINANCE_MANAGER',
+        )
+        self.assertTrue(forwarded['success'])
+        self.assertEqual(forwarded['journal']['status'], 'pending_cfo')
+        self.assertEqual(self.svc.get_asset(asset_id)['status'], 'active')
+
+        approved = self.svc.approve_journal(
+            journal['journal']['journal_id'],
+            'cfo-user-1',
+            reviewer_role='CFO',
+        )
         self.assertTrue(approved['success'])
         asset_after = self.svc.get_asset(asset_id)
         self.assertEqual(asset_after['status'], 'disposed')
@@ -281,6 +294,151 @@ class FixedAssetGlMatchingTests(unittest.TestCase):
         self.assertIn('86be47f2…', note)
         self.assertNotIn('5782e1ab5502', note)
         self.assertIn('1 fixed-asset GL line', note)
+
+
+class AssetJournalMaterialityTests(unittest.TestCase):
+    def setUp(self):
+        self.svc = AssetRegisterService(model=InMemoryAssetRegisterModel())
+
+    def _register_sample(self):
+        return self.svc.register_asset(
+            {
+                'asset_name': 'Test vehicle',
+                'asset_category': 'property_plant_equipment',
+                'purchase_date': '2023-01-01',
+                'purchase_cost': 450_000,
+                'residual_value': 50_000,
+                'useful_life_years': 10,
+            },
+            'am-user-1',
+        )
+
+    def test_useful_life_fm_approves_without_cfo(self):
+        reg = self._register_sample()
+        journal = self.svc.create_useful_life_journal(
+            reg['asset_id'],
+            new_useful_life=8,
+            reason='Revised estimate based on usage.',
+            user_id='am-user-1',
+        )
+        approved = self.svc.approve_journal(
+            journal['journal']['journal_id'],
+            'fm-user-1',
+            'FM One',
+            reviewer_role='FINANCE_MANAGER',
+        )
+        self.assertTrue(approved['success'])
+        self.assertEqual(approved['journal']['status'], 'approved')
+        self.assertNotIn('forwarded_to_cfo', approved)
+
+    def test_material_impairment_forwards_to_cfo(self):
+        reg = self._register_sample()
+        journal = self.svc.create_impairment_journal(
+            reg['asset_id'],
+            impairment_amount=150_000,
+            reason='Indicator of impairment identified during review.',
+            user_id='am-user-1',
+        )
+        forwarded = self.svc.approve_journal(
+            journal['journal']['journal_id'],
+            'fm-user-1',
+            'FM One',
+            reviewer_role='FINANCE_MANAGER',
+        )
+        self.assertTrue(forwarded['success'])
+        self.assertTrue(forwarded.get('forwarded_to_cfo'))
+        self.assertEqual(forwarded['journal']['status'], 'pending_cfo')
+
+        cfo_approved = self.svc.approve_journal(
+            journal['journal']['journal_id'],
+            'cfo-user-1',
+            'CFO One',
+            reviewer_role='CFO',
+        )
+        self.assertTrue(cfo_approved['success'])
+        self.assertEqual(cfo_approved['journal']['status'], 'approved')
+
+    def test_material_journal_audit_trail_excludes_routine_fm_only(self):
+        reg = self._register_sample()
+        routine = self.svc.create_useful_life_journal(
+            reg['asset_id'],
+            new_useful_life=6,
+            reason='Routine useful life update.',
+            user_id='am-user-1',
+        )
+        self.svc.approve_journal(
+            routine['journal']['journal_id'],
+            'fm-user-1',
+            'FM One',
+            reviewer_role='FINANCE_MANAGER',
+        )
+        disposal = self.svc.create_disposal_journal(
+            reg['asset_id'],
+            disposal_proceeds=20_000,
+            reason='End of useful life disposal.',
+            user_id='am-user-1',
+        )
+        self.svc.approve_journal(
+            disposal['journal']['journal_id'],
+            'fm-user-1',
+            'FM One',
+            reviewer_role='FINANCE_MANAGER',
+        )
+        self.svc.approve_journal(
+            disposal['journal']['journal_id'],
+            'cfo-user-1',
+            'CFO One',
+            reviewer_role='CFO',
+        )
+
+        trail = self.svc.list_material_journal_audit_trail()
+        journal_ids = {j['journal_id'] for j in trail}
+        self.assertIn(disposal['journal']['journal_id'], journal_ids)
+        self.assertNotIn(routine['journal']['journal_id'], journal_ids)
+        self.assertTrue(all(j.get('requires_cfo_escalation') for j in trail))
+
+    def test_cfo_cannot_approve_fm_queue(self):
+        reg = self._register_sample()
+        journal = self.svc.create_useful_life_journal(
+            reg['asset_id'],
+            new_useful_life=7,
+            reason='Routine useful life update.',
+            user_id='am-user-1',
+        )
+        denied = self.svc.approve_journal(
+            journal['journal']['journal_id'],
+            'cfo-user-1',
+            'CFO One',
+            reviewer_role='CFO',
+        )
+        self.assertFalse(denied['success'])
+
+    def test_settled_history_excludes_invalid_records(self):
+        reg = self._register_sample()
+        j = self.svc.create_impairment_journal(
+            reg['asset_id'],
+            impairment_amount=5_000,
+            reason='Small impairment for history filter test.',
+            user_id='am-user-1',
+        )
+        self.svc.approve_journal(
+            j['journal']['journal_id'],
+            'fm-user-1',
+            'FM One',
+            reviewer_role='FINANCE_MANAGER',
+        )
+        store = self.svc._read_store()
+        store.setdefault('journals', []).append({
+            'journal_id': 'bad-history-row',
+            'journal_type': 'balance_sheet',
+            'status': 'approved_by_manager',
+            'reason': 'budget_report_perfectly_balanced.csv',
+        })
+        self.svc._write_store(store)
+        settled = self.svc.list_settled_journals(status_filter='all')
+        ids = [row['journal_id'] for row in settled]
+        self.assertIn(j['journal']['journal_id'], ids)
+        self.assertNotIn('bad-history-row', ids)
 
 
 if __name__ == '__main__':

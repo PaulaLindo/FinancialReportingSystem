@@ -449,15 +449,9 @@ class IncomeStatementService(FinancialDocumentService):
         return model.create_session(session)
     
     def _store_session(self, session: IncomeStatementSession) -> IncomeStatementSession:
-        """Store session in database using proper RLS handling"""
-        try:
-            # Use the new method that handles RLS properly
-            return self.create_session_with_user_context("", session.user_id, session.original_filename)
-        except Exception as e:
-            # Fallback to regular method
-            print(f"⚠️ RLS bypass failed, using regular method: {e}")
-            model = self.get_model()
-            return model.create_session(session)
+        """Persist the enriched upload session (period linkage, column mapping, validation)."""
+        model = self.get_model()
+        return model.create_session(session)
     
     def calculate_financial_summary(self, session_id: str) -> Dict[str, Any]:
         """Calculate revenue, expenses, and net income"""

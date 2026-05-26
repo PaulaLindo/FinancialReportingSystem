@@ -3,19 +3,20 @@
 {% block title %}Audit workspace{% endblock %}
 
 {% block content %}
-<div class="page page--auditor audit-workspace-page">
-    <header class="audit-workspace-hero">
-        <div class="container-content audit-workspace-hero__inner">
-            <p class="asset-manager-hero__eyebrow">AGSA · Read-only audit</p>
-            <h1>Audit workspace</h1>
-            <p class="audit-workspace-hero__lead">
-                Review CFO-finalized submissions in locked reporting periods. Export audit CSV and inspect statements and calculations — no changes are permitted.
-            </p>
-            <p class="text-muted audit-workspace-hero__meta">{{ finalized_count or 0 }} finalized submission(s) available</p>
-        </div>
-    </header>
+<div class="page page--auditor page--asset-manager audit-workspace-page">
+    <div class="container-content">
 
-    <div class="audit-workspace-content container-content">
+        <header class="asset-manager-hero">
+            <div class="asset-manager-hero__copy">
+                <p class="asset-manager-hero__eyebrow">Auditor · Read-only audit</p>
+                <h1>Audit workspace</h1>
+                <p class="asset-manager-hero__lead">
+                    Review CFO-finalized submissions in locked reporting periods. Export audit CSV and inspect statements and calculations — no changes are permitted.
+                </p>
+                <p class="asset-manager-hero__count">{{ finalized_count or 0 }} finalized submission(s) available</p>
+            </div>
+        </header>
+
         <section class="audit-workspace-panel" aria-labelledby="auditSessionLabel">
             <h2 id="auditSessionLabel" class="audit-workspace-panel__title">1. Choose finalized submission</h2>
             <p class="text-muted">Only CFO-approved submissions in locked periods appear here.</p>

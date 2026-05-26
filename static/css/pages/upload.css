@@ -21,6 +21,65 @@
     width: 100%;
 }
 
+.upload-period-section {
+    margin-bottom: var(--fluid-space-xl);
+    padding: var(--fluid-space-lg);
+    background: var(--bg-primary, #fff);
+    border: 1px solid var(--primary-200, #bfdbfe);
+    border-radius: var(--radius-md);
+    text-align: center;
+}
+
+.upload-period-section__hint {
+    margin: 0 auto var(--fluid-space-md);
+    max-width: 36rem;
+    color: var(--text-secondary);
+    font-size: var(--fluid-text-sm);
+}
+
+.upload-period-field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--fluid-space-xs);
+    margin: 0 auto;
+    max-width: 28rem;
+    width: 100%;
+}
+
+.upload-period-field__label {
+    font-size: var(--fluid-text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.upload-period-select {
+    width: 100%;
+    max-width: 28rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border-primary, #e2e8f0);
+    border-radius: var(--radius-md);
+    font-size: var(--fluid-text-sm);
+    background: var(--bg-primary, #fff);
+}
+
+.upload-period-banner {
+    margin-bottom: var(--fluid-space-lg);
+    padding: var(--fluid-space-md) var(--fluid-space-lg);
+    background: color-mix(in srgb, var(--primary-50, #eff6ff) 70%, #fff);
+    border: 1px solid var(--primary-200, #bfdbfe);
+    border-radius: var(--radius-md);
+    color: var(--primary-900, #1e3a8a);
+    font-size: var(--fluid-text-sm);
+}
+
+.upload-period-banner__meta {
+    display: block;
+    margin-top: var(--fluid-space-xs);
+    color: var(--text-secondary);
+    font-size: var(--fluid-text-xs);
+}
+
 /* Upload Header */
 .page-title {
     font-size: var(--heading-2xl);

@@ -64,7 +64,13 @@
 .review-queue-batch-bar__actions {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: var(--fluid-space-sm);
+}
+
+.review-queue-batch-bar__actions .btn {
+    min-width: auto;
+    white-space: nowrap;
 }
 
 .page--fm-review-queue .transaction-card {
@@ -104,8 +110,9 @@
 
 .approval-signature-item {
     display: grid;
-    grid-template-columns: minmax(8rem, 1fr) minmax(6rem, auto) minmax(8rem, auto);
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, max-content);
     gap: var(--fluid-space-sm);
+    align-items: baseline;
     padding: var(--fluid-space-xs) 0;
     border-bottom: 1px solid var(--gray-200);
     font-size: var(--text-sm);
@@ -118,16 +125,34 @@
 .approval-signature-role {
     font-weight: var(--font-medium);
     color: var(--gray-800);
+    min-width: 0;
 }
 
 .approval-signature-user {
     font-family: var(--font-mono, monospace);
     color: var(--gray-600);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .approval-signature-at {
     color: var(--gray-500);
     text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    .approval-signature-item {
+        grid-template-columns: 1fr;
+        gap: 0.15rem;
+    }
+
+    .approval-signature-at {
+        text-align: left;
+    }
 }
 
 .page--fm-review-queue .review-queue-count {
@@ -808,13 +833,388 @@
 }
 
 .transaction-card--export-noted {
-    opacity: 0.88;
+    background: linear-gradient(
+        135deg,
+        var(--bg-primary) 0%,
+        color-mix(in srgb, var(--gray-100, #f3f4f6) 55%, var(--bg-primary)) 100%
+    );
 }
 
 .transaction-card--exported {
-    opacity: 0.72;
+    background: linear-gradient(
+        135deg,
+        var(--bg-primary) 0%,
+        color-mix(in srgb, var(--success-50, #ecfdf5) 45%, var(--bg-primary)) 100%
+    );
 }
 
-.transaction-card--exported:hover {
-    opacity: 0.85;
+/* —— FM / CFO submission history —— */
+.page--fm-history {
+    min-height: auto;
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 12rem);
+    padding: clamp(1rem, 3vw, 2rem) 0 clamp(2rem, 5vw, 3rem);
+}
+
+.page--fm-history .container-content {
+    width: 100%;
+    max-width: min(100%, var(--container-2xl, 72rem));
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 4vw, 2rem);
+}
+
+@media (min-width: 1024px) {
+    .page--fm-history .container-content {
+        max-width: var(--container-4xl, 90rem);
+    }
+}
+
+.page--fm-history .content-page-header {
+    padding: clamp(1.25rem, 4vw, 2.5rem) 0 clamp(1rem, 3vw, 1.75rem);
+    margin-bottom: clamp(0.75rem, 2vw, 1.25rem);
+    border-bottom: 1px solid var(--border-primary);
+    background: transparent;
+}
+
+.page--fm-history .content-page-header__lead,
+.page--fm-history .fm-history-count {
+    font-weight: var(--font-semibold, 600);
+    color: var(--text-primary);
+}
+
+.fm-history-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fluid-space-md);
+    margin-bottom: var(--fluid-space-lg);
+}
+
+.fm-history-filters {
+    padding: var(--fluid-space-md) var(--fluid-space-lg);
+    background: var(--white, var(--bg-primary));
+    border: 1px solid var(--gray-200, var(--border-primary));
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.fm-history-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.fm-history-summary__chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    border: 1px solid var(--border-primary);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+}
+
+.fm-history-summary__chip--approved {
+    color: var(--success-700, #047857);
+    background: var(--success-50, #ecfdf5);
+    border-color: var(--success-200, #a7f3d0);
+}
+
+.fm-history-summary__chip--rejected {
+    color: var(--error-700, #b91c1c);
+    background: var(--error-50, #fef2f2);
+    border-color: var(--error-200, #fecaca);
+}
+
+.page--fm-history .transaction-list--history {
+    display: grid;
+    gap: clamp(0.85rem, 2vw, 1.25rem);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+@media (min-width: 768px) {
+    .page--fm-history .transaction-list--history {
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    }
+}
+
+@media (min-width: 1280px) {
+    .page--fm-history .transaction-list--history {
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+    }
+}
+
+.page--fm-history .transaction-card--history {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-xl);
+    padding: clamp(0.85rem, 2vw, 1.15rem);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    border-left-width: 4px;
+    border-left-style: solid;
+}
+
+.page--fm-history .transaction-card--history:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: color-mix(in srgb, var(--primary-300, #a5b4fc) 65%, var(--border-primary));
+}
+
+.page--fm-history .transaction-card--balance-sheet {
+    border-left-color: var(--primary-500, #6366f1);
+}
+
+.page--fm-history .transaction-card--income-statement {
+    border-left-color: #7c3aed;
+}
+
+.page--fm-history .transaction-card--budget-report {
+    border-left-color: #0891b2;
+}
+
+.page--fm-history .transaction-card.status-rejected,
+.page--fm-history .transaction-card.status-unknown {
+    border-left-color: var(--error-500, #ef4444);
+}
+
+.page--fm-history .transaction-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.15rem;
+}
+
+.page--fm-history .transaction-doc-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.75rem;
+    height: 1.75rem;
+    padding: 0 0.35rem;
+    border-radius: var(--radius-md);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+}
+
+.page--fm-history .transaction-doc-chip--balance-sheet {
+    color: var(--primary-700, #4338ca);
+    background: color-mix(in srgb, var(--primary-500, #6366f1) 12%, #fff);
+}
+
+.page--fm-history .transaction-doc-chip--income-statement {
+    color: #5b21b6;
+    background: color-mix(in srgb, #7c3aed 12%, #fff);
+}
+
+.page--fm-history .transaction-doc-chip--budget-report {
+    color: #0e7490;
+    background: color-mix(in srgb, #0891b2 12%, #fff);
+}
+
+.page--fm-history .transaction-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--fluid-space-sm);
+    margin-bottom: var(--fluid-space-sm);
+}
+
+.page--fm-history .transaction-title {
+    font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+    font-weight: var(--font-semibold, 600);
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.page--fm-history .transaction-info p {
+    margin: 0.15rem 0;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+.page--fm-history .transaction-id {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.75rem;
+    color: var(--text-muted, #64748b);
+}
+
+.page--fm-history .transaction-doc-context {
+    margin: 0.25rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--text-muted, #64748b);
+    line-height: 1.45;
+}
+
+.page--fm-history .transaction-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    justify-content: flex-end;
+}
+
+.page--fm-history .status-badge {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.page--fm-history .status-badge.status-approved {
+    color: var(--success-700, #047857);
+    background: var(--success-50, #ecfdf5);
+    border: 1px solid var(--success-200, #a7f3d0);
+}
+
+.page--fm-history .status-badge.status-rejected,
+.page--fm-history .status-badge.status-unknown {
+    color: var(--error-700, #b91c1c);
+    background: var(--error-50, #fef2f2);
+    border: 1px solid var(--error-200, #fecaca);
+}
+
+.page--fm-history .transaction-details {
+    flex: 1 1 auto;
+}
+
+.page--fm-history .transaction-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    font-size: 0.75rem;
+    color: var(--text-muted, #64748b);
+    margin-bottom: 0.35rem;
+}
+
+.page--fm-history .transaction-date {
+    font-weight: 500;
+}
+
+.page--fm-history .transaction-reason {
+    margin-top: 0.35rem;
+    padding: 0.45rem 0.65rem;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+.page--fm-history .transaction-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: auto;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-primary);
+}
+
+.page--fm-history .transaction-actions .btn {
+    min-width: auto;
+    white-space: nowrap;
+}
+
+.page--fm-history .finalized-export-badge {
+    font-size: 0.6875rem;
+}
+
+.page--fm-history .fm-history-empty {
+    padding: clamp(2rem, 6vw, 4rem) 1rem;
+    background: var(--bg-primary);
+    border: 1px dashed var(--border-primary);
+    border-radius: var(--radius-xl);
+}
+
+.fm-history-period-group {
+    margin-bottom: clamp(1.25rem, 3vw, 2rem);
+}
+
+.fm-history-period-group__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.35rem 0.75rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.fm-history-period-group__title {
+    margin: 0;
+    font-size: clamp(0.95rem, 2.2vw, 1.05rem);
+    font-weight: var(--font-semibold, 600);
+    color: var(--text-primary);
+}
+
+.fm-history-period-group__count {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted, #64748b);
+}
+
+.fm-history-doc-type-group {
+    margin-bottom: 1rem;
+}
+
+.fm-history-doc-type-group:last-child {
+    margin-bottom: 0;
+}
+
+.fm-history-doc-type-group__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 0.5rem;
+    margin-bottom: 0.5rem;
+    padding-left: 0.35rem;
+    border-left: 3px solid var(--border-primary);
+}
+
+.fm-history-doc-type-group__title {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-secondary, #475569);
+    letter-spacing: 0.01em;
+}
+
+.fm-history-doc-type-group__count {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--text-muted, #64748b);
+}
+
+@media (max-width: 767px) {
+    .page--fm-history .transaction-header {
+        flex-direction: column;
+    }
+
+    .page--fm-history .transaction-status {
+        justify-content: flex-start;
+    }
+
+    .page--fm-history .transaction-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .page--fm-history .transaction-actions .btn {
+        width: 100%;
+    }
 }

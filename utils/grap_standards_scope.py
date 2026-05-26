@@ -68,7 +68,7 @@ def compliance_intro_for_document(document_type: str) -> dict:
             "title": "GRAP 24 — Budget vs Actual",
             "intro": (
                 "Before submit for review, provide written variance explanations for "
-                "every line item where |variance ÷ budget| exceeds 10%."
+                "every line item where variance as a share of budget exceeds 10%."
             ),
         }
     if dt == "balance_sheet":

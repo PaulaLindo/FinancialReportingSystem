@@ -336,6 +336,31 @@
 
 }
 
+.fm-asset-journals-page .queue-loading,
+.fm-asset-journals-page .queue-empty {
+    text-align: center;
+    padding: clamp(1.5rem, 4vw, 2.5rem) var(--fluid-space-lg);
+    color: var(--text-secondary);
+    background: var(--bg-primary);
+    border-radius: var(--radius-xl);
+    border: 1px dashed var(--border-primary);
+}
+
+.fm-asset-journals-page .queue-empty h3,
+.fm-asset-journals-page .queue-loading h3 {
+    margin: 0 0 0.35rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.fm-asset-journals-page .queue-empty p,
+.fm-asset-journals-page .queue-loading p {
+    margin: 0;
+    max-width: 28rem;
+    margin-inline: auto;
+    line-height: 1.5;
+}
+
 
 
 .asset-manager-hero {
@@ -716,6 +741,61 @@
 
 
 
+.asset-status--active,
+.status-active {
+
+    background: rgba(34, 197, 94, 0.18);
+
+    color: #15803d;
+
+    border: 1px solid rgba(34, 197, 94, 0.35);
+
+}
+
+
+
+.asset-status--disposed,
+.status-disposed {
+
+    background: rgba(100, 116, 139, 0.12);
+
+    color: #475569;
+
+}
+
+
+
+.asset-status--fully_depreciated,
+.status-muted {
+
+    background: rgba(148, 163, 184, 0.15);
+
+    color: #64748b;
+
+}
+
+
+
+.status-active,
+.status-disposed,
+.status-muted {
+
+    display: inline-block;
+
+    font-size: 0.75rem;
+
+    font-weight: 600;
+
+    text-transform: capitalize;
+
+    padding: 0.25rem 0.65rem;
+
+    border-radius: 999px;
+
+}
+
+
+
 /* ── Lifecycle action cards ── */
 
 
@@ -869,6 +949,16 @@
     background: rgba(148, 163, 184, 0.1);
     font-size: 0.9rem;
     line-height: 1.5;
+}
+
+.asset-journal-escalation {
+    margin: 0 0 var(--fluid-space-sm);
+    padding: var(--fluid-space-xs) var(--fluid-space-sm);
+    border-radius: 8px;
+    background: rgba(245, 158, 11, 0.12);
+    color: #b45309;
+    font-size: 0.85rem;
+    line-height: 1.45;
 }
 
 .asset-journal-outcome {

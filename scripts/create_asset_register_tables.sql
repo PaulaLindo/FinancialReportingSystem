@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS asset_journals (
     reviewer_name TEXT,
     rejection_reason TEXT,
     CONSTRAINT asset_journals_status_check CHECK (
-        status IN ('pending_review', 'approved', 'rejected')
+        status IN ('pending_review', 'pending_cfo', 'approved', 'rejected')
     ),
     CONSTRAINT asset_journals_type_check CHECK (
         journal_type IN ('useful_life_review', 'impairment', 'disposal')

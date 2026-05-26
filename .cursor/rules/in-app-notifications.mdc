@@ -1,0 +1,24 @@
+---
+description: Use in-app toasts and modals — never browser alert(), confirm(), or prompt()
+alwaysApply: true
+---
+
+# In-app notifications only
+
+Never use native browser dialogs for user-facing messages in this project:
+
+- Do **not** use `alert()`, `confirm()`, or `prompt()`.
+- Do **not** add fallbacks to `window.alert` when a toast/modal helper is unavailable.
+
+Use the existing UI instead:
+
+| Need | Use |
+|------|-----|
+| Short success/error/info | `VarydianUtils.showToast(message, type)` |
+| Blocking OK dialog | `window.modalSystem.alert(title, message, options)` |
+| Confirm before action | `window.modalSystem.confirm(...)` or an in-app modal |
+| Destructive confirm | In-app modal with explicit Confirm/Cancel buttons |
+
+When touching notification code, migrate any remaining `alert()` calls to the helpers above.
+
+Admin and upload flows already use `VarydianUtils.showToast` — follow that pattern.

@@ -12,9 +12,11 @@
             {% else %}
             <p>Financial submission decisions and asset journal approve/reject outcomes. Pending items remain on <strong>Review</strong> or <strong>Asset journals</strong>.</p>
             {% endif %}
+            <p class="content-page-header__lead"><span id="fmHistoryCount" class="fm-history-count" aria-live="polite">—</span> record(s) in view.</p>
         </header>
 
-        <div class="queue-filters">
+        <div class="fm-history-toolbar">
+        <div class="queue-filters fm-history-filters">
             <div class="filter-group">
                 <label for="fmHistoryRecordTypeFilter" class="filter-label">Record type</label>
                 <select id="fmHistoryRecordTypeFilter" class="filter-select">
@@ -36,8 +38,10 @@
                 <button type="button" class="btn btn-secondary btn-sm" data-action="refresh-fm-history">Refresh</button>
             </div>
         </div>
+        <div id="fmHistorySummary" class="fm-history-summary" aria-live="polite"></div>
+        </div>
 
-        <div id="fmHistoryContainer" class="queue-items">
+        <div id="fmHistoryContainer" class="queue-items fm-history-list">
             <div class="queue-loading">
                 <div class="loading-spinner"></div>
                 <p>Loading history…</p>

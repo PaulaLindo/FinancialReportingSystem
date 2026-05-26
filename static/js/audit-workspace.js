@@ -9,15 +9,11 @@
     }
 
     function toast(msg, isError) {
-        if (window.VarydianUtils?.showError && isError) {
-            VarydianUtils.showError(msg);
+        if (window.VarydianUtils?.showToast) {
+            VarydianUtils.showToast(msg, isError ? 'error' : 'success');
             return;
         }
-        if (window.VarydianUtils?.showSuccess && !isError) {
-            VarydianUtils.showSuccess(msg);
-            return;
-        }
-        window.alert(msg);
+        console.warn('[audit]', msg);
     }
 
     function selectionPayload() {

@@ -11,16 +11,30 @@ class SessionKpiSnapshotTests(unittest.TestCase):
     def test_income_statement_uses_net_income(self):
         session = MagicMock()
         session.metadata = {}
+        session.processed_at = '2026-01-01T00:00:00Z'
         session.net_income = Decimal('125000.50')
         kpi = UniversalWorkflowService._session_kpi_snapshot(session, 'income_statement')
         self.assertEqual(kpi['surplus_deficit'], 125000.5)
         self.assertIsNone(kpi['budget_variance'])
 
+    def test_income_statement_skips_unprocessed_zero_defaults(self):
+        session = MagicMock()
+        session.metadata = {}
+        session.processed_at = None
+        session.net_income = Decimal('0.00')
+        session.total_revenue = Decimal('0.00')
+        session.total_expenses = Decimal('0.00')
+        kpi = UniversalWorkflowService._session_kpi_snapshot(session, 'income_statement')
+        self.assertIsNone(kpi['surplus_deficit'])
+
     def test_budget_report_uses_total_variance(self):
         session = MagicMock()
         session.metadata = {}
+        session.processed_at = '2026-01-01T00:00:00Z'
         session.total_variance = Decimal('-42000')
         session.variance_percentage = Decimal('-8.5')
+        session.total_budget = Decimal('500000')
+        session.total_actual = Decimal('542000')
         kpi = UniversalWorkflowService._session_kpi_snapshot(session, 'budget_report')
         self.assertEqual(kpi['budget_variance'], -42000.0)
         self.assertEqual(kpi['variance_percentage'], -8.5)

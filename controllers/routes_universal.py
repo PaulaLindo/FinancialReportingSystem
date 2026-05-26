@@ -136,9 +136,11 @@ class UniversalUploadHandler:
                     pass
                     
         except Exception as e:
+            from utils.document_format_detection import document_type_label
+            label = document_type_label(document_type)
             return {
                 'success': False,
-                'error': f'Error processing {document_type}: {str(e)}'
+                'error': f'Error processing {label}: {str(e)}'
             }
 
 
@@ -368,6 +370,19 @@ def register_universal_routes(app):
             period_id = request.form.get('period_id')
             notes = request.form.get('notes', '')
 
+            from services.period_management_service import period_management_service
+            open_periods = period_management_service.dedupe_open_periods(
+                period_management_service.model.get_open_periods()
+            )
+            if len(open_periods) > 1 and not period_id:
+                return jsonify({
+                    'success': False,
+                    'error': (
+                        'Multiple reporting periods are open. '
+                        'Choose a period on the dashboard or upload page before uploading.'
+                    ),
+                }), 400
+
             if period_id:
                 allowed, lock_msg = check_period_id_unlocked(period_id)
                 if not allowed:
@@ -561,8 +576,9 @@ def register_universal_routes(app):
             if not db_session:
                 return jsonify({'success': False, 'error': 'Session not found'}), 404
 
-            if str(db_session.user_id) != str(current_user.id) and not current_user.can_review():
-                return jsonify({'success': False, 'error': 'Access denied'}), 403
+            denied = _session_view_json_error(session_id, document_type, current_user)
+            if denied:
+                return denied
 
             from services.workflow_timeline_service import (
                 build_timeline_from_metadata,
@@ -1233,6 +1249,7 @@ def register_universal_routes(app):
                 notes=f"Submitted {len(mapped_data)} mapped accounts for review",
                 mapped_data=mapped_data,
                 clerk_correction_note=clerk_correction_note,
+                period_id=data.get('period_id'),
             )
             
             if result['success']:
@@ -2164,6 +2181,12 @@ def register_transaction_history_route(app):
 
                 md = getattr(session, 'metadata', None) or {}
                 sid = session.id
+                period_name = (
+                    md.get('period_name')
+                    or md.get('reporting_period')
+                    or md.get('period')
+                    or ''
+                )
                 all_transactions.append({
                     'transaction_id': readable_id,
                     'session_id': sid,
@@ -2173,6 +2196,7 @@ def register_transaction_history_route(app):
                     'updated_at': updated_at or '',
                     'status': display_status,
                     'reason': session.filename or '',
+                    'period_name': period_name,
                     'pdf_exported': sid in pdf_exported_ids,
                     'export_acknowledged': bool(md.get('export_ready_acknowledged_at')),
                     'metadata': md,

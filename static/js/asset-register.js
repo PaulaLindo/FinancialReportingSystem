@@ -59,12 +59,12 @@
         async runDepreciation() {
             const year = new Date().getFullYear();
             const message = `Run annual depreciation for fiscal year ${year}? This updates carrying values for all active assets.`;
-            const ok = typeof window.showConfirm === 'function'
-                ? await window.showConfirm('Annual depreciation', message, {
+            const ok = window.varydianAppConfirm
+                ? await window.varydianAppConfirm('Annual depreciation', message, {
                     confirmText: 'Run',
                     cancelText: 'Cancel',
                 })
-                : window.confirm(message);
+                : false;
             if (!ok) return;
             try {
                 const res = await VarydianUtils.safeFetch(`${API}/depreciation/run`, {

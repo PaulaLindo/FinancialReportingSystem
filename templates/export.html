@@ -6,9 +6,9 @@
 <div class="page page--export export-page">
     <header class="export-header">
         <div class="container-content export-header__inner">
-            <h1>Export Center</h1>
+            <h1>{% if read_only_export %}Download finalized PDFs{% else %}Export Center{% endif %}</h1>
             {% if read_only_export %}
-            <p>Download finalized financial statements after CFO approval and period lock.</p>
+            <p>Finance Manager read-only access — download CFO-approved PDFs after period lock. Official generation is done by the CFO in Export Center.</p>
             {% else %}
             <p>Export financial statements in various formats after the reporting period is locked.</p>
             {% endif %}

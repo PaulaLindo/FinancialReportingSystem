@@ -263,6 +263,12 @@ body .login-container .login-box {
     border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
+.role-system-admin {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(239, 68, 68, 0.08) 100%);
+    color: #b91c1c;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
 .alert {
     border-radius: var(--radius-lg);
     animation: slideDown 0.5s cubic-bezier(0.4, 0, 0.2, 1);

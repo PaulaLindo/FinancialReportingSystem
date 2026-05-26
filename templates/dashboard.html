@@ -16,24 +16,30 @@
             {% if current_user.can_upload() %}
             <div class="hero-actions">
                 <a href="/upload" class="btn btn-primary">Upload Financial Document</a>
-                <a href="/reports" class="btn btn-secondary">View Reports</a>
+                {% if current_user.role == 'FINANCE_CLERK' %}
+                <a href="/submission-history" class="btn btn-secondary">Submission history</a>
+                {% endif %}
             </div>
             {% else %}
+            {% if current_user.role != 'ASSET_MANAGER' %}
             <div class="hero-actions">
-                {% if current_user.role == 'ASSET_MANAGER' %}
-                <a href="/asset-manager/register" class="btn btn-primary">Asset Register</a>
-                <a href="/asset-manager/reconciliation" class="btn btn-secondary">Reconciliation</a>
+                {% if current_user.role == 'SYSTEM_ADMIN' %}
+                <a href="/admin" class="btn btn-primary">Admin panel</a>
                 {% elif current_user.role == 'AUDITOR' %}
                 <a href="/audit" class="btn btn-primary">Audit workspace</a>
                 <a href="/audit/asset-register" class="btn btn-secondary">Asset register</a>
                 {% elif current_user.can_review() %}
                 <a href="/finance-manager/review-queue" class="btn btn-primary">View Queue</a>
-                <a href="/about" class="btn btn-secondary">Learn More</a>
+                {% if current_user.role == 'CFO' %}
+                <a href="/export" class="btn btn-secondary">Export Center</a>
                 {% else %}
-                <a href="/reports" class="btn btn-primary">View Reports</a>
-                <a href="/about" class="btn btn-secondary">Learn More</a>
+                <a href="/finance-manager/asset-journals" class="btn btn-secondary">Asset journals</a>
+                {% endif %}
+                {% else %}
+                <a href="/about" class="btn btn-primary">About Varydian</a>
                 {% endif %}
             </div>
+            {% endif %}
             {% endif %}
         </div>
     </div>
@@ -41,159 +47,228 @@
     {% if current_user.role == 'FINANCE_CLERK' %}
     <!-- Finance Clerk Dashboard Content -->
     <div class="dashboard-content dashboard-clerk container-content">
-        <!-- Quick Stats -->
-        <div class="quick-stats dashboard-quick-stats" aria-label="Period summary">
-            <div class="stat-card">
-                <div class="stat-number">{{ stats.open_periods or 0 }}</div>
-                <div class="stat-label">Open Periods</div>
+        <section class="clerk-overview-panel" aria-label="Finance Clerk overview">
+            <header class="clerk-overview-panel__intro">
+                <p class="clerk-overview-panel__eyebrow">Finance Clerk · Reporting periods</p>
+                <h2 class="clerk-overview-panel__heading">Your workspace</h2>
+                <p class="clerk-overview-panel__lead">Focus on open reporting periods for uploads. Closed months stay available below for reference.</p>
+            </header>
+
+            <div class="clerk-metrics-grid dashboard-quick-stats" aria-label="Period summary">
+                <article class="clerk-metric-tile clerk-metric-tile--periods{% if stats.open_periods %} clerk-metric-tile--active{% endif %}">
+                    <span class="clerk-metric-tile__label">Open periods</span>
+                    <span class="clerk-metric-tile__value">{{ stats.open_periods or 0 }}</span>
+                </article>
+                <article class="clerk-metric-tile clerk-metric-tile--pending{% if stats.pending_uploads %} clerk-metric-tile--active{% endif %}">
+                    <span class="clerk-metric-tile__label">Pending uploads</span>
+                    <span class="clerk-metric-tile__value">{{ stats.pending_uploads or 0 }}</span>
+                </article>
+                <article class="clerk-metric-tile clerk-metric-tile--today{% if stats.submitted_today %} clerk-metric-tile--active{% endif %}">
+                    <span class="clerk-metric-tile__label">Submitted today</span>
+                    <span class="clerk-metric-tile__value">{{ stats.submitted_today or 0 }}</span>
+                </article>
+                <article class="clerk-metric-tile clerk-metric-tile--approved{% if stats.approved_this_month %} clerk-metric-tile--active{% endif %}">
+                    <span class="clerk-metric-tile__label">Approved this month</span>
+                    <span class="clerk-metric-tile__value">{{ stats.approved_this_month or 0 }}</span>
+                </article>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ stats.pending_uploads or 0 }}</div>
-                <div class="stat-label">Pending Uploads</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ stats.submitted_today or 0 }}</div>
-                <div class="stat-label">Submitted Today</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ stats.approved_this_month or 0 }}</div>
-                <div class="stat-label">Approved This Month</div>
-            </div>
-        </div>
+        </section>
 
         <!-- Task List Section -->
-        <div class="task-list-section dashboard-panel">
-            <div class="section-header">
-                <h2 class="section-title">
-                    <span class="section-icon">📋</span>
-                    Task List - Open Periods
-                </h2>
-                <div class="task-summary">
-                    <span class="summary-item">
-                        <span class="summary-number">{{ periods|length }}</span>
-                        <span class="summary-label">Periods</span>
-                    </span>
-                    <span class="summary-item">
-                        <span class="summary-number">{{ stats.open_periods or 0 }}</span>
-                        <span class="summary-label">Open</span>
-                    </span>
+        {% macro clerk_period_card(period) %}
+        <article class="task-card task-card--{{ period.status }}{% if period.is_locked %} task-card--locked{% endif %}{% if period.is_urgent and period.status == 'open' and not period.is_locked %} task-card--urgent{% endif %}"
+             data-period-id="{{ period.id }}"
+             data-status="{{ period.status }}"
+             data-period-kind="{% if period.status == 'open' and not period.is_locked %}open{% else %}closed{% endif %}"
+             data-urgency="{% if period.is_urgent and period.status == 'open' %}urgent{% else %}normal{% endif %}">
+            <div class="task-header">
+                <div class="task-period">{{ period.name }}</div>
+                <div class="task-badges">
+                    {% if period.is_locked %}
+                    <span class="task-badge task-badge--locked">CFO locked</span>
+                    {% elif period.status == 'open' %}
+                    <span class="task-badge task-badge--open">Open</span>
+                    {% else %}
+                    <span class="task-badge task-badge--closed">Closed</span>
+                    {% endif %}
+                    {% if period.is_urgent and period.status == 'open' and not period.is_locked %}
+                    <span class="task-badge task-badge--urgent">Due soon</span>
+                    {% endif %}
                 </div>
             </div>
-            
+
+            <div class="task-details">
+                <dl class="task-info">
+                    <div class="task-info-item">
+                        <dt class="task-info-icon" aria-hidden="true">📅</dt>
+                        <dd>{{ period.start_date | display_datetime }} – {{ period.end_date | display_datetime }}</dd>
+                    </div>
+                    <div class="task-info-item">
+                        <dt class="task-info-icon" aria-hidden="true">📊</dt>
+                        <dd>{{ period.uploaded_count or 0 }}/{{ period.required_uploads or 3 }} documents</dd>
+                    </div>
+                    <div class="task-info-item{% if period.is_urgent and period.status == 'open' %} task-info-item--urgent{% endif %}">
+                        <dt class="task-info-icon" aria-hidden="true">⏰</dt>
+                        <dd>Due {{ period.due_date | display_datetime }}</dd>
+                    </div>
+                    {% if period.last_upload %}
+                    <div class="task-info-item task-info-item--muted">
+                        <dt class="task-info-icon" aria-hidden="true">🕐</dt>
+                        <dd>Last upload {{ period.last_upload | display_datetime }}</dd>
+                    </div>
+                    {% endif %}
+                </dl>
+            </div>
+
+            <div class="task-progress">
+                {% set progress = period.completion_percentage|default(0)|round(0)|int %}
+                {% set progress_width = [progress, 100]|min %}
+                <div class="task-progress__label">
+                    <span class="progress-text">Upload progress</span>
+                    <span class="progress-value">{{ progress }}%</span>
+                </div>
+                <div class="task-progress__bar task-progress__bar--{{ period.status }}"
+                    role="progressbar"
+                    aria-valuenow="{{ progress }}"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-label="Upload progress for {{ period.name }}">
+                    <div class="task-progress__fill" style="width: {{ progress_width }}%;"></div>
+                </div>
+            </div>
+
+            <div class="task-actions">
+                {% set slots_remaining = period.upload_slots_remaining|default(0) %}
+                {% if period.status == 'open' and not period.is_locked and slots_remaining > 0 %}
+                    <a href="/upload?period={{ period.id }}" class="btn-upload btn-upload--primary">
+                        <span aria-hidden="true">📤</span>
+                        {% if (period.uploaded_count or 0) > 0 %}Upload next document{% else %}Upload document{% endif %}
+                    </a>
+                {% elif period.status == 'open' and not period.is_locked %}
+                    <button type="button" class="btn-upload btn-upload--done" disabled>
+                        <span aria-hidden="true">✅</span>
+                        All documents uploaded
+                    </button>
+                {% elif period.is_locked %}
+                    <button type="button" class="btn-upload btn-upload--locked" disabled>
+                        <span aria-hidden="true">🔒</span>
+                        Locked by CFO
+                    </button>
+                {% else %}
+                    <button type="button" class="btn-upload btn-upload--closed" disabled>
+                        <span aria-hidden="true">📁</span>
+                        No new uploads
+                    </button>
+                {% endif %}
+
+                {% if (period.uploaded_count or 0) > 0 %}
+                    <a href="/submission-history" class="btn-view">View submissions</a>
+                {% endif %}
+            </div>
+        </article>
+        {% endmacro %}
+
+        <section class="task-list-section dashboard-panel clerk-task-panel">
+            <div class="section-header clerk-task-panel__header">
+                <div class="clerk-task-panel__title-wrap">
+                    <h2 class="section-title clerk-task-panel__title">
+                        <span class="section-icon" aria-hidden="true">📋</span>
+                        Reporting periods
+                    </h2>
+                    <p class="clerk-task-panel__subtitle">Upload to <strong>open</strong> periods. Closed months are read-only — expand the archive below when you need them.</p>
+                </div>
+                <div class="task-summary clerk-task-summary">
+                    <span class="summary-item clerk-summary-chip clerk-summary-chip--open">
+                        <span class="summary-number">{{ open_periods|length if open_periods is defined else stats.open_periods or 0 }}</span>
+                        <span class="summary-label">Open</span>
+                    </span>
+                    {% if closed_periods is defined and closed_periods|length %}
+                    <span class="summary-item clerk-summary-chip clerk-summary-chip--closed">
+                        <span class="summary-number">{{ closed_periods|length }}</span>
+                        <span class="summary-label">Closed</span>
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
             {% if periods %}
-                <div class="task-filters">
-                    <div class="filter-group">
-                        <label for="periodFilter" class="filter-label">Filter by Status:</label>
-                        <select id="periodFilter" class="filter-select">
-                            <option value="all">All Periods</option>
-                            <option value="open">Open Only</option>
-                            <option value="closed">Closed Only</option>
-                        </select>
+                {% if open_periods is defined and open_periods|length %}
+                <section class="clerk-periods-section clerk-periods-section--open" aria-label="Open reporting periods">
+                    <header class="clerk-periods-section__head">
+                        <h3 class="clerk-periods-section__title">Open for upload</h3>
+                        <span class="clerk-periods-section__count">{{ open_periods|length }} period{{ 's' if open_periods|length != 1 else '' }}</span>
+                    </header>
+                    <div class="task-filters task-filters--open">
+                        <div class="filter-group">
+                            <label for="urgencyFilter" class="filter-label">Urgency</label>
+                            <select id="urgencyFilter" class="filter-select">
+                                <option value="all">All open</option>
+                                <option value="urgent">Due soon only</option>
+                                <option value="normal">Normal only</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="filter-group">
-                        <label for="urgencyFilter" class="filter-label">Urgency:</label>
-                        <select id="urgencyFilter" class="filter-select">
-                            <option value="all">All</option>
-                            <option value="urgent">Urgent (Due Soon)</option>
-                            <option value="normal">Normal</option>
-                        </select>
+                    <div class="task-grid task-grid--open" id="taskGrid">
+                        {% for period in open_periods %}
+                            {{ clerk_period_card(period) }}
+                        {% endfor %}
                     </div>
+                </section>
+                {% else %}
+                <div class="clerk-open-empty">
+                    <p>No open reporting periods right now. {% if closed_periods is defined and closed_periods|length %}Expand <strong>Closed periods</strong> below or check submission history.{% else %}Ask your system administrator to open a period.{% endif %}</p>
                 </div>
-                
-                <div class="task-grid" id="taskGrid">
-                    {% for period in periods %}
-                    <div class="task-card status-{{ period.status }} {% if period.is_urgent %}urgent{% endif %}" 
-                         data-status="{{ period.status }}" 
-                         data-urgency="{% if period.is_urgent %}urgent{% else %}normal{% endif %}">
-                        <div class="task-header">
-                            <div class="task-period">{{ period.name }}</div>
-                            <div class="task-badges">
-                                <div class="task-status status-{{ period.status }}">
-                                    {{ period.status.title() }}
-                                </div>
-                                {% if period.is_urgent %}
-                                <div class="task-urgency urgent">
-                                    <span>⚡</span>
-                                    Urgent
-                                </div>
-                                {% endif %}
-                            </div>
+                {% endif %}
+
+                {% if closed_periods is defined and closed_periods|length %}
+                <section class="clerk-periods-section clerk-periods-section--closed" id="clerkClosedPeriodsSection" aria-label="Closed reporting periods">
+                    <header class="clerk-periods-section__head clerk-periods-section__head--toggle">
+                        <div class="clerk-periods-section__head-text">
+                            <h3 class="clerk-periods-section__title">Closed periods</h3>
+                            <p class="clerk-periods-section__hint">Read-only archive — use submission history for full audit detail.</p>
                         </div>
-                        
-                        <div class="task-details">
-                            <div class="task-info">
-                                <div class="task-info-item">
-                                    <span class="task-info-icon">📅</span>
-                                    <span>{{ period.start_date | display_datetime }} - {{ period.end_date | display_datetime }}</span>
-                                </div>
-                                <div class="task-info-item">
-                                    <span class="task-info-icon">📊</span>
-                                    <span>{{ period.uploaded_count or 0 }}/{{ period.required_count or 1 }} files uploaded</span>
-                                </div>
-                                <div class="task-info-item {% if period.is_urgent %}urgent-deadline{% endif %}">
-                                    <span class="task-info-icon">⏰</span>
-                                    <span>Due: {{ period.due_date | display_datetime }}</span>
-                                </div>
-                                {% if period.last_upload %}
-                                <div class="task-info-item">
-                                    <span class="task-info-icon">🕐</span>
-                                    <span>Last upload: {{ period.last_upload | display_datetime }}</span>
-                                </div>
-                                {% endif %}
-                            </div>
+                        <div class="clerk-periods-section__head-actions">
+                            <span class="clerk-periods-section__count">{{ closed_periods|length }} shown{% if stats.has_more_closed %} · {{ stats.older_closed_count }} more available{% endif %}</span>
+                            <button type="button" class="btn btn-secondary btn-sm clerk-periods-toggle" id="clerkClosedPeriodsToggle" aria-expanded="false" aria-controls="clerkClosedPeriodsPanel">
+                                Show closed periods
+                            </button>
                         </div>
-                        
-                        <div class="task-progress">
-                            {% set uploaded = period.uploaded_count or 0 %}
-                            {% set required = period.required_count or 1 %}
-                            {% set progress = (uploaded / required) * 100 %}
-                            {% set progress_width = [progress, 100]|min %}
-                            <div class="task-progress__label">
-                                <span class="progress-text">{{ progress|round(0)|int }}% Complete</span>
-                            </div>
-                            <div class="progress-bar task-progress__bar"
-                                role="progressbar"
-                                aria-valuenow="{{ progress|round(0)|int }}"
-                                aria-valuemin="0"
-                                aria-valuemax="100"
-                                aria-label="Upload progress for {{ period.name }}">
-                                <div class="progress-fill task-progress__fill" style="width: {{ progress_width|round(0) }}%;"></div>
-                            </div>
+                    </header>
+                    <div class="clerk-periods-section__panel" id="clerkClosedPeriodsPanel" hidden>
+                        <div class="task-grid task-grid--closed" id="clerkClosedPeriodsGrid">
+                            {% for period in closed_periods %}
+                                {{ clerk_period_card(period) }}
+                            {% endfor %}
                         </div>
-                        
-                        <div class="task-actions">
-                            {% if period.status == 'open' %}
-                                <a href="/upload?period={{ period.id }}" class="btn-upload">
-                                    <span>📤</span>
-                                    Upload Balance Sheet
-                                </a>
-                            {% else %}
-                                <button class="btn-upload" disabled>
-                                    <span>🔒</span>
-                                    Period Closed
-                                </button>
-                            {% endif %}
-                            
-                            {% if (period.uploaded_count or 0) > 0 %}
-                                <a href="/reports?period={{ period.id }}" class="btn-view">
-                                    View Reports
-                                </a>
-                            {% endif %}
+
+                        {% if stats.has_more_closed %}
+                        <div class="clerk-closed-periods-toolbar" id="clerkClosedPeriodsToolbar">
+                            <p class="clerk-closed-periods-toolbar__note text-muted">
+                                {{ stats.older_closed_count }} older closed period(s) not shown yet.
+                            </p>
+                            <button type="button" class="btn btn-secondary btn-sm" id="clerkShowAllClosedBtn" data-closed-count="{{ stats.closed_periods or 0 }}">
+                                Load all closed periods
+                            </button>
                         </div>
+                        {% endif %}
                     </div>
-                    {% endfor %}
-                </div>
+                </section>
+                {% endif %}
             {% else %}
-                <div class="empty-state">
-                    <div class="empty-icon">📋</div>
-                    <h3 class="empty-title">No Open Periods</h3>
-                    <p class="empty-description">
-                        There are currently no open periods for balance sheet uploads. 
-                        Please check back later or contact your administrator.
+                <div class="clerk-empty-state">
+                    <div class="clerk-empty-state__icon" aria-hidden="true">📋</div>
+                    <h3 class="clerk-empty-state__title">No reporting periods</h3>
+                    <p class="clerk-empty-state__text">
+                        There are no open or recently closed reporting periods to show.
+                        Your system administrator must <strong>create and open</strong> a period in
+                        <code>financial_periods</code> before you can upload balance sheets, income statements, and budget reports.
                     </p>
+                    <div class="clerk-empty-state__actions">
+                        <a href="/submission-history" class="btn btn-secondary btn-sm">View submission history</a>
+                    </div>
                 </div>
             {% endif %}
-        </div>
+        </section>
     </div>
     {% endif %}
 
@@ -204,31 +279,59 @@
             <div class="steps-grid">
                 <div class="step">
                     <div class="step-number">1</div>
-                    <h3>Upload Balance Sheet</h3>
-                    <p>Import your Balance Sheet from Pastel or Excel (CSV, XLSX supported)</p>
+                    <h3>Choose period &amp; document</h3>
+                    <p>Select an open reporting period, then upload a balance sheet, income statement, or budget report</p>
                 </div>
                 <div class="step-arrow">→</div>
                 <div class="step">
                     <div class="step-number">2</div>
-                    <h3>Automatic Mapping</h3>
-                    <p>System intelligently maps accounts to GRAP categories</p>
+                    <h3>Upload &amp; map</h3>
+                    <p>Import from Pastel or Excel (CSV, XLSX). Map accounts to GRAP categories and GRAP 24 budget lines</p>
                 </div>
                 <div class="step-arrow">→</div>
                 <div class="step">
                     <div class="step-number">3</div>
-                    <h3>Generate Reports</h3>
-                    <p>Click one button to generate complete financial statements</p>
+                    <h3>Submit for review</h3>
+                    <p>Send the mapped document to the Finance Manager — each document type follows the same approval path</p>
                 </div>
                 <div class="step-arrow">→</div>
                 <div class="step">
                     <div class="step-number">4</div>
-                    <h3>Download PDF</h3>
-                    <p>Receive GRAP-compliant PDF ready for AGSA submission</p>
+                    <h3>Track in history</h3>
+                    <p>Monitor FM/CFO decisions in submission history and open read-only statement views when approved</p>
                 </div>
             </div>
         </div>
     </div>
     {% elif current_user.role == 'FINANCE_MANAGER' %}
+    {% if fm_kpis %}
+    <div class="dashboard-content dashboard-fm container-content">
+        <section class="cfo-kpi-panel fm-kpi-panel" aria-label="Finance Manager overview">
+            <div class="cfo-kpi-grid fm-kpi-grid">
+                <article class="cfo-metric-tile cfo-metric-tile--queue{% if fm_kpis.pending_review_count %} fm-metric-tile--active{% endif %}">
+                    <span class="cfo-metric-tile__value">{{ fm_kpis.pending_review_count or 0 }}</span>
+                    <span class="cfo-metric-tile__label">Awaiting review</span>
+                </article>
+                <article class="cfo-metric-tile{% if fm_kpis.pending_asset_journals_count %} fm-metric-tile--active{% endif %}">
+                    <span class="cfo-metric-tile__value">{{ fm_kpis.pending_asset_journals_count or 0 }}</span>
+                    <span class="cfo-metric-tile__label">Asset journals</span>
+                </article>
+                <article class="cfo-metric-tile{% if fm_kpis.unread_inbox_count %} fm-metric-tile--active{% endif %}">
+                    <span class="cfo-metric-tile__value">{{ fm_kpis.unread_inbox_count or 0 }}</span>
+                    <span class="cfo-metric-tile__label">Unread inbox</span>
+                </article>
+                <article class="cfo-metric-tile cfo-metric-tile--cta fm-metric-tile--actions">
+                    <span class="cfo-metric-tile__label">Your queues</span>
+                    <div class="fm-kpi-actions">
+                        <a href="/finance-manager/review-queue" class="btn btn-primary btn-sm">Review queue</a>
+                        <a href="/finance-manager/asset-journals" class="btn btn-secondary btn-sm">Asset journals</a>
+                    </div>
+                </article>
+            </div>
+            <p class="cfo-kpi-panel__note text-muted">Counts reflect clerk submissions pending FM review, asset journals awaiting approval, and unread notifications.</p>
+        </section>
+    </div>
+    {% endif %}
     <div class="section">
         <div class="container-content">
             <h2 class="section-title">How It Works</h2>
@@ -253,7 +356,13 @@
                 <div class="step-arrow">→</div>
                 <div class="step">
                     <div class="step-number">4</div>
-                    <h3>Submission History</h3>
+                    <h3>Asset journals</h3>
+                    <p>Review lifecycle changes from the asset register — routine approvals stay with FM; material items go to CFO</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <h3>Submission history</h3>
                     <p>Track settled FM and CFO decisions — status badges show who approved or rejected</p>
                 </div>
             </div>
@@ -340,84 +449,197 @@
             </footer>
         </section>
     </div>
-    {% elif current_user.role == 'AUDITOR' and auditor_stats %}
-    <div class="dashboard-content dashboard-auditor container-content">
-        <section class="audit-dashboard">
-            <header class="audit-workspace-hero audit-workspace-hero--compact">
-                <div class="audit-workspace-hero__inner">
-                    <p class="asset-manager-hero__eyebrow">AGSA · Read-only audit</p>
-                    <h2 class="audit-workspace-hero__heading">Audit overview</h2>
-                    <p class="audit-workspace-hero__lead">Review CFO-finalized submissions in locked reporting periods. No edits or approvals.</p>
+    <div class="section">
+        <div class="container-content">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Maintain register</h3>
+                    <p>Record assets in the GRAP 17 register with cost, depreciation, and carrying values</p>
                 </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Submit journals</h3>
+                    <p>Request useful-life reviews, impairments, or disposals as asset journals for FM approval</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>FM &amp; CFO approval</h3>
+                    <p>Finance Manager approves routine changes; material disposals and impairments escalate to the CFO</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Reconcile to GL</h3>
+                    <p>Compare register carrying value to the general ledger and resolve variances</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% elif current_user.role == 'SYSTEM_ADMIN' and admin_stats %}
+    <div class="dashboard-content dashboard-admin container-content">
+        <section class="cfo-kpi-panel admin-kpi-panel" aria-label="System Admin overview">
+            <header class="admin-kpi-panel__intro">
+                <p class="admin-kpi-panel__eyebrow">System Admin · Configuration</p>
+                <h2 class="admin-kpi-panel__heading">Platform overview</h2>
+                <p class="admin-kpi-panel__lead">Open reporting periods for Finance Clerks and manage user accounts. No financial upload or approval access.</p>
             </header>
-            <div class="asset-dashboard__metrics">
-                <article class="asset-metric-tile asset-metric-tile--highlight">
-                    <span class="asset-metric-tile__icon" aria-hidden="true">✓</span>
-                    <span class="asset-metric-tile__label">Finalized submissions</span>
-                    <span class="asset-metric-tile__value">{{ auditor_stats.finalized_count or 0 }}</span>
+            <div class="cfo-kpi-grid admin-kpi-grid">
+                <article class="cfo-metric-tile{% if admin_stats.active_user_count %} admin-metric-tile--active{% endif %}">
+                    <span class="cfo-metric-tile__value">{{ admin_stats.active_user_count or 0 }}</span>
+                    <span class="cfo-metric-tile__label">Active users</span>
+                </article>
+                <article class="cfo-metric-tile{% if admin_stats.open_period_count %} admin-metric-tile--active{% endif %}">
+                    <span class="cfo-metric-tile__value">{{ admin_stats.open_period_count or 0 }}</span>
+                    <span class="cfo-metric-tile__label">Open periods</span>
+                </article>
+                <article class="cfo-metric-tile{% if admin_stats.locked_period_count %} admin-metric-tile--active{% endif %}">
+                    <span class="cfo-metric-tile__value">{{ admin_stats.locked_period_count or 0 }}</span>
+                    <span class="cfo-metric-tile__label">Locked periods</span>
+                </article>
+                <article class="cfo-metric-tile cfo-metric-tile--cta admin-metric-tile--actions">
+                    <span class="cfo-metric-tile__label">Administration</span>
+                    <div class="admin-kpi-actions">
+                        <a href="/admin" class="btn btn-primary btn-sm">Open admin panel</a>
+                        <a href="/admin#adminPeriodsHeading" class="btn btn-secondary btn-sm">Manage periods</a>
+                    </div>
                 </article>
             </div>
-            <div class="audit-dashboard-actions">
-                <a href="/audit" class="audit-dashboard-link">
-                    <strong>Audit workspace</strong>
-                    <small>Statement review, audit CSV, export log</small>
-                </a>
-                <a href="/audit/asset-register" class="audit-dashboard-link">
-                    <strong>Asset register</strong>
-                    <small>Read-only GRAP 17 register</small>
-                </a>
-                <a href="/audit/reconciliation" class="audit-dashboard-link">
-                    <strong>Asset reconciliation</strong>
-                    <small>Register vs GL variance</small>
-                </a>
-            </div>
+            <p class="cfo-kpi-panel__note text-muted">
+                Schema migrations: {% if admin_stats.migrations_ok %}OK{% else %}action required — open Admin panel{% endif %}.
+                Auditors receive inbox alerts when a period is CFO-locked and audit-ready.
+            </p>
         </section>
+    </div>
+    {% elif current_user.role == 'AUDITOR' and auditor_stats %}
+    <div class="dashboard-content dashboard-auditor container-content">
+        <section class="cfo-kpi-panel auditor-kpi-panel" aria-label="Auditor overview">
+            <header class="auditor-kpi-panel__intro">
+                <p class="auditor-kpi-panel__eyebrow">AGSA · Read-only audit</p>
+                <h2 class="auditor-kpi-panel__heading">Audit overview</h2>
+                <p class="auditor-kpi-panel__lead">Review CFO-finalized submissions in locked reporting periods. Exports and inspections only — no edits or approvals.</p>
+            </header>
+            <div class="cfo-kpi-grid auditor-kpi-grid">
+                <article class="cfo-metric-tile cfo-metric-tile--queue{% if auditor_stats.finalized_count %} auditor-metric-tile--active{% endif %}">
+                    <span class="cfo-metric-tile__value">{{ auditor_stats.finalized_count or 0 }}</span>
+                    <span class="cfo-metric-tile__label">Finalized submissions</span>
+                </article>
+                <article class="cfo-metric-tile{% if auditor_stats.locked_periods_count %} auditor-metric-tile--active{% endif %}">
+                    <span class="cfo-metric-tile__value">{{ auditor_stats.locked_periods_count or 0 }}</span>
+                    <span class="cfo-metric-tile__label">Locked periods</span>
+                </article>
+                <article class="cfo-metric-tile{% if auditor_stats.active_asset_count %} auditor-metric-tile--active{% endif %}">
+                    <span class="cfo-metric-tile__value">{{ auditor_stats.active_asset_count or 0 }}</span>
+                    <span class="cfo-metric-tile__label">Active assets</span>
+                </article>
+                <article class="cfo-metric-tile{% if auditor_stats.unread_inbox_count %} auditor-metric-tile--active{% endif %}">
+                    <span class="cfo-metric-tile__value">{{ auditor_stats.unread_inbox_count or 0 }}</span>
+                    <span class="cfo-metric-tile__label">Unread inbox</span>
+                </article>
+                <article class="cfo-metric-tile cfo-metric-tile--cta auditor-metric-tile--actions">
+                    <span class="cfo-metric-tile__label">Start audit</span>
+                    <div class="auditor-kpi-actions">
+                        <a href="/audit" class="btn btn-primary btn-sm">Audit workspace</a>
+                        <a href="/audit/asset-register" class="btn btn-secondary btn-sm">Asset register</a>
+                    </div>
+                </article>
+            </div>
+            <p class="cfo-kpi-panel__note text-muted">Only CFO-approved submissions in locked periods are available for read-only review and audit CSV export.</p>
+        </section>
+    </div>
+    <div class="section">
+        <div class="container-content">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Choose submission</h3>
+                    <p>Open the audit workspace and select a CFO-finalized submission in a locked reporting period</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Read-only review</h3>
+                    <p>Inspect statements, FM/CFO line comments, and formula transparency — no approve or reject actions</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Audit CSV &amp; PDF</h3>
+                    <p>Download mapped audit CSV for working papers and export calculation breakdown PDFs from the formula modal</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Asset register</h3>
+                    <p>Review read-only GRAP 17 asset register and register-vs-GL reconciliation separately from trial balance workflow</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <h3>Material journal trail</h3>
+                    <p>Inspect CFO-approved disposals and material impairments in the read-only asset journal audit log</p>
+                </div>
+            </div>
+        </div>
     </div>
     {% elif current_user.role == 'CFO' %}
     <!-- CFO strategic KPI strip -->
     {% if cfo_kpis %}
     <div class="dashboard-content dashboard-cfo container-content">
-        <div class="quick-stats dashboard-quick-stats" aria-label="CFO overview">
-            <div class="stat-card">
-                <div class="stat-number">{{ cfo_kpis.pending_finalization_count or 0 }}</div>
-                <div class="stat-label">Awaiting finalization</div>
+        <section class="cfo-kpi-panel" aria-label="CFO overview">
+            <div class="cfo-kpi-grid cfo-kpi-grid--extended">
+                <article class="cfo-metric-tile cfo-metric-tile--queue{% if cfo_kpis.pending_finalization_count %} cfo-metric-tile--active{% endif %}">
+                    <span class="cfo-metric-tile__value">{{ cfo_kpis.pending_finalization_count or 0 }}</span>
+                    <span class="cfo-metric-tile__label">Awaiting finalization</span>
+                </article>
+                <article class="cfo-metric-tile{% if cfo_kpis.pending_material_journals_count %} cfo-metric-tile--active{% endif %}">
+                    <span class="cfo-metric-tile__value">{{ cfo_kpis.pending_material_journals_count or 0 }}</span>
+                    <span class="cfo-metric-tile__label">Material asset journals</span>
+                </article>
+                <article class="cfo-metric-tile">
+                    <span class="cfo-metric-tile__value cfo-metric-tile__value--currency">
+                        {% if cfo_kpis.surplus_deficit_total is not none %}
+                        R {{ "{:,.2f}".format(cfo_kpis.surplus_deficit_total) }}
+                        {% else %}
+                        —
+                        {% endif %}
+                    </span>
+                    <span class="cfo-metric-tile__label">
+                        Surplus / (deficit)
+                        {% if cfo_kpis.surplus_deficit_submission_count %}
+                        <span class="cfo-metric-tile__sublabel">{{ cfo_kpis.surplus_deficit_submission_count }} submission{{ 's' if cfo_kpis.surplus_deficit_submission_count != 1 else '' }}</span>
+                        {% endif %}
+                    </span>
+                </article>
+                <article class="cfo-metric-tile">
+                    <span class="cfo-metric-tile__value cfo-metric-tile__value--currency">
+                        {% if cfo_kpis.budget_variance_total is not none %}
+                        R {{ "{:,.2f}".format(cfo_kpis.budget_variance_total) }}
+                        {% else %}
+                        —
+                        {% endif %}
+                    </span>
+                    <span class="cfo-metric-tile__label">
+                        Budget variance
+                        {% if cfo_kpis.budget_variance_submission_count %}
+                        <span class="cfo-metric-tile__sublabel">{{ cfo_kpis.budget_variance_submission_count }} report{{ 's' if cfo_kpis.budget_variance_submission_count != 1 else '' }}</span>
+                        {% endif %}
+                    </span>
+                </article>
+                <article class="cfo-metric-tile cfo-metric-tile--cta cfo-metric-tile--actions">
+                    <span class="cfo-metric-tile__label">Your queues</span>
+                    <div class="cfo-kpi-actions">
+                        <a href="/finance-manager/review-queue" class="btn btn-primary btn-sm">Review queue</a>
+                        <a href="/finance-manager/asset-journals" class="btn btn-secondary btn-sm">Asset journals</a>
+                    </div>
+                </article>
             </div>
-            <div class="stat-card">
-                <div class="stat-number stat-number--currency">
-                    {% if cfo_kpis.surplus_deficit_total is not none %}
-                    R {{ "{:,.2f}".format(cfo_kpis.surplus_deficit_total) }}
-                    {% else %}
-                    —
-                    {% endif %}
-                </div>
-                <div class="stat-label">
-                    Surplus / (deficit)
-                    {% if cfo_kpis.surplus_deficit_submission_count %}
-                    <span class="stat-sublabel">({{ cfo_kpis.surplus_deficit_submission_count }} submission{{ 's' if cfo_kpis.surplus_deficit_submission_count != 1 else '' }})</span>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number stat-number--currency">
-                    {% if cfo_kpis.budget_variance_total is not none %}
-                    R {{ "{:,.2f}".format(cfo_kpis.budget_variance_total) }}
-                    {% else %}
-                    —
-                    {% endif %}
-                </div>
-                <div class="stat-label">
-                    Budget variance (actual − budget)
-                    {% if cfo_kpis.budget_variance_submission_count %}
-                    <span class="stat-sublabel">({{ cfo_kpis.budget_variance_submission_count }} report{{ 's' if cfo_kpis.budget_variance_submission_count != 1 else '' }})</span>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="stat-card stat-card--action">
-                <a href="/finance-manager/review-queue" class="btn btn-primary btn-sm">Open review queue</a>
-                <div class="stat-label" style="margin-top: 0.5rem;">Final review &amp; period lock</div>
-            </div>
-        </div>
-        <p class="dashboard-cfo-kpi-note text-muted">Totals reflect submissions currently in the CFO queue (pending CFO / approved by manager).</p>
+            <p class="cfo-kpi-panel__note text-muted">Totals reflect submissions in the CFO queue. Material asset journals are disposals and impairments forwarded by the Finance Manager.</p>
+        </section>
     </div>
     {% endif %}
     <div class="section">
@@ -444,6 +666,12 @@
                 <div class="step-arrow">→</div>
                 <div class="step">
                     <div class="step-number">4</div>
+                    <h3>Material asset journals</h3>
+                    <p>Sign off on disposals and material impairments forwarded by the Finance Manager after their review</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">5</div>
                     <h3>Export &amp; PDF</h3>
                     <p>After finalization, generate GRAP-compliant PDFs for audit and AGSA submission</p>
                 </div>
@@ -469,21 +697,20 @@
                         <a href="/upload" class="btn btn-primary">Upload Now</a>
                     </div>
                 </div>
-                {% endif %}
-                
-                {% if current_user.can_view_all() and current_user.role not in ['FINANCE_MANAGER', 'CFO', 'AUDITOR'] %}
+                {% if current_user.role == 'FINANCE_CLERK' %}
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">
-                            <div class="feature-icon">📁</div>
-                            File Management
+                            <div class="feature-icon">📜</div>
+                            Submission history
                         </div>
                     </div>
                     <div class="card-body">
-                        <p>View and manage your uploaded balance sheets and generated financial reports</p>
-                        <a href="/reports" class="btn btn-secondary">View Files</a>
+                        <p>Track your submitted documents, review status, and open read-only statement views.</p>
+                        <a href="/submission-history" class="btn btn-secondary">Open history</a>
                     </div>
                 </div>
+                {% endif %}
                 {% endif %}
                 
                 {% if current_user.can_review() %}
@@ -499,9 +726,88 @@
                         <a href="/finance-manager/history" class="btn btn-secondary">Open history</a>
                     </div>
                 </div>
+                {% if current_user.role == 'FINANCE_MANAGER' %}
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">📝</div>
+                            Asset journals
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Approve or reject asset lifecycle changes from the register. Material items are forwarded to the CFO.</p>
+                        <a href="/finance-manager/asset-journals" class="btn btn-secondary">Open asset journals</a>
+                    </div>
+                </div>
+                {% endif %}
+                {% if current_user.role == 'CFO' %}
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">📝</div>
+                            Material asset journals
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Final sign-off on disposals and material impairments forwarded by the Finance Manager.</p>
+                        <a href="/finance-manager/asset-journals" class="btn btn-secondary">Open asset journals</a>
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}
+
+                {% if current_user.role == 'AUDITOR' %}
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">🔍</div>
+                            Audit workspace
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Select a finalized submission, open read-only statement review, and export audit CSV.</p>
+                        <a href="/audit" class="btn btn-primary">Open workspace</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">🏗️</div>
+                            Asset register
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Read-only GRAP 17 register — inspect carrying values and asset metadata.</p>
+                        <a href="/audit/asset-register" class="btn btn-secondary">Open register</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">⚖️</div>
+                            Asset reconciliation
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Compare register carrying value to general ledger balance and variance.</p>
+                        <a href="/audit/reconciliation" class="btn btn-secondary">Open reconciliation</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="feature-icon">📝</div>
+                            Material journal trail
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p>Read-only audit log of CFO-approved disposals and material impairments from the asset register.</p>
+                        <a href="/audit/asset-journals" class="btn btn-secondary">Open journal trail</a>
+                    </div>
+                </div>
                 {% endif %}
                 
-                {% if current_user.can_access_export_center() %}
+                {% if current_user.can_access_export_center() and current_user.role != 'AUDITOR' %}
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">
@@ -552,6 +858,8 @@
     </div>
 
 </div>
+{% endblock %}
+
 {% block extra_js %}
 {% if current_user.role == 'FINANCE_CLERK' %}
 <script>
@@ -568,6 +876,8 @@ window.statsData = {{ stats|tojson|safe }};
 window.statsData = {};
 {% endif %}
 </script>
+<script src="{{ url_for('static', filename='js/clerk-dashboard-periods.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard-init.js') }}"></script>
 {% endif %}
 {% if current_user.role == 'FINANCE_MANAGER' %}
 <script>
@@ -575,6 +885,4 @@ window.statsData = {};
 window.currentUserRole = '{{ current_user.role }}';
 </script>
 {% endif %}
-<script src="{{ url_for('static', filename='js/dashboard-init.js') }}"></script>
-{% endblock %}
 {% endblock %}

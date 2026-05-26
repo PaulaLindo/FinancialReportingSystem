@@ -3,7 +3,7 @@ Period lock helpers — resolve period from sessions and enforce lock on mutatin
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from models.period_models import period_model, FinancialPeriod
 
@@ -246,14 +246,22 @@ def infer_document_type_from_session(session_id: str) -> Optional[str]:
 
 def find_open_period_for_today() -> Optional[FinancialPeriod]:
     """Best-effort fallback when upload omits period_id."""
+    from services.period_management_service import period_management_service
+
     now = datetime.now()
-    for period in period_model.get_open_periods():
+    matches: List[FinancialPeriod] = []
+    open_periods = period_management_service.dedupe_open_periods(period_model.get_open_periods())
+    for period in open_periods:
         try:
             start = datetime.fromisoformat(str(period.start_date).replace("Z", "+00:00")[:19])
             end = datetime.fromisoformat(str(period.end_date).replace("Z", "+00:00")[:19])
             if start.replace(tzinfo=None) <= now <= end.replace(tzinfo=None):
-                return period
+                matches.append(period)
         except Exception:
             continue
-    open_periods = period_model.get_open_periods()
-    return open_periods[0] if open_periods else None
+
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        return None
+    return open_periods[0] if len(open_periods) == 1 else None

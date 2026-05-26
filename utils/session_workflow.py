@@ -211,12 +211,13 @@ def parse_iso_datetime(value: Any) -> Optional[datetime]:
 
 
 def session_submitted_at(session: Any) -> Optional[datetime]:
+    from utils.datetime_display import parse_app_timezone_timestamp
+
     meta = session_metadata(session)
-    submitted = parse_iso_datetime(meta.get('submitted_at'))
-    if submitted:
-        return submitted
-    if session_submitted_for_review(session):
-        return parse_iso_datetime(getattr(session, 'updated_at', None))
+    for key in ('first_submitted_at', 'submitted_at', 'last_resubmitted_at'):
+        submitted = parse_app_timezone_timestamp(meta.get(key))
+        if submitted:
+            return submitted
     return None
 
 
@@ -232,14 +233,16 @@ def session_is_draft_work(session: Any) -> bool:
 
 def clerk_submission_stats(sessions: List[Any]) -> Dict[str, int]:
     """Aggregate counts for clerk dashboard / submission history."""
+    from utils.datetime_display import local_date, local_today
+
     visible = [s for s in sessions if not session_hidden_from_clerk_history(s)]
-    today = datetime.now(timezone.utc).date()
+    today = local_today()
     submitted = [s for s in visible if session_submitted_for_review(s)]
 
     submitted_today = 0
     for session in submitted:
         ts = session_submitted_at(session)
-        if ts and ts.date() == today:
+        if ts and local_date(ts) == today:
             submitted_today += 1
 
     pending = sum(1 for s in submitted if session_pending_approval(s))
@@ -257,8 +260,8 @@ def clerk_submission_stats(sessions: List[Any]) -> Dict[str, int]:
     )
     pending_uploads = sum(1 for s in visible if session_is_draft_work(s))
 
-    current_month = datetime.now(timezone.utc).month
-    current_year = datetime.now(timezone.utc).year
+    current_month = local_today().month
+    current_year = local_today().year
     approved_this_month = 0
     for session in submitted:
         if effective_workflow_status(session) != 'approved' and getattr(session, 'status', '') != 'approved':
@@ -267,7 +270,7 @@ def clerk_submission_stats(sessions: List[Any]) -> Dict[str, int]:
         ts = parse_iso_datetime(meta.get('approved_at')) or parse_iso_datetime(
             getattr(session, 'updated_at', None)
         )
-        if ts and ts.month == current_month and ts.year == current_year:
+        if ts and local_date(ts) and local_date(ts).month == current_month and local_date(ts).year == current_year:
             approved_this_month += 1
 
     return {

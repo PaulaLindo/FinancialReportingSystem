@@ -2,53 +2,15 @@
     padding-bottom: var(--fluid-space-xl);
 }
 
-.audit-workspace-hero {
-    padding: clamp(var(--fluid-space-lg), 3vw, var(--fluid-space-2xl)) 0;
-    margin-bottom: var(--fluid-space-lg);
-    background: linear-gradient(160deg, rgba(245, 158, 11, 0.1) 0%, rgba(255, 255, 255, 1) 55%, rgba(139, 92, 246, 0.05) 100%);
-    border-bottom: 1px solid rgba(245, 158, 11, 0.2);
-}
-
-.audit-workspace-hero__inner {
-    text-align: center;
-    max-width: 42rem;
-    margin: 0 auto;
-}
-
-.audit-workspace-hero .asset-manager-hero__eyebrow {
-    color: #b45309;
-}
-
-.audit-workspace-hero h1 {
-    margin: 0 0 0.35rem;
-    font-size: clamp(1.4rem, 2.8vw, 1.9rem);
-}
-
-.audit-workspace-hero__lead {
-    margin: 0;
-    color: var(--text-muted, #64748b);
-    line-height: 1.55;
-}
-
-.audit-workspace-hero__meta {
-    margin: var(--fluid-space-sm) 0 0;
-    font-size: 0.85rem;
-}
-
-.audit-workspace-content {
-    display: flex;
-    flex-direction: column;
-    gap: var(--fluid-space-xl);
-}
-
 .audit-workspace-panel,
 .audit-workspace-actions,
 .audit-workspace-log {
     padding: clamp(var(--fluid-space-md), 2.5vw, var(--fluid-space-xl));
     border-radius: 16px;
     background: var(--bg-primary, #fff);
-    border: 1px solid rgba(245, 158, 11, 0.18);
+    border: 1px solid rgba(139, 92, 246, 0.14);
     box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    margin-bottom: var(--fluid-space-lg);
 }
 
 .audit-workspace-panel__title {
@@ -57,7 +19,7 @@
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: #b45309;
+    color: #7c3aed;
 }
 
 .audit-session-select {
@@ -79,7 +41,8 @@
 
 .audit-action-card {
     display: flex;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
     gap: var(--fluid-space-sm);
     padding: var(--fluid-space-md);
     border-radius: 12px;
@@ -87,16 +50,17 @@
     background: var(--bg-secondary, #fafafa);
     text-decoration: none;
     color: inherit;
+    text-align: center;
 }
 
 .audit-action-card--primary {
-    border-color: rgba(245, 158, 11, 0.35);
-    background: linear-gradient(145deg, rgba(254, 243, 199, 0.35), rgba(255, 255, 255, 1));
+    border-color: rgba(139, 92, 246, 0.28);
+    background: linear-gradient(145deg, rgba(237, 233, 254, 0.45), rgba(255, 255, 255, 1));
 }
 
 .audit-action-card--link:hover {
-    border-color: rgba(245, 158, 11, 0.4);
-    box-shadow: 0 6px 18px rgba(245, 158, 11, 0.1);
+    border-color: rgba(139, 92, 246, 0.35);
+    box-shadow: 0 6px 18px rgba(139, 92, 246, 0.1);
     transform: translateY(-1px);
 }
 
@@ -106,26 +70,37 @@
 }
 
 .audit-action-card__body {
-    flex: 1;
-    min-width: 0;
+    width: 100%;
+    flex: none;
+    text-align: center;
 }
 
 .audit-action-card__body h3 {
     margin: 0 0 0.25rem;
     font-size: 0.95rem;
+    text-wrap: balance;
 }
 
 .audit-action-card__body p {
     margin: 0;
     font-size: 0.8rem;
     color: var(--text-muted, #64748b);
-    line-height: 1.4;
+    line-height: 1.5;
+    text-wrap: pretty;
+}
+
+.audit-action-card > .btn {
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+    width: 100%;
+    max-width: 14rem;
 }
 
 .audit-action-card__chevron {
     align-self: center;
-    color: #b45309;
+    color: #7c3aed;
     font-weight: 700;
+    margin-top: 0.15rem;
 }
 
 .audit-export-log__row {
@@ -147,23 +122,100 @@
     gap: var(--fluid-space-md);
 }
 
-.audit-workspace-hero--compact {
-    padding: 0 0 var(--fluid-space-md);
-    margin-bottom: 0;
-    border-bottom: none;
-    background: transparent;
-}
-
-.audit-workspace-hero__heading {
-    margin: 0 0 0.35rem;
-    font-size: clamp(1.25rem, 2.5vw, 1.6rem);
-}
-
 .dashboard-auditor .asset-dashboard__metrics {
     display: grid;
     grid-template-columns: minmax(160px, 240px);
     gap: var(--fluid-space-sm);
     margin-bottom: var(--fluid-space-lg);
+}
+
+/* Auditor dashboard — KPI strip (matches FM/CFO layout) */
+.dashboard-auditor {
+    margin-bottom: var(--fluid-space-lg);
+}
+
+.auditor-kpi-panel {
+    background: linear-gradient(
+        155deg,
+        rgba(139, 92, 246, 0.1) 0%,
+        rgba(255, 255, 255, 1) 42%,
+        rgba(37, 99, 235, 0.04) 100%
+    );
+    border-color: rgba(139, 92, 246, 0.22);
+}
+
+.auditor-kpi-panel__intro {
+    margin-bottom: var(--fluid-space-md);
+    text-align: center;
+}
+
+.auditor-kpi-panel__eyebrow {
+    margin: 0 0 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #7c3aed;
+}
+
+.auditor-kpi-panel__heading {
+    margin: 0 0 0.35rem;
+    font-size: clamp(1.15rem, 2vw, 1.45rem);
+    font-weight: 700;
+    color: var(--text-primary, #0f172a);
+}
+
+.auditor-kpi-panel__lead {
+    margin: 0 auto;
+    max-width: 40rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--text-muted, #64748b);
+}
+
+.auditor-kpi-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.auditor-metric-tile--active {
+    border-color: rgba(139, 92, 246, 0.28);
+    background: linear-gradient(145deg, rgba(237, 233, 254, 0.35), rgba(255, 255, 255, 1));
+}
+
+.auditor-metric-tile--active .cfo-metric-tile__value {
+    color: #7c3aed;
+}
+
+.auditor-metric-tile--actions .auditor-kpi-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    width: 100%;
+    min-width: 0;
+}
+
+.auditor-metric-tile--actions .auditor-kpi-actions .btn {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    line-height: 1.25;
+}
+
+@media (max-width: 1100px) {
+    .auditor-kpi-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .auditor-metric-tile--actions {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 640px) {
+    .auditor-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 .audit-dashboard-link {
@@ -174,14 +226,14 @@
     border-radius: 12px;
     text-decoration: none;
     color: inherit;
-    border: 1px solid rgba(245, 158, 11, 0.25);
-    background: linear-gradient(145deg, rgba(254, 243, 199, 0.2), rgba(255, 255, 255, 1));
+    border: 1px solid rgba(139, 92, 246, 0.22);
+    background: linear-gradient(145deg, rgba(237, 233, 254, 0.25), rgba(255, 255, 255, 1));
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .audit-dashboard-link:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.12);
+    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.12);
 }
 
 .audit-dashboard-link strong {
@@ -203,9 +255,19 @@
 }
 
 @media (max-width: 768px) {
+    .audit-workspace-panel,
+    .audit-workspace-actions,
+    .audit-workspace-log {
+        padding: var(--fluid-space-md);
+    }
+
     .audit-action-grid,
     .dashboard-auditor .audit-dashboard-actions {
         grid-template-columns: 1fr;
+    }
+
+    .audit-action-card > .btn {
+        max-width: none;
     }
 
     .audit-export-log__row {

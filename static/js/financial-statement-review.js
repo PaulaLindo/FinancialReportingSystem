@@ -59,27 +59,17 @@ function varydianMandatoryRejectionReason() {
 
 window.varydianMandatoryRejectionReason = varydianMandatoryRejectionReason;
 
-/** In-app confirm dialog — replaces browser confirm() in review workflows. */
-async function varydianAppConfirm(title, message, options = {}) {
-    if (window.modalSystem && typeof window.modalSystem.confirm === 'function') {
-        return window.modalSystem.confirm(title, message, options);
-    }
-    if (typeof window.showConfirm === 'function') {
-        return window.showConfirm(title, message, options);
-    }
-    return window.confirm(`${title}\n\n${message}`);
-}
-window.varydianAppConfirm = varydianAppConfirm;
-
-/** CFO finalize — irreversible period lock with audit trail (single or batch). */
+/** In-app confirm — defined in modal-system.js; CFO finalize uses it below. */
 async function varydianCfoFinalizeConfirm(options = {}) {
     const count = Math.max(1, Number(options.count) || 1);
     const plural = count > 1;
     const title = plural ? `Finalize ${count} submissions` : 'Finalize period';
+    const lockNote =
+        'The entire reporting period is locked on the first final approval — clerks cannot upload further documents for that month, even if other document types are not yet finalized.';
     const message = plural
-        ? `This action will final-approve ${count} submission(s), lock each reporting period, and is irreversible without an audit log entry. An audit trail record is written for each finalization. Continue?`
-        : 'This action will lock all records for this submission\'s reporting period and is irreversible without an audit log entry. An audit trail record will be created. Continue?';
-    return varydianAppConfirm(title, message, {
+        ? `${lockNote} This action will final-approve ${count} submission(s) and is irreversible without an audit log entry. An audit trail record is written for each finalization. Continue?`
+        : `${lockNote} This action is irreversible without an audit log entry. An audit trail record will be created. Continue?`;
+    return window.varydianAppConfirm(title, message, {
         confirmText: plural ? 'Finalize all and lock' : 'Finalize and lock',
         cancelText: 'Cancel',
     });
@@ -137,7 +127,7 @@ class FinancialStatementReview {
         if (!decoded.startsWith('/') || decoded.startsWith('//') || decoded.includes('://')) {
             return null;
         }
-        const allowedPrefixes = ['/finance-manager/', '/approvals', '/dashboard', '/submission-history'];
+        const allowedPrefixes = ['/finance-manager/', '/approvals', '/dashboard', '/submission-history', '/audit'];
         if (!allowedPrefixes.some((p) => decoded === p || decoded.startsWith(p))) {
             return null;
         }
@@ -430,6 +420,9 @@ class FinancialStatementReview {
         if (role === 'FINANCE_MANAGER' || role === 'CFO') {
             return { url: '/finance-manager/review-queue', label: 'review queue' };
         }
+        if (role === 'AUDITOR') {
+            return { url: '/audit', label: 'audit workspace' };
+        }
         return { url: '/dashboard', label: 'dashboard' };
     }
 
@@ -438,6 +431,7 @@ class FinancialStatementReview {
         if (url.includes('/finance-manager/history')) return 'submission history';
         if (url.includes('/finance-manager/review-queue')) return 'review queue';
         if (url.includes('/finance-manager/dashboard')) return 'review queue';
+        if (url.includes('/audit')) return 'audit workspace';
         if (url.includes('/dashboard')) return 'dashboard';
         return 'review queue';
     }
@@ -2481,7 +2475,7 @@ class FinancialStatementReview {
         if (role === 'CFO') {
             const confirmed = window.varydianCfoFinalizeConfirm
                 ? await window.varydianCfoFinalizeConfirm({ count: 1 })
-                : await varydianAppConfirm(
+                : await window.varydianAppConfirm(
                     'Finalize period',
                     'This action will lock all records for this submission\'s reporting period and is irreversible without an audit log entry. An audit trail record will be created. Continue?',
                     { confirmText: 'Finalize and lock', cancelText: 'Cancel' }
@@ -2524,7 +2518,7 @@ class FinancialStatementReview {
                 if (role === 'FINANCE_MANAGER' && (newStatus === 'approved_by_manager' || newStatus === 'pending_cfo')) {
                     this.showSuccess(result.message || 'Approved by manager — forwarded to CFO.');
                     window.setTimeout(async () => {
-                        const downloadNow = await varydianAppConfirm(
+                        const downloadNow = await window.varydianAppConfirm(
                             "Manager's certificate",
                             "Download the manager's certificate (PDF) now? You can generate it later from the review tools after the session is forwarded.",
                             { confirmText: 'Download PDF', cancelText: 'Skip for now' }

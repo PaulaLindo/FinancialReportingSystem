@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from functools import wraps
 
-from flask import flash, redirect, render_template, url_for
+from flask import flash, jsonify, redirect, render_template, url_for
 
 from models.supabase_auth_models import get_current_user, get_role_description
 from services.export_center_service import export_center_service
@@ -41,7 +41,10 @@ def register_auditor_routes(app):
     @_auditor_required
     def auditor_workspace_page():
         user = get_current_user()
-        sessions = export_center_service.list_exportable_sessions(limit=200)
+        try:
+            sessions = export_center_service.list_exportable_sessions(limit=200)
+        except Exception:
+            sessions = []
         return render_template(
             'auditor/audit_workspace.html',
             current_user=user,
@@ -74,3 +77,23 @@ def register_auditor_routes(app):
             get_role_description=get_role_description,
             reconciliation=recon,
         )
+
+    @app.route('/audit/asset-journals')
+    @_login_required
+    @_auditor_required
+    def auditor_asset_journals_page():
+        user = get_current_user()
+        return render_template(
+            'auditor/asset_journals.html',
+            current_user=user,
+            get_role_description=get_role_description,
+        )
+
+    @app.route('/api/audit/asset-journals', methods=['GET'])
+    @_login_required
+    @_auditor_required
+    def api_auditor_asset_journals():
+        from services.asset_register_service import asset_register_service
+
+        journals = asset_register_service.list_material_journal_audit_trail()
+        return jsonify({'success': True, 'journals': journals, 'count': len(journals)})

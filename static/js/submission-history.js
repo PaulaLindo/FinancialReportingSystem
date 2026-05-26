@@ -23,6 +23,36 @@ function isRejectedHistoryStatus(status) {
     return REJECTED_HISTORY_STATUSES.has(String(status || '').toLowerCase());
 }
 
+const STATEMENT_VIEW_STATUSES = new Set([
+    'pending_review',
+    'pending_cfo',
+    'approved_by_manager',
+    'rejected_by_manager',
+    'submitted',
+    'approved',
+    'rejected',
+    'rejected_by_cfo',
+    'finalized',
+]);
+
+const DRAFT_HISTORY_STATUSES = new Set([
+    'uploaded',
+    'processing',
+    'mapped',
+    'draft',
+    'in_progress',
+    'pending_mapping',
+    'open',
+    'closed',
+]);
+
+function canViewStatementInHistory(submission) {
+    const status = String(submission?.status || '').toLowerCase();
+    if (DRAFT_HISTORY_STATUSES.has(status)) return false;
+    if (STATEMENT_VIEW_STATUSES.has(status) || isRejectedHistoryStatus(status)) return true;
+    return !!(submission?.submitted_at || submission?.submission_timestamp);
+}
+
 function isClosedHistoryStatus(status) {
     return String(status || '').toLowerCase() === 'closed';
 }
@@ -189,20 +219,18 @@ class SubmissionHistoryManager {
     }
 
     updateSubmissionStats() {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const todayYmd = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Africa/Johannesburg',
+        }).format(new Date());
 
         const pendingStatuses = new Set(['pending', 'pending_review', 'pending_cfo', 'approved_by_manager', 'submitted']);
         const approvedStatuses = new Set(['approved']);
         const submittedTimestamp = (submission) => submission.submitted_at || submission.submission_timestamp;
 
         const isSubmittedToday = (submission) => {
-            const raw = submittedTimestamp(submission);
-            if (!raw) return false;
-            const submissionDate = new Date(raw);
-            if (Number.isNaN(submissionDate.getTime())) return false;
-            submissionDate.setHours(0, 0, 0, 0);
-            return submissionDate.getTime() === today.getTime();
+            const formatted = VarydianUtils.formatDateTime(submittedTimestamp(submission));
+            const datePart = formatted.slice(0, 10);
+            return Boolean(datePart && datePart === todayYmd);
         };
 
         const stats = {
@@ -386,6 +414,11 @@ class SubmissionHistoryManager {
         const mapBtn = clone.querySelector('.btn-open-mapping');
         if (mapBtn && isRejectedHistoryStatus(submission.status)) {
             VarydianUtils.showElement(mapBtn);
+        }
+
+        const stmtBtn = clone.querySelector('.btn-view-statement');
+        if (stmtBtn && !canViewStatementInHistory(submission)) {
+            VarydianUtils.hideElement(stmtBtn);
         }
 
         return clone;

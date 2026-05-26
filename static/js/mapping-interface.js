@@ -96,6 +96,27 @@ class GRAPMappingInterface {
         }
     }
 
+    getPeriodId() {
+        const params = new URLSearchParams(window.location.search);
+        const fromUrl = params.get('period');
+        if (fromUrl) {
+            return fromUrl;
+        }
+        try {
+            for (const key of ['mappingReviewData', 'mappingData']) {
+                const raw = sessionStorage.getItem(key);
+                if (!raw) continue;
+                const parsed = JSON.parse(raw);
+                if (parsed && parsed.period_id) {
+                    return parsed.period_id;
+                }
+            }
+        } catch (_) {
+            /* ignore */
+        }
+        return null;
+    }
+
     getGrapSubmitConfig() {
         const dt = this.state.documentType || '';
         if (window.GrapStandards) {
@@ -824,6 +845,7 @@ class GRAPMappingInterface {
                     document_type: documentType,
                     mapped_data: mappedData,
                     clerk_correction_note: note,
+                    period_id: this.getPeriodId(),
                 }),
             });
             const result = await response.json();
@@ -1886,6 +1908,7 @@ class GRAPMappingInterface {
                     mapped_data: mappedData,
                     session_id: this.state.sessionId,
                     document_type: documentType,
+                    period_id: this.getPeriodId(),
                 })
             });
             

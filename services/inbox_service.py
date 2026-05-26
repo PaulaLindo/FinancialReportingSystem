@@ -194,6 +194,38 @@ def notify_submitter_final_approval(
     )
 
 
+def notify_auditors_audit_pack_ready(
+    *,
+    period_id: str,
+    period_name: str,
+    session_id: str,
+    document_type: str,
+    actor_id: str,
+) -> int:
+    """Notify AGSA auditors when a reporting period is locked and audit-ready."""
+    label = document_type.replace("_", " ")
+    display_period = (period_name or period_id or "Reporting period").strip()
+    return notify_users_by_role(
+        "AUDITOR",
+        message_type="audit_pack_ready",
+        title="Reporting period locked — audit pack ready",
+        body=(
+            f"{display_period} is locked with CFO-finalized submissions available "
+            f"for read-only audit (including {label})."
+        ),
+        severity="info",
+        metadata={
+            "period_id": period_id,
+            "period_name": period_name,
+            "session_id": session_id,
+            "document_type": document_type,
+            "action_url": "/audit",
+            "action_label": "Open audit workspace",
+        },
+        actor_id=actor_id,
+    )
+
+
 def notify_workflow_comment(
     workflow: Any,
     *,
@@ -259,6 +291,71 @@ def notify_asset_journal_pending_review(
             "action_label": "Open asset journals",
         },
         actor_id=submitter_id,
+    )
+
+
+def notify_asset_journal_pending_cfo(
+    *,
+    journal_id: str,
+    journal_type: str,
+    asset_id: str,
+    asset_name: str,
+    fm_reviewer_id: str,
+    fm_reviewer_name: str = "",
+    escalation_reason: str = "",
+) -> int:
+    label = journal_type.replace("_", " ")
+    reason_line = f" {escalation_reason.strip()}" if escalation_reason else ""
+    return notify_users_by_role(
+        "CFO",
+        message_type="asset_journal_pending_cfo",
+        title="Material asset journal — CFO sign-off",
+        body=(
+            f"{fm_reviewer_name or 'Finance Manager'} forwarded a {label} for "
+            f"{asset_name or asset_id}.{reason_line} Final approval is required before the register updates."
+        ),
+        severity="warning",
+        metadata={
+            "journal_id": journal_id,
+            "journal_type": journal_type,
+            "asset_id": asset_id,
+            "asset_name": asset_name,
+            "action_url": "/finance-manager/asset-journals",
+            "action_label": "Review asset journals",
+        },
+        actor_id=fm_reviewer_id,
+    )
+
+
+def notify_asset_journal_forwarded_to_cfo(
+    submitter_user_id: Optional[str],
+    *,
+    journal_id: str,
+    journal_type: str,
+    asset_id: str,
+    asset_name: str,
+    fm_reviewer_name: str = "",
+) -> Optional[Dict[str, Any]]:
+    if not submitter_user_id:
+        return None
+    label = journal_type.replace("_", " ")
+    return notify_user(
+        str(submitter_user_id),
+        message_type="asset_journal_forwarded_to_cfo",
+        title="Asset journal forwarded to CFO",
+        body=(
+            f"Your {label} for {asset_name or asset_id} was reviewed by "
+            f"{fm_reviewer_name or 'Finance Manager'} and forwarded to the CFO for materiality sign-off."
+        ),
+        severity="info",
+        metadata={
+            "journal_id": journal_id,
+            "journal_type": journal_type,
+            "asset_id": asset_id,
+            "action_url": f"/asset-manager/assets/{asset_id}",
+            "action_label": "View asset",
+        },
+        actor_id=submitter_user_id,
     )
 
 

@@ -20,6 +20,16 @@ DOCUMENT_TYPE_LABELS = {
 }
 
 
+def document_type_label(document_type: Optional[str]) -> str:
+    """Human-readable document name for errors and UI (no snake_case)."""
+    key = (document_type or '').strip().lower()
+    if key in DOCUMENT_TYPE_LABELS:
+        return DOCUMENT_TYPE_LABELS[key]
+    if not key:
+        return 'Document'
+    return key.replace('_', ' ').title()
+
+
 def _normalize_column_names(column_names: Iterable[str]) -> list[str]:
     return [str(name).strip().lower() for name in column_names if name]
 

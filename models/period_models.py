@@ -135,11 +135,45 @@ class FinancialPeriod:
 
     @classmethod
     def from_db_row(cls, row: Dict[str, Any]) -> "FinancialPeriod":
-        """Build period from Supabase row, tolerating missing is_locked column."""
-        data = dict(row)
-        if "is_locked" not in data:
-            data["is_locked"] = bool((data.get("metadata") or {}).get("is_locked", False))
-        return cls(**data)
+        """Build period from Supabase row, tolerating schema drift and legacy columns."""
+        data = dict(row or {})
+        metadata = data.get("metadata") or {}
+        if not isinstance(metadata, dict):
+            metadata = {}
+
+        period_code = data.get("period_code")
+        if period_code and "period_code" not in metadata:
+            metadata = {**metadata, "period_code": period_code}
+        legacy_id = metadata.get("legacy_id")
+        if not legacy_id and period_code:
+            metadata = {**metadata, "legacy_id": period_code}
+
+        name = data.get("name") or data.get("period_name") or period_code or "Unnamed period"
+        description = data.get("description") or period_code or name
+        end_date = data.get("end_date") or ""
+        due_date = data.get("due_date") or end_date or ""
+
+        is_locked = data.get("is_locked")
+        if is_locked is None:
+            is_locked = bool(metadata.get("is_locked", False))
+
+        return cls(
+            id=str(data.get("id") or ""),
+            name=str(name),
+            description=str(description),
+            start_date=str(data.get("start_date") or ""),
+            end_date=str(end_date),
+            due_date=str(due_date),
+            status=str(data.get("status") or PeriodStatus.OPEN.value),
+            urgency=str(data.get("urgency") or PeriodUrgency.NORMAL.value),
+            required_uploads=int(data.get("required_uploads") or 0),
+            uploaded_count=int(data.get("uploaded_count") or 0),
+            created_by=str(data.get("created_by") or ""),
+            created_at=str(data.get("created_at") or datetime.now().isoformat()),
+            updated_at=str(data.get("updated_at") or datetime.now().isoformat()),
+            metadata=metadata,
+            is_locked=bool(is_locked),
+        )
 
 
 class PeriodModel:
@@ -289,7 +323,7 @@ class PeriodModel:
             'status': PeriodStatus.ARCHIVED.value
         })
 
-    def increment_upload_count(self, period_id: str, upload_date: Optional[str] = None) -> FinancialPeriod:
+    def increment_upload_count(self, period_id: str, upload_date: Optional[str] = None, metadata: Optional[Dict[str, Any]] = None) -> FinancialPeriod:
         """Increment upload count for a period"""
         try:
             # Get current period
@@ -298,12 +332,14 @@ class PeriodModel:
                 raise Exception("Period not found")
             
             # Update upload count and last upload
+            merged_metadata = {
+                **period.metadata,
+                **(metadata or {}),
+                'last_upload': upload_date or datetime.now().isoformat()
+            }
             update_data = {
                 'uploaded_count': period.uploaded_count + 1,
-                'metadata': {
-                    **period.metadata,
-                    'last_upload': upload_date or datetime.now().isoformat()
-                }
+                'metadata': merged_metadata,
             }
             
             return self.update_period(period_id, update_data)

@@ -809,6 +809,17 @@ class UploadService {
 
     }
 
+    getPeriodId() {
+        const select = document.getElementById('uploadPeriodSelect');
+        if (select && select.value) {
+            return select.value;
+        }
+        const container = document.querySelector('.upload-container[data-period-id]');
+        if (container && container.dataset.periodId) {
+            return container.dataset.periodId;
+        }
+        return new URLSearchParams(window.location.search).get('period');
+    }
 
 
 
@@ -1292,6 +1303,11 @@ class UploadService {
         console.log('🔍 Document type selector available:', !!window.documentTypeSelector);
 
         formData.append('document_type', documentType);
+
+        const periodId = this.getPeriodId();
+        if (periodId) {
+            formData.append('period_id', periodId);
+        }
 
 
 
@@ -2543,6 +2559,7 @@ class UploadService {
 
                     session_id: this.state.sessionId,
                     document_type: documentTypeForProcess,
+                    period_id: this.getPeriodId(),
 
                     mapped_accounts: data.mapped_accounts || [],
 
@@ -3069,6 +3086,7 @@ class UploadService {
      */
 
     showUnbalancedOptions(balanceData) {
+        this.lastUnbalancedBalanceData = balanceData || null;
 
         // Create or update unbalanced options section
 
@@ -3149,31 +3167,9 @@ class UploadService {
 
                     </button>
 
-                    
-
-                    ${canProceedWithWarning ? `
-
-                        <button type="button" class="btn btn-warning" onclick="uploadService.proceedWithWarning()">
-
-                            Proceed with Warning
-
-                        </button>
-
-                    ` : `
-
-                        <button type="button" class="btn btn-outline" onclick="uploadService.saveForLater()" disabled>
-
-                            Save for Later (Coming Soon)
-
-                        </button>
-
-                    `}
-
-                    
-
                     <button type="button" class="btn btn-outline" onclick="uploadService.viewBalanceDetails()">
 
-                        View Balance Details
+                        View balance details
 
                     </button>
 
@@ -3386,25 +3382,47 @@ class UploadService {
      */
 
     viewBalanceDetails() {
+        const data = this.lastUnbalancedBalanceData;
+        if (!data) {
+            if (typeof showAlert === 'function') {
+                showAlert('No balance data', 'Upload and validate a file first to see balance details.');
+            }
+            return;
+        }
 
-        // This could open a modal with detailed balance information
+        const documentType = window.documentTypeSelector
+            ? window.documentTypeSelector.getSelectedType()
+            : 'balance_sheet';
+        const fmt = (value) => `R ${(Number(value) || 0).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const lines = [];
 
-        showAlert('Feature Coming Soon', 'Balance details feature coming soon! This will show a detailed breakdown of the balance sheet accounts and their balances.');
+        if (documentType === 'income_statement') {
+            lines.push(`Total revenue: ${fmt(data.total_revenue)}`);
+            lines.push(`Total expenses: ${fmt(data.total_expenses)}`);
+            lines.push(`Net income / surplus: ${fmt(data.net_income)}`);
+        } else if (documentType === 'budget_report' || data.balance_type === 'budget_vs_actual') {
+            lines.push(`Total budget: ${fmt(data.total_budget)}`);
+            lines.push(`Total actual: ${fmt(data.total_actual)}`);
+            lines.push(`Variance: ${fmt(data.variance)}`);
+        } else {
+            lines.push(`Total debits: ${fmt(data.total_debits)}`);
+            lines.push(`Total credits: ${fmt(data.total_credits)}`);
+            const diff = data.difference ?? data.balance_difference ?? data.variance ?? 0;
+            lines.push(`Difference: ${fmt(Math.abs(diff))}${Number(diff) < 0 ? ' (credits exceed debits)' : Number(diff) > 0 ? ' (debits exceed credits)' : ''}`);
+        }
 
+        if (data.recommendation) {
+            lines.push('');
+            lines.push(`Recommendation: ${data.recommendation}`);
+        }
+
+        if (typeof showAlert === 'function') {
+            showAlert('Balance details', lines.join('\n'));
+        }
     }
 
-
-
-    /**
-
-     * Save for later (placeholder for future implementation)
-
-     */
-
     saveForLater() {
-
-        this.showInfo('Save for later feature coming soon! This will allow you to save the unbalanced balance sheet and continue later.');
-
+        this.showInfo('Correct the file and upload again, or contact your Finance Manager if you need help.');
     }
 
 
@@ -5241,7 +5259,9 @@ getState() {
 
             // Redirect to mapping interface with review parameter
 
-            window.location.href = `/mapping?review=true&session_id=${mappingData.session_id}`;
+            const periodId = this.getPeriodId();
+            const periodQuery = periodId ? `&period=${encodeURIComponent(periodId)}` : '';
+            window.location.href = `/mapping?review=true&session_id=${mappingData.session_id}${periodQuery}`;
 
             
 
@@ -5279,7 +5299,8 @@ getState() {
 
                 detected_structure: detectedStructure,
 
-                session_id: this.state.sessionId
+                session_id: this.state.sessionId,
+                period_id: this.getPeriodId(),
 
             };
 
@@ -5289,7 +5310,9 @@ getState() {
 
             // Redirect to mapping page with session ID
 
-            window.location.href = `/mapping?session_id=${this.state.sessionId}`;
+            const periodId = this.getPeriodId();
+            const periodQuery = periodId ? `&period=${encodeURIComponent(periodId)}` : '';
+            window.location.href = `/mapping?session_id=${this.state.sessionId}${periodQuery}`;
 
             
 

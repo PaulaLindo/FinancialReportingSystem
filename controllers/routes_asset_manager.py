@@ -13,7 +13,7 @@ from functools import wraps
 from flask import Response, flash, jsonify, redirect, render_template, request, url_for
 
 from models.supabase_auth_models import SupabaseUser, get_current_user, get_role_description
-from services.asset_register_service import JOURNAL_PENDING, asset_register_service
+from services.asset_register_service import asset_register_service
 
 logger = logging.getLogger(__name__)
 
@@ -330,6 +330,14 @@ def register_asset_manager_routes(app):
         )
         return jsonify({'success': True, 'journals': journals, 'count': len(journals)})
 
+    @app.route('/api/asset-manager/journals/pending/count', methods=['GET'])
+    @_login_required
+    @_role_required('ASSET_MANAGER')
+    def api_asset_manager_pending_journals_count():
+        user = get_current_user()
+        count = asset_register_service.count_pending_journals_for_user(user.id)
+        return jsonify({'success': True, 'count': count})
+
     @app.route('/api/asset-manager/reconciliation', methods=['GET'])
     @_login_required
     @_permission_api('manage_assets', 'view_assets')
@@ -341,8 +349,21 @@ def register_asset_manager_routes(app):
     @app.route('/api/asset-journals/pending', methods=['GET'])
     @_fm_api
     def api_pending_asset_journals():
-        journals = asset_register_service.list_journals(status=JOURNAL_PENDING)
-        return jsonify({'success': True, 'journals': journals, 'count': len(journals)})
+        user = get_current_user()
+        role = getattr(user, 'role', '') or 'FINANCE_MANAGER'
+        journals = asset_register_service.list_pending_journals_for_role(role)
+        return jsonify({'success': True, 'journals': journals, 'count': len(journals), 'queue': role})
+
+    @app.route('/api/asset-journals/pending/count', methods=['GET'])
+    @_fm_api
+    def api_pending_asset_journals_count():
+        user = get_current_user()
+        role = getattr(user, 'role', '') or 'FINANCE_MANAGER'
+        if role == 'CFO':
+            count = asset_register_service.count_pending_cfo_journals()
+        else:
+            count = asset_register_service.count_pending_journals()
+        return jsonify({'success': True, 'count': count, 'queue': role})
 
     @app.route('/api/asset-journals/history', methods=['GET'])
     @_fm_api
@@ -361,6 +382,7 @@ def register_asset_manager_routes(app):
             journal_id,
             user.id,
             user.full_name or user.username,
+            reviewer_role=user.role,
         )
         status = 200 if result.get('success') else 400
         return jsonify(result), status
@@ -376,6 +398,7 @@ def register_asset_manager_routes(app):
             user.id,
             reason,
             user.full_name or user.username,
+            reviewer_role=user.role,
         )
         status = 200 if result.get('success') else 400
         return jsonify(result), status

@@ -798,13 +798,14 @@
 /* Steps Grid - Process Flow */
 .steps-grid {
     display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
+    flex-wrap: wrap;
+    align-items: stretch;
     justify-content: center;
     gap: var(--fluid-space-md);
     margin-top: var(--fluid-space-2xl);
     position: relative;
     padding: var(--fluid-space-md) 0;
+    max-width: 100%;
 }
 
 .step {
@@ -819,7 +820,10 @@
     transition: all var(--transition-base);
     min-height: clamp(180px, 20vw, 240px);
     width: clamp(200px, 22vw, 280px);
-    flex-shrink: 0;
+    flex: 1 1 min(11rem, 100%);
+    min-width: min(11rem, 100%);
+    max-width: 16rem;
+    flex-shrink: 1;
 }
 
 .step:hover {
@@ -875,6 +879,29 @@
   justify-content: center;
   align-self: center;
   margin: 0 var(--fluid-space-sm);
+  flex: 0 0 auto;
+}
+
+/* Desktop: fit steps within container — drop inline arrows, use responsive grid */
+@media (min-width: 1024px) {
+    .steps-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
+        gap: var(--fluid-space-md);
+        align-items: stretch;
+    }
+
+    .steps-grid .step {
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        min-height: clamp(160px, 16vw, 220px);
+        padding: var(--fluid-space-md) var(--fluid-space-lg);
+    }
+
+    .steps-grid .step-arrow {
+        display: none;
+    }
 }
 
 /* CTA Section - Call to Action */
@@ -919,6 +946,7 @@
     .steps-grid {
         display: grid;
         grid-template-columns: 1fr;
+        justify-items: center;
         gap: var(--fluid-space-md);
         margin: var(--fluid-space-2xl) auto;
         overflow-x: visible;
@@ -926,7 +954,9 @@
     }
     
     .step {
-        width: 100%;
+        width: min(100%, 20rem);
+        max-width: 20rem;
+        margin-inline: auto;
         flex-shrink: 1;
     }
     
@@ -937,6 +967,7 @@
         align-items: center;
         justify-content: center;
         width: 100%;
+        justify-self: stretch;
         font-size: 0;
         line-height: 1;
         animation: none;

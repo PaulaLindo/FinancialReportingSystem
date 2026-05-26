@@ -117,13 +117,11 @@
 
             const confirmed = await (window.varydianCfoFinalizeConfirm
                 ? window.varydianCfoFinalizeConfirm({ count: items.length })
-                : window.varydianAppConfirm
-                ? window.varydianAppConfirm(
+                : window.varydianAppConfirm(
                     'Finalize selected submissions',
                     `This action will final-approve ${items.length} submission(s), lock each reporting period, and is irreversible without an audit log entry. An audit trail record is written for each finalization. Continue?`,
                     { confirmText: 'Finalize all and lock', cancelText: 'Cancel' }
-                )
-                : Promise.resolve(window.confirm(`Finalize ${items.length} submission(s)?`)));
+                ));
             if (!confirmed) return;
 
             const btn = document.getElementById('reviewQueueBatchFinalizeBtn');

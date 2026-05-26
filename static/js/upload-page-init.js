@@ -36,6 +36,34 @@ function clearDebugConsole() {
 // Initialize upload functionality when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     debugLog('📁 Upload page loaded', 'info');
+
+    const periodSelect = document.getElementById('uploadPeriodSelect');
+    const uploadContainer = document.querySelector('.upload-container');
+    if (periodSelect && uploadContainer) {
+        periodSelect.addEventListener('change', () => {
+            uploadContainer.dataset.periodId = periodSelect.value || '';
+            const label = periodSelect.options[periodSelect.selectedIndex]?.text || '';
+            let banner = document.getElementById('uploadPeriodBanner');
+            if (!banner && label) {
+                const section = document.querySelector('.upload-period-section');
+                if (section) {
+                    banner = document.createElement('div');
+                    banner.id = 'uploadPeriodBanner';
+                    banner.className = 'upload-period-banner';
+                    banner.setAttribute('role', 'status');
+                    banner.innerHTML = `<strong>Reporting period:</strong> <span id="uploadPeriodBannerName">${label}</span>`;
+                    section.insertAdjacentElement('afterend', banner);
+                }
+            }
+            const bannerName = document.getElementById('uploadPeriodBannerName');
+            if (bannerName) {
+                bannerName.textContent = label;
+            }
+        });
+        if (periodSelect.value) {
+            uploadContainer.dataset.periodId = periodSelect.value;
+        }
+    }
     
     // Initialize upload service
     if (typeof window.uploadService === 'undefined') {

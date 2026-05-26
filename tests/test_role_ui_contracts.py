@@ -15,10 +15,12 @@ def read(rel_path: str) -> str:
 class ClerkUiContractTests(unittest.TestCase):
     def test_submission_history_has_filters_and_cards(self):
         html = read('templates/submission-history.html')
+        js = read('static/js/submission-history.js')
         self.assertIn('submission-history-page--clerk', html)
         self.assertIn('id="statusFilter"', html)
         self.assertIn('id="submissionsList"', html)
         self.assertIn('btn-view-statement', html)
+        self.assertIn('canViewStatementInHistory', js)
         self.assertNotIn('submissionDetailsModal', html)
         self.assertNotIn('btn-view-details', html)
 
@@ -26,6 +28,14 @@ class ClerkUiContractTests(unittest.TestCase):
         js = read('static/js/upload.js')
         self.assertIn('getUploadProcessButtonLabel', js)
         self.assertIn('Continue to mapping', js)
+        self.assertIn('viewBalanceDetails', js)
+        self.assertNotIn('Feature Coming Soon', js)
+        self.assertNotIn('Save for Later (Coming Soon)', js)
+
+    def test_modal_system_has_varydian_app_confirm(self):
+        js = read('static/js/modal-system.js')
+        self.assertIn('varydianAppConfirm', js)
+        self.assertNotIn('window.confirm(', js)
 
     def test_mapping_interface_submit_path(self):
         js = read('static/js/mapping-interface.js')
@@ -114,16 +124,31 @@ class CfoDashboardUiContractTests(unittest.TestCase):
         html = read('templates/dashboard.html')
         self.assertIn('dashboard-cfo', html)
         self.assertIn('pending_finalization_count', html)
+        self.assertIn('pending_material_journals_count', html)
         self.assertIn('surplus_deficit_total', html)
         self.assertIn('budget_variance_total', html)
 
     def test_dashboard_route_loads_cfo_kpis(self):
         src = read('controllers/routes.py')
         self.assertIn('get_cfo_dashboard_kpis', src)
+        self.assertIn('count_pending_cfo_journals', src)
         self.assertIn("user.role == 'CFO'", src)
 
 
 class LegacyRoutesRemovedTests(unittest.TestCase):
+    def test_admin_page_requires_system_admin(self):
+        src = read('controllers/routes.py')
+        self.assertIn('can_manage_users()', src)
+        self.assertIn('System Administrator privileges required', src)
+        self.assertNotIn("user.role != 'CFO'", src)
+
+    def test_login_redirects_by_role(self):
+        src = read('controllers/routes.py')
+        self.assertIn('_login_redirect_for_role', src)
+        self.assertIn("url_for('finance_manager_review_queue')", src)
+        self.assertIn("url_for('auditor_workspace_page')", src)
+        self.assertIn("url_for('admin_page')", src)
+
     def test_finance_manager_api_routes_removed(self):
         src = read('controllers/routes_finance_manager.py')
         self.assertNotRegex(src, r"@app\.route\('/api/finance-manager/")
@@ -170,7 +195,22 @@ class LegacyRoutesRemovedTests(unittest.TestCase):
         self.assertIn('renderCategories()', js)
 
 
-class AssetManagerUiContractTests(unittest.TestCase):
+    def test_asset_manager_nav_badge_markup(self):
+        base = read('templates/base.html')
+        self.assertIn('data-journal-badge="am"', base)
+        self.assertIn('/api/asset-manager/journals/pending/count', read('static/js/asset-journal-nav-badge.js'))
+
+    def test_auditor_mobile_nav_journal_trail(self):
+        base = read('templates/base.html')
+        mobile_block = base.split('<!-- Mobile Menu -->', 1)[1]
+        self.assertIn('/audit/asset-journals', mobile_block)
+        self.assertIn('Journal trail', mobile_block)
+
+    def test_mobile_inbox_nav_badge(self):
+        base = read('templates/base.html')
+        mobile_block = base.split('<!-- Mobile Menu -->', 1)[1]
+        self.assertIn('nav-inbox-badge', mobile_block)
+        self.assertIn('nav-inbox', mobile_block)
     def test_asset_manager_pages_and_nav(self):
         html = read('templates/asset_manager/register.html')
         base = read('templates/base.html')

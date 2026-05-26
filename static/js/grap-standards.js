@@ -459,7 +459,7 @@
             budget_report: {
                 clerk: [
                     'Map budget lines to GRAP categories.',
-                    `${std}: written variance explanations where |variance ÷ budget| > 10%.`,
+                    `${std}: written variance explanations where variance as a share of budget exceeds 10%.`,
                     'Submit for review after explanations are complete.',
                 ],
                 finance_manager: [

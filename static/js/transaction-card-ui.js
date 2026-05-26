@@ -30,6 +30,7 @@
             approved: 'status-approved',
             rejected: 'status-rejected',
             rejected_by_manager: 'status-rejected',
+            rejected_by_cfo: 'status-rejected',
             finalized: 'status-completed',
             pending: 'status-pending',
         };
@@ -137,15 +138,15 @@
             return;
         }
 
-        const title = 'Finalized — ready for export';
-        const message = finalizedExportMessage();
+        const title = 'Mark export ready';
+        const message = `${finalizedExportMessage()}\n\nThis button records that you have reviewed the submission. It does not generate or download a PDF.`;
 
         if (window.modalSystem && typeof window.modalSystem.alert === 'function') {
             await window.modalSystem.alert(title, message, { confirmText: 'OK' });
         } else if (window.VarydianUtils && VarydianUtils.showToast) {
-            VarydianUtils.showToast(message, false);
+            VarydianUtils.showToast(message, 'info');
         } else {
-            window.alert(`${title}\n\n${message}`);
+            console.warn('[transaction-card]', title, message);
         }
 
         await persistExportAcknowledged(sessionId, dtype);
@@ -168,6 +169,22 @@
     function canApproveTransactions() {
         const role = window.currentUserRole || '';
         return ['FINANCE_MANAGER', 'CFO', 'SYSTEM_ADMIN'].includes(role);
+    }
+
+    function docTypeModifier(dtype) {
+        if (dtype === 'balance_sheet') return 'transaction-card--balance-sheet';
+        if (dtype === 'income_statement') return 'transaction-card--income-statement';
+        if (dtype === 'budget_report') return 'transaction-card--budget-report';
+        return '';
+    }
+
+    function docTypeAbbrev(dtype) {
+        const map = {
+            balance_sheet: 'BS',
+            income_statement: 'IS',
+            budget_report: 'BR',
+        };
+        return map[dtype] || 'DOC';
     }
 
     function grapStandardLabel(dtype) {
@@ -222,9 +239,12 @@
         const showApproveReject = opts.showApproveReject === true && canApproveTransactions();
         const selectable = opts.selectable === true;
         const isPending = variant === 'pending' || st === 'pending_review' || st === 'pending_cfo';
+        const isHistory = variant === 'history';
         const cardModifier = isPending ? 'pending' : cardStatusClass;
-        const reviewLabel = opts.reviewLabel || (variant === 'history' ? 'View Details' : 'Review');
-        const reviewBtnClass = variant === 'history' ? 'btn-secondary' : 'btn-primary';
+        const docModifier = docTypeModifier(dtype);
+        const historyClass = isHistory ? ' transaction-card--history' : '';
+        const reviewLabel = opts.reviewLabel || (isHistory ? 'View Details' : 'Review');
+        const reviewBtnClass = isHistory ? 'btn-secondary' : 'btn-primary';
 
         const reviewBtn = sessionId
             ? `<button type="button" class="btn btn-sm ${reviewBtnClass} view-transaction-btn"
@@ -258,10 +278,11 @@
             } else if (exportState === 'noted') {
                 exportBtn = '<span class="finalized-export-badge finalized-export-badge--noted">Export noted</span>';
             } else {
-                exportBtn = `<button type="button" class="btn btn-sm btn-outline-secondary finalized-export-btn"
+                exportBtn = `<button type="button" class="btn btn-sm btn-secondary finalized-export-btn"
                 data-session-id="${escapeHtml(sessionId)}"
                 data-document-type="${escapeHtml(dtype)}"
-                data-export-state="pending">Finalized export</button>`;
+                data-export-state="pending"
+                title="Acknowledge this submission is ready for export — does not generate a PDF">Mark export ready</button>`;
             }
         }
 
@@ -285,13 +306,20 @@
         const idForDisplay = shortSessionIdForDisplay(sessionId, tx.transaction_id);
         const docContext = documentContextLine(tx);
 
+        const docTypeChip = dtype
+            ? `<span class="transaction-doc-chip transaction-doc-chip--${escapeHtml(dtype.replace(/_/g, '-'))}" aria-hidden="true">${escapeHtml(docTypeAbbrev(dtype))}</span>`
+            : '';
+
         return `
-            <div class="transaction-card ${cardModifier}${cardExportClass}" data-transaction-id="${escapeHtml(tx.transaction_id || '')}"
+            <div class="transaction-card ${cardModifier}${docModifier ? ` ${docModifier}` : ''}${cardExportClass}${historyClass}" data-transaction-id="${escapeHtml(tx.transaction_id || '')}"
                 data-session-id="${escapeHtml(sessionId)}" data-document-type="${escapeHtml(dtype)}">
                 ${selectCheckbox}
                 <div class="transaction-header">
                     <div class="transaction-info">
-                        <h3 class="transaction-title">${escapeHtml(typeLabel(dtype))}</h3>
+                        <div class="transaction-title-row">
+                            ${docTypeChip}
+                            <h3 class="transaction-title">${escapeHtml(typeLabel(dtype))}</h3>
+                        </div>
                         <p class="transaction-id" title="${escapeHtml(idForDisplay.full || tx.transaction_id || '')}">ID: ${escapeHtml(idForDisplay.short)}</p>
                         ${docContext ? `<p class="transaction-doc-context">${escapeHtml(docContext)}</p>` : ''}
                         <p class="transaction-creator">Submitted by: ${escapeHtml(tx.creator_name || 'Unknown')}</p>
@@ -322,7 +350,8 @@
         if (!transactions || !transactions.length) {
             return '';
         }
-        return `<div class="transaction-list">${transactions.map((tx) => renderTransactionCard(tx, opts)).join('')}</div>`;
+        const listClass = opts.variant === 'history' ? 'transaction-list transaction-list--history' : 'transaction-list';
+        return `<div class="${listClass}">${transactions.map((tx) => renderTransactionCard(tx, opts)).join('')}</div>`;
     }
 
     function openStatementReview(sessionId, documentType, returnTo) {

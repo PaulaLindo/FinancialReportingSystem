@@ -52,7 +52,7 @@ Prepare trial balance data (or equivalent), map accounts where required, satisfy
 
 ### Typical journey
 
-1. **Dashboard (`/dashboard`)** — Open periods and workload; shortcuts to upload or back to work in progress.
+1. **Dashboard (`/dashboard`)** — Open periods and workload; **recently closed** periods (last 8) remain visible with progress after 3/3 auto-close or CFO lock. Use the status filter (**Closed only**) or **View submissions** on a card. **Open periods** depend on Supabase **`financial_periods`** (configured by System Admin). An empty period list is normal until periods are opened — then you can upload balance sheets, income statements, and budget reports.
 2. **Upload (`/upload`)** — Import files (Excel/CSV where enabled). **Hard upload gates** block continue when validation fails:
    - **`balance_sheet`** — debits must equal credits
    - **`income_statement`** — at least one revenue/expense line; if the file has debit/credit columns, debits must equal credits
@@ -93,11 +93,13 @@ This file is the **single workflow reference** for clerks, managers, and CFOs.
 
 ## Finance Manager
 
+Login redirects to **`/finance-manager/review-queue`**. Dashboard remains available from nav.
+
 1. **Queue:** Open **Review** (`/finance-manager/review-queue`) from the nav or the **Dashboard** hero (**View Queue**); **Learn More** on the hero links to About. **Quick Actions** on the dashboard includes **Submission history** only (no duplicate review-queue card; **File Management** is hidden for Finance Manager). The queue loads **`GET /api/transactions/pending`** filtered to **`pending_review`**.
 2. **Work:** Use **Review** on a card to open statement review (full-page or inline on the Review page, depending on navigation). Verify lines, formulas, and comments as implemented in the app. For **`budget_report`**, confirm **GRAP 24** variance explanations are present for line items exceeding 10% before forwarding.
 3. **Approve:** **`POST /api/universal/approve`** with `session_id` and `document_type` — forwards the workflow toward CFO (session moves out of **`pending_review`**). For **budget reports**, the backend re-validates **GRAP 24** variance explanations at forward time (same gate as clerk submit and CFO finalize). Approve/reject from queue cards is disabled for FM — use statement review.
 4. **Reject:** **`POST /api/universal/reject`** with a **mandatory reason** — typically **`rejected_by_manager`** so the clerk can fix and resubmit.
-5. **History:** Settled items appear under **`/finance-manager/history`** with filters as implemented.
+5. **History:** Settled items appear under **`/finance-manager/history`**, grouped by **reporting period** (filters and search still apply).
 6. **Approval signatures:** Shown in statement review when `metadata.approval_signatures` is present.
 7. **Line-item comments:** During active review (`pending_review`), use the **💬** button on statement rows to add per-account notes (calculation, mapping, data, or general). Comments are stored on `metadata.line_item_comments`, preserved on approve/reject, and visible in:
    - **Statement review** — audit panel grouped by account; **View** (💬) on flagged rows when read-only or settled
@@ -108,9 +110,11 @@ This file is the **single workflow reference** for clerks, managers, and CFOs.
 
 ## CFO
 
+Login redirects to **`/finance-manager/review-queue`** (same queue page as FM; client filters to CFO items).
+
 1. **Queue:** Same **Review** page. The UI filters **`GET /api/transactions/pending`** to **`pending_cfo`** and **`approved_by_manager`**. Queue cards include **Finalize** / **Reject** quick actions; use **Batch finalization** to finalize multiple submissions via **`POST /api/universal/batch-approve`**.
 2. **Work:** Same statement review entry points as the manager (session + document type).
-3. **Approve:** **`POST /api/universal/approve`** — final approval step for the CFO stage (exact terminal status depends on service rules).
+3. **Approve:** **`POST /api/universal/approve`** — final approval step for the CFO stage. **The entire reporting period locks on the first final approval** (no further clerk uploads for that month, even if other document types are not yet CFO-approved). The finalize confirm dialog states this explicitly.
 4. **Reject:** **`POST /api/universal/reject`** with reason — returns feedback toward submitter/workflow per backend rules.
 5. **History:** Same **`/finance-manager/history`** page. On approved cards, **Finalized export** opens an in-app notice (does not navigate away) so you can keep final-approving other documents; open **Export Center** from the nav when ready to generate PDFs for all finalized submissions.
 6. **Approval signatures:** Shown in statement review when prior approvers are recorded.
@@ -377,11 +381,11 @@ Use this checklist for user acceptance testing before production sign-off. Recor
 |------------|---------|
 | **Dashboard** (`/dashboard`) | Overview panel: active assets, carrying value, pending journals, GL variance, quick actions |
 | **Asset Register** (`/asset-manager/register`) | Summary strip, list, register, export CSV, run annual depreciation |
-| **My journals** (`/asset-manager/journals`) | All journals you submitted (filter by status) |
+| **My journals** (`/asset-manager/journals`) | All journals you submitted (filter by status); nav badge shows your pending FM approvals |
 | **Asset detail** (`/asset-manager/assets/<id>`) | Useful life, impairment, and disposal journals |
 | **Reconciliation** (`/asset-manager/reconciliation`) | Register vs GL; preview + sync from approved trial balance or manual override |
 
-Finance Manager: **Asset journals** (`/finance-manager/asset-journals`) — approve or reject pending asset journals (nav badge shows pending count). Settled asset journal decisions appear under **History → Asset journals**.
+Finance Manager: **Asset journals** (`/finance-manager/asset-journals`) — approve or reject pending asset journals (nav badge shows pending count). **Materiality escalation:** routine useful-life reviews are FM-only; **disposals** and **impairments ≥ threshold** (default R 100,000, `ASSET_JOURNAL_MATERIALITY_THRESHOLD`) are forwarded by FM to **CFO** (`pending_cfo`) for final sign-off. Settled asset journal decisions appear under **History → Asset journals**.
 
 **Persistence:** Supabase only — tables `assets`, `asset_journals`, `asset_gl_balances`. No JSON file fallback.
 
@@ -402,8 +406,10 @@ WHERE table_name = 'financial_periods' AND column_name = 'id';
 | Event | Who is notified | Inbox action |
 |-------|-----------------|--------------|
 | Asset Manager submits useful life / impairment / disposal journal | Finance Manager | Open **Asset journals** |
-| FM approves journal | Asset Manager (submitter) | View asset detail |
-| FM rejects journal | Asset Manager (submitter) | View asset detail (includes rejection reason) |
+| FM forwards material journal (disposal or impairment ≥ threshold) | CFO | Open **Asset journals** (CFO queue) |
+| FM approves routine journal | Asset Manager (submitter) | View asset detail |
+| CFO approves material journal | Asset Manager (submitter) | View asset detail |
+| FM or CFO rejects journal | Asset Manager (submitter) | View asset detail (includes rejection reason) |
 
 Asset Manager sees journal status on each asset’s **Asset journals** section (pending / approved / rejected, reviewer, date, FM rejection reason when applicable).
 
@@ -411,7 +417,7 @@ Asset Manager sees journal status on each asset’s **Asset journals** section (
 
 1. **Register** — Add assets (GRAP 17 category, cost, useful life). Demo seed on first register visit if empty. Money fields use live **en-ZA** formatting (thousands + cents).
 2. **Lifecycle** — Submit **Useful life review** (GRAP 17.16), **Impairment**, or **Disposal** with mandatory reason.
-3. **FM approval** — Status `pending_review` until FM approves/rejects. Register updates **only on approval** (disposal sets status `disposed`, carrying value zero).
+3. **FM approval** — Status `pending_review` until FM approves/rejects or forwards material items to CFO (`pending_cfo`). Register updates **only on final approval** (FM for routine; CFO for material).
 4. **Depreciation** — **Run depreciation** on the register page applies annual charges for the **current calendar year** to active assets whose schedule row is still `projected`. Re-running the same year processes **0** assets (no double-charge).
 5. **Reconciliation** — Compare register carrying value total to GL PPE control balance.
    - **Sync from trial balance** — previews first (`GET .../sync-tb/preview`), shows current vs proposed balance and line count, then confirms before writing.
@@ -481,9 +487,12 @@ Asset Manager sees journal status on each asset’s **Asset journals** section (
 | **Audit workspace** (`/audit`) | Pick finalized submission → read-only review or audit CSV |
 | **Statement review** (`/approvals?review=statement&transaction=<id>&type=<doc>&returnTo=/audit`) | Read-only SFP/SFPER, line comments, formula modal |
 | **Asset register** (`/audit/asset-register`) | Read-only GRAP 17 register list |
+| **Material journal trail** (`/audit/asset-journals`) | Read-only CFO-approved disposals and material impairments |
 | **Asset reconciliation** (`/audit/reconciliation`) | Read-only register vs GL variance |
 
 Login redirects to **`/audit`**. Demo user: `auditor@agsa.gov.za`.
+
+**Inbox:** When a reporting period is **locked for the first time** on CFO finalization, auditors receive **“Reporting period locked — audit pack ready”** with a link to the audit workspace.
 
 ### Access rules
 
@@ -497,6 +506,7 @@ Login redirects to **`/audit`**. Demo user: `auditor@agsa.gov.za`.
 2. **Read-only review** — **Open review** → full statement, existing FM/CFO line comments, **View Calculations** → formula modal → **Export This Breakdown (PDF)**.
 3. **Audit CSV** — Download mapped line data for working papers (`POST /api/export/csv`).
 4. **Asset register / reconciliation** — Read-only GRAP 17 views (separate from trial balance workflow).
+5. **Material journal trail** — Read-only log of CFO-approved disposals and material impairments from the asset register.
 
 ### APIs (Auditor)
 
@@ -510,19 +520,73 @@ Login redirects to **`/audit`**. Demo user: `auditor@agsa.gov.za`.
 | `POST /api/formula/export/formula-breakdown-pdf` | Calculation audit PDF |
 | `GET /api/asset-manager/assets` | Read-only asset list (`view_assets`) |
 | `GET /api/asset-manager/reconciliation` | Read-only reconciliation (`view_assets`) |
+| `GET /api/audit/asset-journals` | Read-only material asset journal audit trail |
 
 ### UAT checklist (Auditor)
 
 | # | Test | Pass |
 |---|------|------|
-| U1 | Login as Auditor → lands on **Audit workspace** | |
-| U2 | Dashboard shows finalized submission count | |
-| U3 | Audit workspace lists only CFO-finalized, locked submissions | |
-| U4 | **Open review** — read-only statement; no Approve/Reject | |
-| U5 | Formula modal → **Export This Breakdown (PDF)** works | |
-| U6 | **Export CSV** downloads mapped data | |
-| U7 | Non-finalized session → 403 on session API | |
-| U8 | Read-only **Asset register** and **Reconciliation** | |
+| U1 | Login as Auditor → lands on **Audit workspace** | Pass |
+| U2 | Dashboard shows finalized submission count | Pass |
+| U3 | Audit workspace lists only CFO-finalized, locked submissions | Pass |
+| U4 | **Open review** — read-only statement; no Approve/Reject | Pass |
+| U5 | Formula modal → **Export This Breakdown (PDF)** works | Pass |
+| U6 | **Export CSV** downloads mapped data | Pass |
+| U7 | Non-finalized session → 403 on session API | Pass |
+| U8 | Read-only **Asset register** and **Reconciliation** | Pass |
+| U9 | **Material journal trail** lists CFO-approved disposals/impairments only | Pass |
+| U10 | Mobile nav includes **Journal trail** (parity with desktop) | Pass |
+| U11 | Inbox **audit pack ready** when period first locked on CFO finalize | Pass |
+
+---
+
+## System Admin
+
+**Primary goal:** Configure **`financial_periods`** and user accounts. **No financial workflow access** (no upload, review, export, or asset mutations).
+
+### Where the System Admin works
+
+| Nav / page | Purpose |
+|------------|---------|
+| **Admin panel** (`/admin`) | Overview, period management, user CRUD, schema migration status |
+| **Dashboard** (`/dashboard`) | KPI strip — active users, open/locked periods, link to admin panel |
+
+Login redirects to **`/admin`**. Demo user: `system.admin@sadpmr.gov.za` / `demo123`.
+
+### Typical journey
+
+1. **Schema migrations** — Confirm all checks pass on the Admin panel (or `GET /api/system/schema-migrations`). Run SQL scripts in Supabase if any are missing.
+2. **Create period** — `POST /api/periods` with name, start/end/due dates, required uploads.
+3. **Open period** — `POST /api/periods/<id>/open` so Finance Clerks see it on their dashboard.
+4. **Users** — Create accounts and assign roles via Admin panel (`POST /api/admin/users`). Deactivate leavers with `POST /api/admin/users/<id>/deactivate`.
+
+**Clerk dependency:** Until a period is **created and opened**, the Finance Clerk dashboard shows an empty period list.
+
+### APIs (System Admin)
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/admin/overview` | User/period counts + migration report |
+| `GET /api/admin/periods` | List all `financial_periods` |
+| `POST /api/periods` | Create period (`manage_users`) |
+| `POST /api/periods/<id>/open` \| `/close` | Open/close for clerk uploads |
+| `GET /api/admin/users` | List users (no password hashes) |
+| `POST /api/admin/users` | Create user with role |
+| `POST /api/admin/users/<id>/deactivate` | Deactivate account |
+| `GET /api/system/schema-migrations` | Schema health (CFO + System Admin) |
+
+### UAT checklist (System Admin)
+
+| # | Test | Pass |
+|---|------|------|
+| S1 | Login as System Admin → lands on **`/admin`** | Pass |
+| S2 | Dashboard shows user/period KPIs | Pass |
+| S3 | Create reporting period → appears in list | Pass |
+| S4 | Open period → Finance Clerk dashboard shows it | Pass |
+| S5 | Create user with role → can log in | Pass |
+| S6 | Deactivate user → login denied | Pass |
+| S7 | Schema migration panel shows status | Pass |
+| S8 | System Admin cannot access review queue / upload / export | Pass |
 
 ### Sign-off
 
@@ -531,4 +595,24 @@ Login redirects to **`/audit`**. Demo user: `auditor@agsa.gov.za`.
 | Finance Clerk (UAT) | Paula | 25/05/2026 | OK |
 | Finance Manager (UAT) | Paula | 25/05/2026 | OK |
 | CFO (UAT) | Paula | 25/05/2026 | OK |
+| Asset Manager (UAT) | Paula | 25/05/2026 | OK |
+| Auditor (UAT) | Paula | 25/05/2026 | OK |
+| System Admin (UAT) | Paula | 26/05/2026 | OK |
 | Technical / Dev | Paula | 25/05/2026 | OK |
+
+---
+
+## Operator notes (known behaviour)
+
+| Topic | Behaviour |
+|-------|-----------|
+| **Clerk dashboard** | **Open periods** shown first for uploads. **Closed periods** sit in a collapsible archive (hidden by default); **Load all closed periods** fetches older months. CFO-locked months appear only in closed. |
+| **System Admin first** | Clerks cannot upload until a period is **created and opened** in Admin — empty dashboard is expected before that. |
+| **FM/CFO history** | Submissions are **grouped by reporting period**, then **by document type** (Balance Sheet, Income Statement, Budget Report); older items without `period_name` appear under **Other submissions**. |
+| **CFO first finalize** | Locks the **whole reporting month** immediately — confirm dialog explains this; finish all reviews before finalizing if uploads must stay open (they will not after lock). |
+| **Auditor exports** | No **Export** nav — use **Audit workspace** CSV and formula-breakdown PDF from statement review (`export_audit` permission). |
+| **Admin duplicate rows** | Legacy duplicate `financial_periods` rows may remain if **CFO locked**; admin list dedupes display. Use **Merge duplicate rows** on the card to relink sessions and delete empty duplicates (including locked empties). |
+| **Admin system tools** | **Database cleanup** at `/admin/cleanup` (System Admin only). Inbox hidden for System Admin. Audit log UI planned — use Supabase dashboard for now. |
+| **FM export nav** | Labelled **Export PDFs** — read-only download; CFO uses full Export Center to generate outputs. |
+| **History export ack** | **Mark export ready** on approved cards is acknowledgment only — open **Export** nav to download or generate PDFs. |
+| **Asset workflow** | Self-contained GRAP 17 path — apply `scripts/create_asset_register_tables.sql` in Supabase before first use. |

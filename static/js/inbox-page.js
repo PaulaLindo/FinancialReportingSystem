@@ -10,7 +10,11 @@
         const body = await r.json().catch(() => ({}));
         if (!r.ok) {
             const msg = body.error || r.statusText;
-            window.alert(typeof msg === 'string' ? msg : 'Could not update inbox');
+            if (window.VarydianUtils?.showToast) {
+                VarydianUtils.showToast(typeof msg === 'string' ? msg : 'Could not update inbox', 'error');
+            } else {
+                console.warn('[inbox]', msg);
+            }
             return false;
         }
         return true;
@@ -49,6 +53,10 @@
         const toggle = li.querySelector('.inbox-msg__toggle');
         const panel = li.querySelector('.inbox-msg__panel');
         if (!toggle || !panel) return;
+
+        toggle.setAttribute('aria-expanded', 'false');
+        panel.hidden = true;
+        li.classList.remove('inbox-msg--open');
 
         toggle.addEventListener('click', async function () {
             const isOpen = toggle.getAttribute('aria-expanded') === 'true';

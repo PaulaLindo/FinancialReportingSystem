@@ -87,7 +87,6 @@ class AuthenticationModule {
                     if (this.elements.loginForm) {
                         this.elements.loginForm.submit();
                     } else {
-                        alert('Login form not found');
                         this.showError('Login form not found');
                     }
                 } catch (error) {

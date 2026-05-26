@@ -605,6 +605,15 @@
         padding: var(--fluid-space-md) var(--fluid-space-lg);
     }
 
+    .nav-mobile-body .nav-menu a.nav-inbox,
+    .nav-mobile-body .nav-menu a:has(.nav-pending-badge) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--fluid-space-xs, 0.35rem);
+        flex-wrap: wrap;
+    }
+
     .nav-mobile-body .nav-menu a.active {
         background: var(--primary-100);
         color: var(--primary-800);

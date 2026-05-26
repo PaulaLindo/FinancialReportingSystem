@@ -530,7 +530,31 @@ h4.text-center {
 
 .navbar .nav-user-info .nav-user-role--auditor,
 .navbar .nav-user-info-mobile .nav-user-role--auditor {
-    background: linear-gradient(135deg, var(--warning) 0%, var(--warning-dark) 100%);
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: var(--white);
+}
+
+.navbar .nav-user-info .nav-user-role--finance_manager,
+.navbar .nav-user-info-mobile .nav-user-role--finance_manager {
+    background: linear-gradient(135deg, #3182ce 0%, #2563eb 100%);
+    color: var(--white);
+}
+
+.navbar .nav-user-info .nav-user-role--finance_clerk,
+.navbar .nav-user-info-mobile .nav-user-role--finance_clerk {
+    background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+    color: var(--white);
+}
+
+.navbar .nav-user-info .nav-user-role--asset_manager,
+.navbar .nav-user-info-mobile .nav-user-role--asset_manager {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: var(--white);
+}
+
+.navbar .nav-user-info .nav-user-role--system_admin,
+.navbar .nav-user-info-mobile .nav-user-role--system_admin {
+    background: linear-gradient(135deg, var(--error) 0%, var(--error-dark) 100%);
     color: var(--white);
 }
 

@@ -104,6 +104,39 @@ class FlexibleBalanceSheetService:
             # Check if session ID is valid
             if not session.id or session.id == "":
                 raise Exception("Session creation failed - empty session ID returned")
+
+            if period_id:
+                from services.period_management_service import period_management_service
+                from utils.period_lock import attach_period_to_session_metadata
+
+                can_upload, lock_msg = period_management_service.validate_upload_for_period(period_id)
+                if not can_upload:
+                    raise Exception(lock_msg)
+                attach_period_to_session_metadata(session, period_id)
+                self.model.update_session_status(session.id, session.status, session.metadata)
+            else:
+                from utils.period_lock import find_open_period_for_today, attach_period_to_session_metadata
+                from services.period_management_service import period_management_service
+
+                open_periods = period_management_service.dedupe_open_periods(
+                    period_management_service.model.get_open_periods()
+                )
+                if len(open_periods) > 1:
+                    raise Exception(
+                        "Multiple reporting periods are open. "
+                        "Choose a period from the dashboard task card or the upload page before uploading."
+                    )
+                fallback = find_open_period_for_today()
+                if fallback:
+                    attach_period_to_session_metadata(session, fallback.id)
+                elif len(open_periods) == 1:
+                    attach_period_to_session_metadata(session, open_periods[0].id)
+                else:
+                    raise Exception(
+                        "No open reporting period is available. "
+                        "Ask your system administrator to open a period first."
+                    )
+                self.model.update_session_status(session.id, session.status, session.metadata)
             
             # Step 2: Read and analyze file
             print("📖 Step 2: Reading file...")

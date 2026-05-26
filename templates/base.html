@@ -38,40 +38,40 @@
                     <ul class="nav-menu">
                         {% if current_user %}
                         <li><a href="/dashboard" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">Dashboard</a></li>
+                        {% if current_user.role != 'SYSTEM_ADMIN' %}
                         <li><a href="/inbox" class="nav-link nav-inbox {% if request.endpoint == 'inbox_page' %}active{% endif %}" id="navInboxLink"><span>Inbox</span><span class="nav-inbox-badge" aria-live="polite" hidden aria-label="Unread messages"></span></a></li>
+                        {% endif %}
                         {% else %}
                         <li><a href="/" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Home</a></li>
                         {% endif %}
                         {% if current_user and current_user.can_review() %}
                         <li><a href="/finance-manager/history" class="nav-link {% if request.endpoint == 'finance_manager_history' %}active{% endif %}">History</a></li>
-                        {% elif current_user and current_user.can_view_all() and current_user.role != 'AUDITOR' %}
-                        <li><a href="/reports" class="nav-link {% if request.endpoint == 'reports_page' %}active{% endif %}">File Management</a></li>
+                        {% elif current_user and current_user.role == 'FINANCE_CLERK' %}
+                        <li><a href="/submission-history" class="nav-link {% if request.endpoint == 'submission_history_page' %}active{% endif %}">History</a></li>
                         {% endif %}
                         {% if current_user and current_user.can_upload() %}
                         <li><a href="/upload" class="nav-link {% if request.endpoint == 'upload_page' %}active{% endif %}">Upload</a></li>
                         {% endif %}
-                        
-                        {% if current_user and current_user.role == 'FINANCE_CLERK' %}
-                        <li><a href="/submission-history" class="nav-link {% if request.endpoint == 'submission_history_page' %}active{% endif %}">History</a></li>
-                        {% endif %}
 
                         {% if current_user and current_user.role == 'ASSET_MANAGER' %}
                         <li><a href="/asset-manager/register" class="nav-link {% if request.endpoint == 'asset_manager_register_page' %}active{% endif %}">Asset Register</a></li>
-                        <li><a href="/asset-manager/journals" class="nav-link {% if request.endpoint == 'asset_manager_journals_page' %}active{% endif %}">My journals</a></li>
+                        <li><a href="/asset-manager/journals" class="nav-link {% if request.endpoint == 'asset_manager_journals_page' %}active{% endif %}">My journals<span class="nav-pending-badge" data-journal-badge="am" hidden aria-label="Your pending asset journals"></span></a></li>
                         <li><a href="/asset-manager/reconciliation" class="nav-link {% if request.endpoint == 'asset_manager_reconciliation_page' %}active{% endif %}">Reconciliation</a></li>
                         {% endif %}
 
                         {% if current_user and current_user.role == 'AUDITOR' %}
                         <li><a href="/audit" class="nav-link {% if request.endpoint == 'auditor_workspace_page' %}active{% endif %}">Audit workspace</a></li>
                         <li><a href="/audit/asset-register" class="nav-link {% if request.endpoint == 'auditor_asset_register_page' %}active{% endif %}">Asset register</a></li>
+                        <li><a href="/audit/asset-journals" class="nav-link {% if request.endpoint == 'auditor_asset_journals_page' %}active{% endif %}">Journal trail</a></li>
+                        <li><a href="/audit/reconciliation" class="nav-link {% if request.endpoint == 'auditor_reconciliation_page' %}active{% endif %}">Reconciliation</a></li>
                         {% endif %}
                         
                         {% if current_user and current_user.role in ['FINANCE_MANAGER', 'CFO'] %}
                         <li><a href="/finance-manager/review-queue" class="nav-link {% if request.endpoint == 'finance_manager_review_queue' %}active{% endif %}">Review</a></li>
-                        <li><a href="/finance-manager/asset-journals" class="nav-link {% if request.endpoint == 'finance_manager_asset_journals_page' %}active{% endif %}">Asset journals<span class="nav-pending-badge" id="navAssetJournalBadge" hidden aria-label="Pending asset journals"></span></a></li>
+                        <li><a href="/finance-manager/asset-journals" class="nav-link {% if request.endpoint == 'finance_manager_asset_journals_page' %}active{% endif %}">Asset journals<span class="nav-pending-badge" data-journal-badge="fm" hidden aria-label="Pending asset journals"></span></a></li>
                         {% endif %}
-                        {% if current_user and current_user.can_access_export_center() %}
-                        <li><a href="/export" class="nav-link {% if request.endpoint == 'export_page' %}active{% endif %}">Export</a></li>
+                        {% if current_user and current_user.can_access_export_center() and current_user.role != 'AUDITOR' %}
+                        <li><a href="/export" class="nav-link {% if request.endpoint == 'export_page' %}active{% endif %}"{% if current_user.role == 'FINANCE_MANAGER' %} title="Download finalized PDFs (read-only)"{% endif %}>{% if current_user.role == 'FINANCE_MANAGER' %}Export PDFs{% else %}Export{% endif %}</a></li>
                         {% endif %}
                         {% if current_user and current_user.can_manage_users() %}
                         <li><a href="/admin" class="nav-link {% if request.endpoint == 'admin_page' %}active{% endif %}">Admin</a></li>
@@ -110,40 +110,40 @@
                 <ul class="nav-menu">
                     {% if current_user %}
                     <li><a href="/dashboard" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">Dashboard</a></li>
-                    <li><a href="/inbox" class="nav-link {% if request.endpoint == 'inbox_page' %}active{% endif %}">Inbox</a></li>
+                    {% if current_user.role != 'SYSTEM_ADMIN' %}
+                    <li><a href="/inbox" class="nav-link nav-inbox {% if request.endpoint == 'inbox_page' %}active{% endif %}"><span>Inbox</span><span class="nav-inbox-badge" aria-live="polite" hidden aria-label="Unread messages"></span></a></li>
+                    {% endif %}
                     {% else %}
                     <li><a href="/" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Home</a></li>
                     {% endif %}
                     {% if current_user and current_user.can_review() %}
                     <li><a href="/finance-manager/history" class="nav-link {% if request.endpoint == 'finance_manager_history' %}active{% endif %}">History</a></li>
-                    {% elif current_user and current_user.can_view_all() and current_user.role != 'AUDITOR' %}
-                    <li><a href="/reports" class="nav-link {% if request.endpoint == 'reports_page' %}active{% endif %}">File Management</a></li>
+                    {% elif current_user and current_user.role == 'FINANCE_CLERK' %}
+                    <li><a href="/submission-history" class="nav-link {% if request.endpoint == 'submission_history_page' %}active{% endif %}">History</a></li>
                     {% endif %}
                     {% if current_user and current_user.can_upload() %}
                     <li><a href="/upload" class="nav-link {% if request.endpoint == 'upload_page' %}active{% endif %}">Upload</a></li>
                     {% endif %}
-                    
-                    {% if current_user and current_user.role == 'FINANCE_CLERK' %}
-                    <li><a href="/submission-history" class="nav-link {% if request.endpoint == 'submission_history_page' %}active{% endif %}">History</a></li>
-                    {% endif %}
 
                     {% if current_user and current_user.role == 'ASSET_MANAGER' %}
                     <li><a href="/asset-manager/register" class="nav-link {% if request.endpoint == 'asset_manager_register_page' %}active{% endif %}">Asset Register</a></li>
-                    <li><a href="/asset-manager/journals" class="nav-link {% if request.endpoint == 'asset_manager_journals_page' %}active{% endif %}">My journals</a></li>
+                    <li><a href="/asset-manager/journals" class="nav-link {% if request.endpoint == 'asset_manager_journals_page' %}active{% endif %}">My journals<span class="nav-pending-badge" data-journal-badge="am" hidden aria-label="Your pending asset journals"></span></a></li>
                     <li><a href="/asset-manager/reconciliation" class="nav-link {% if request.endpoint == 'asset_manager_reconciliation_page' %}active{% endif %}">Reconciliation</a></li>
                     {% endif %}
 
                     {% if current_user and current_user.role == 'AUDITOR' %}
                     <li><a href="/audit" class="nav-link {% if request.endpoint == 'auditor_workspace_page' %}active{% endif %}">Audit workspace</a></li>
                     <li><a href="/audit/asset-register" class="nav-link {% if request.endpoint == 'auditor_asset_register_page' %}active{% endif %}">Asset register</a></li>
+                    <li><a href="/audit/asset-journals" class="nav-link {% if request.endpoint == 'auditor_asset_journals_page' %}active{% endif %}">Journal trail</a></li>
+                    <li><a href="/audit/reconciliation" class="nav-link {% if request.endpoint == 'auditor_reconciliation_page' %}active{% endif %}">Reconciliation</a></li>
                     {% endif %}
                     
                     {% if current_user and current_user.role in ['FINANCE_MANAGER', 'CFO'] %}
                     <li><a href="/finance-manager/review-queue" class="nav-link {% if request.endpoint == 'finance_manager_review_queue' %}active{% endif %}">Review</a></li>
-                    <li><a href="/finance-manager/asset-journals" class="nav-link {% if request.endpoint == 'finance_manager_asset_journals_page' %}active{% endif %}">Asset journals</a></li>
+                    <li><a href="/finance-manager/asset-journals" class="nav-link {% if request.endpoint == 'finance_manager_asset_journals_page' %}active{% endif %}">Asset journals<span class="nav-pending-badge" data-journal-badge="fm" hidden aria-label="Pending asset journals"></span></a></li>
                     {% endif %}
-                    {% if current_user and current_user.can_access_export_center() %}
-                    <li><a href="/export" class="nav-link {% if request.endpoint == 'export_page' %}active{% endif %}">Export</a></li>
+                    {% if current_user and current_user.can_access_export_center() and current_user.role != 'AUDITOR' %}
+                    <li><a href="/export" class="nav-link {% if request.endpoint == 'export_page' %}active{% endif %}"{% if current_user.role == 'FINANCE_MANAGER' %} title="Download finalized PDFs (read-only)"{% endif %}>{% if current_user.role == 'FINANCE_MANAGER' %}Export PDFs{% else %}Export{% endif %}</a></li>
                     {% endif %}
                     {% if current_user and current_user.can_manage_users() %}
                     <li><a href="/admin" class="nav-link {% if request.endpoint == 'admin_page' %}active{% endif %}">Admin</a></li>
@@ -158,7 +158,7 @@
                         <div class="nav-user-avatar">{{ current_user.full_name[0] }}</div>
                         <div class="nav-user-details">
                             <p class="nav-user-name">{{ current_user.full_name }}</p>
-                            <p class="nav-user-role">{{ current_user.role_label }}</p>
+                            <p class="nav-user-role nav-user-role--{{ current_user.role.lower() if current_user.role else 'default' }}">{{ current_user.role_label }}</p>
                         </div>
                     </div>
                     <a href="/logout" class="btn btn-secondary btn-sm">Logout</a>
@@ -188,10 +188,6 @@
     {% include 'components/draft-statement-viewer.html' %}
     {% endif %}
 
-    {% if current_user and current_user.can_view_all() %}
-    {% include 'components/file-details-modal.html' %}
-    {% endif %}
-
     {% if current_user and (current_user.can_review() or (current_user.role == 'FINANCE_CLERK' and current_user.can_process())) %}
     {% include 'components/line-item-comment-modal.html' %}
     {% endif %}
@@ -203,7 +199,7 @@
             <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
             {% if current_user %}
             <script src="{{ url_for('static', filename='js/inbox-nav.js') }}" defer></script>
-            {% if current_user.role in ['FINANCE_MANAGER', 'CFO'] %}
+            {% if current_user.role in ['FINANCE_MANAGER', 'CFO', 'ASSET_MANAGER'] %}
             <script src="{{ url_for('static', filename='js/asset-journal-nav-badge.js') }}" defer></script>
             {% endif %}
             {% endif %}
