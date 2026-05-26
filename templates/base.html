@@ -77,6 +77,7 @@
                         {% if current_user and current_user.can_access_export_center() and current_user.role != 'AUDITOR' %}
                         <li><a href="/export" class="nav-link {% if request.endpoint == 'export_page' %}active{% endif %}"{% if current_user.role == 'FINANCE_MANAGER' %} title="Download finalized PDFs (read-only)"{% endif %}>{% if current_user.role == 'FINANCE_MANAGER' %}Export PDFs{% else %}Export{% endif %}</a></li>
                         {% endif %}
+                        {# Maroon: external-only; hidden when MAROON_APP_URL unset. Always opens new tab — see DEPLOYMENT.md #}
                         {% if maroon_app_url %}
                         <li><a href="{{ maroon_app_url }}" class="nav-link nav-link--external" target="_blank" rel="noopener noreferrer" title="Maroon supply-chain traceability">Maroon</a></li>
                         {% endif %}
@@ -152,6 +153,7 @@
                     {% if current_user and current_user.can_access_export_center() and current_user.role != 'AUDITOR' %}
                     <li><a href="/export" class="nav-link {% if request.endpoint == 'export_page' %}active{% endif %}"{% if current_user.role == 'FINANCE_MANAGER' %} title="Download finalized PDFs (read-only)"{% endif %}>{% if current_user.role == 'FINANCE_MANAGER' %}Export PDFs{% else %}Export{% endif %}</a></li>
                     {% endif %}
+                    {# Same Maroon policy as desktop: new tab when MAROON_APP_URL set #}
                     {% if maroon_app_url %}
                     <li><a href="{{ maroon_app_url }}" class="nav-link nav-link--external" target="_blank" rel="noopener noreferrer">Maroon</a></li>
                     {% endif %}

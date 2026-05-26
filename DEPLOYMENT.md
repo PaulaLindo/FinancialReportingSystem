@@ -137,7 +137,7 @@ Neither is a good **long-term free** host for this stack today.
 | `SUPABASE_SECRET_KEY` | Yes (Render/prod) | Service role — period lock, inbox, assets; **never** expose to browser |
 | `SECRET_KEY` | Yes | Flask session signing (random, 32+ chars) |
 | `FLASK_ENV` | Recommended | `production` on Render/Azure |
-| `MAROON_APP_URL` | Optional | Maroon Traceability base URL for cross-app links |
+| `MAROON_APP_URL` | Optional | Maroon **root** URL, **no trailing slash** (`https://…vercel.app`). Normalized server-side (`utils/integration_urls.py`); `/intro` appended in code via `maroon_intro_url()` if needed — do not bake `/intro/` into env |
 
 Copy from `.env.example` for local development.
 

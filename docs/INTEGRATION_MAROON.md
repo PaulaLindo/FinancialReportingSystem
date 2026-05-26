@@ -47,7 +47,7 @@ Maroon marketing site (pricing)
 | Varydian hosted | Render (`render.yaml`) |
 | Maroon hosted | Vercel / GitHub Pages |
 | Link Maroon → Varydian | `NEXT_PUBLIC_FINANCE_APP_URL` in Maroon → Render URL |
-| Link Varydian → Maroon | `MAROON_APP_URL` in Render → Maroon URL |
+| Link Varydian → Maroon | `MAROON_APP_URL` in Render — **site root only, no trailing slash**; normalized in `utils/integration_urls.py`. Use `maroon_intro_url()` in code for `/intro`, not baked into env |
 | Auth | Separate logins until shared Supabase Auth is designed |
 | Data | Same Supabase project optional; **separate tables** |
 

@@ -30,6 +30,18 @@ Complete financial reporting system with automated GRAP mapping and PDF generati
    - Open: `http://localhost:5000`
    - Upload trial balance and generate GRAP-compliant statements
 
+### Environment variables and security
+
+- Secrets live only in a local **`.env`** (not committed) and in **Render** (or your host) environment settings. Copy from **[`.env.example`](.env.example)**.
+- **Never** expose **`SUPABASE_SECRET_KEY`** (Supabase **service_role** JWT) in the browser, `NEXT_PUBLIC_*` variables on Maroon, or committed files. Flask does not inject it into templates.
+- **`SUPABASE_URL`** and **`SUPABASE_ANON_KEY`** are loaded server-side where the backend calls Supabase; keep the usual hygiene (no leaking into client bundles—we do not ship them to JS for Maroon).
+- **Cross-app links:**
+  - **Varydian (this repo):** **`MAROON_APP_URL`** = deployed Maroon **site root** with **no trailing slash** (e.g. `https://maroontraceabilitydemo.vercel.app`). Paths like `/intro` are built in code: **`utils/integration_urls.maroon_intro_url()`** — do **not** put `/intro/` in `MAROON_APP_URL` unless you deliberately document an exception.
+  - **Maroon (Next.js):** **`NEXT_PUBLIC_FINANCE_APP_URL`** = Varydian public URL (client-safe label only — still no Supabase secrets there).
+- **`.gitignore`** excludes **`.env`**, **`.env.local`**, **`.env.production`**.
+
+See also **[DEPLOYMENT.md](DEPLOYMENT.md)** and **[docs/INTEGRATION_MAROON.md](docs/INTEGRATION_MAROON.md)**.
+
 ---
 
 ## 📁 Project Structure
