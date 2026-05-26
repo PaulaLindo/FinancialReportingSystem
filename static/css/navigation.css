@@ -44,9 +44,10 @@
 }
 
 .nav-logo {
-    height: clamp(32px, 4vw, 48px);
+    height: clamp(44px, 5.5vw, 64px);
     width: auto;
     flex-shrink: 0;
+    object-fit: contain;
 }
 
 .nav-brand-text {

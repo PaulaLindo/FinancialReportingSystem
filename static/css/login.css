@@ -59,10 +59,11 @@ body .login-container .login-box {
 }
 
 .login-logo-img {
-    height: clamp(90px, 20vw, 140px);
+    height: clamp(112px, 22vw, 168px);
     width: auto;
     margin: 0 auto clamp(20px, 3vw, 32px);
     display: block;
+    object-fit: contain;
 }
 
 .login-logo:hover {
@@ -403,17 +404,18 @@ body .login-container .login-box {
     }
     
     .login-branding-logo {
-        background: linear-gradient(135deg, var(--accent-taupe) 0%, var(--accent-taupe-dark) 100%);
-        border-radius: 50%;
-        width: clamp(120px, 15vw, 160px);
-        height: clamp(120px, 15vw, 160px);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: clamp(3rem, 6vw, 4rem);
-        box-shadow: 0 20px 40px rgba(212, 165, 116, 0.3);
         margin-bottom: clamp(32px, 4vw, 48px);
         animation: float 6s ease-in-out infinite;
+        filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.25));
+    }
+
+    .login-branding-logo__img {
+        height: clamp(140px, 18vw, 200px);
+        width: auto;
+        object-fit: contain;
     }
     
     .login-branding h1 {
@@ -477,7 +479,7 @@ body .login-container .login-box {
     }
     
     .login-logo-img {
-        height: clamp(80px, 10vw, 120px);
+        height: clamp(100px, 12vw, 150px);
         margin: 0 0 clamp(24px, 3vw, 32px) 0;
         display: block;
     }
@@ -629,10 +631,8 @@ body .login-container .login-box {
 /* LARGE DESKTOP ENHANCEMENTS */
 /* ======================================== */
 @media (min-width: 1440px) {
-    .login-branding-logo {
-        width: clamp(140px, 18vw, 180px);
-        height: clamp(140px, 18vw, 180px);
-        font-size: clamp(3.5rem, 7vw, 4.5rem);
+    .login-branding-logo__img {
+        height: clamp(160px, 20vw, 220px);
     }
     
     .login-branding h1 {
@@ -661,7 +661,7 @@ body .login-container .login-box {
     }
     
     .login-logo-img {
-        height: clamp(100px, 12vw, 140px);
+        height: clamp(120px, 14vw, 180px);
     }
     
     .login-header h1 {
